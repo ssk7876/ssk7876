@@ -29,33 +29,33 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--cream);color:var(--text);}
 
-.app-bar{position:sticky;top:0;z-index:200;background:var(--navy);padding:0 16px;box-shadow:0 2px 12px rgba(0,0,0,0.25);}
-.app-bar-inner{display:flex;align-items:center;justify-content:space-between;height:54px;}
-.app-title{display:flex;align-items:center;gap:10px;}
-.app-title .emblem{width:34px;height:34px;background:var(--gold);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:18px;}
-.app-title h1{font-size:14px;font-weight:700;color:#fff;line-height:1.2;}
-.app-title span{font-size:10px;color:rgba(255,255,255,0.55);display:block;margin-top:1px;}
-.mode-pills{display:flex;gap:3px;background:rgba(255,255,255,0.1);border-radius:8px;padding:3px;}
-.mode-pill{padding:5px 11px;border:none;border-radius:6px;font-size:11px;font-weight:600;font-family:inherit;color:rgba(255,255,255,0.6);background:transparent;cursor:pointer;transition:all 0.2s;}
+.app-bar{position:sticky;top:0;z-index:200;background:var(--navy);padding:0 12px;box-shadow:0 2px 12px rgba(0,0,0,0.25);}
+.app-bar-inner{display:flex;align-items:center;justify-content:space-between;height:48px;gap:6px;}
+.app-title{display:flex;align-items:center;gap:8px;min-width:0;flex:1;}
+.app-title .emblem{width:30px;height:30px;flex-shrink:0;background:var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.app-title h1{font-size:12px;font-weight:700;color:#fff;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.app-title span{font-size:9px;color:rgba(255,255,255,0.5);display:block;margin-top:1px;}
+.mode-pills{display:flex;gap:3px;background:rgba(255,255,255,0.1);border-radius:7px;padding:2px;flex-shrink:0;}
+.mode-pill{padding:4px 9px;border:none;border-radius:5px;font-size:11px;font-weight:600;font-family:inherit;color:rgba(255,255,255,0.6);background:transparent;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
 .mode-pill.on{background:var(--gold);color:var(--navy);}
 
 .btm-nav{position:fixed;bottom:0;left:0;right:0;z-index:200;background:var(--white);border-top:1px solid var(--border);display:flex;box-shadow:0 -2px 10px rgba(0,0,0,0.06);}
-.btm-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 4px 10px;border:none;background:none;font-family:inherit;cursor:pointer;color:var(--muted);font-size:10px;font-weight:500;transition:color 0.2s;}
-.btm-btn .ico{font-size:20px;line-height:1;}
+.btm-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px 8px;border:none;background:none;font-family:inherit;cursor:pointer;color:var(--muted);font-size:10px;font-weight:500;transition:color 0.2s;}
+.btm-btn .ico{font-size:18px;line-height:1;}
 .btm-btn.on{color:var(--rice);}
 
-.content{padding:14px 14px 80px;max-width:560px;margin:0 auto;}
+.content{padding:10px 10px 76px;max-width:560px;margin:0 auto;}
 .page{display:none;animation:fadeUp 0.25s ease;}
 .page.on{display:block;}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-.card{background:var(--white);border-radius:var(--radius);padding:16px;margin-bottom:12px;border:1px solid var(--border);box-shadow:var(--shadow);}
-.card-hd{font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:6px;}
+.card{background:var(--white);border-radius:var(--radius);padding:12px;margin-bottom:10px;border:1px solid var(--border);box-shadow:var(--shadow);}
+.card-hd{font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
 
-.crop-tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
-.crop-tab{padding:12px 6px;border-radius:10px;border:2px solid var(--border);background:var(--white);cursor:pointer;text-align:center;transition:all 0.2s;}
-.crop-tab .crop-emoji{font-size:26px;display:block;margin-bottom:4px;}
-.crop-tab .crop-name{font-size:13px;font-weight:700;}
+.crop-tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px;}
+.crop-tab{padding:10px 4px;border-radius:10px;border:2px solid var(--border);background:var(--white);cursor:pointer;text-align:center;transition:all 0.2s;}
+.crop-tab .crop-emoji{font-size:22px;display:block;margin-bottom:3px;}
+.crop-tab .crop-name{font-size:12px;font-weight:700;}
 .crop-tab .crop-cnt{font-size:10px;color:var(--muted);margin-top:2px;}
 .crop-tab.rice.on{border-color:var(--rice);background:var(--rice-bg);}
 .crop-tab.rice.on .crop-name{color:var(--rice);}
@@ -64,45 +64,45 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--cre
 .crop-tab.bean.on{border-color:var(--bean);background:var(--bean-bg);}
 .crop-tab.bean.on .crop-name{color:var(--bean);}
 
-.group-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
-.group-tab{padding:7px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);cursor:pointer;text-align:center;font-size:12px;font-weight:600;color:var(--muted);transition:all 0.2s;font-family:inherit;white-space:nowrap;}
+.group-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+.group-tab{padding:6px 11px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);cursor:pointer;text-align:center;font-size:12px;font-weight:600;color:var(--muted);transition:all 0.2s;font-family:inherit;white-space:nowrap;}
 
-.worker-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;background:var(--white);cursor:pointer;transition:all 0.2s;margin-bottom:6px;}
+.worker-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--white);cursor:pointer;transition:all 0.2s;margin-bottom:6px;}
 .worker-card:hover{border-color:var(--rice);}
 .worker-card.selected{border-color:var(--rice);background:var(--rice-bg);}
-.w-avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0;}
-.w-info{flex:1;}
-.w-name{font-size:14px;font-weight:700;}
-.w-detail{font-size:11px;color:var(--muted);margin-top:2px;}
+.w-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0;}
+.w-info{flex:1;min-width:0;}
+.w-name{font-size:13px;font-weight:700;}
+.w-detail{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
-.fg{margin-bottom:13px;}
-label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.3px;}
-input[type=text],input[type=number],input[type=date],select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;color:var(--text);background:#fafafa;outline:none;transition:border-color 0.2s,background 0.2s;-webkit-appearance:none;appearance:none;}
+.fg{margin-bottom:11px;}
+label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;letter-spacing:.3px;}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;color:var(--text);background:#fafafa;outline:none;transition:border-color 0.2s,background 0.2s;-webkit-appearance:none;appearance:none;}
 input:focus,select:focus,textarea:focus{border-color:var(--rice);background:var(--white);}
 textarea{min-height:72px;resize:vertical;line-height:1.6;}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;}
 
-.report-header{background:var(--navy);color:var(--white);border-radius:10px;padding:14px 16px;margin-bottom:12px;}
-.report-header h2{font-family:'Noto Serif KR',serif;font-size:17px;font-weight:700;text-align:center;margin-bottom:10px;}
-.report-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.meta-field{background:rgba(255,255,255,0.1);border-radius:6px;padding:8px 10px;}
-.meta-field label{color:rgba(255,255,255,0.6);font-size:10px;margin-bottom:4px;}
+.report-header{background:var(--navy);color:var(--white);border-radius:10px;padding:12px 14px;margin-bottom:10px;}
+.report-header h2{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:700;text-align:center;margin-bottom:10px;}
+.report-meta{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.meta-field{background:rgba(255,255,255,0.1);border-radius:6px;padding:7px 9px;}
+.meta-field label{color:rgba(255,255,255,0.6);font-size:10px;margin-bottom:3px;}
 .meta-field input,.meta-field select{background:transparent;border:none;color:white;font-size:13px;font-weight:600;padding:0;width:100%;outline:none;}
 .meta-field input::placeholder{color:rgba(255,255,255,0.4);}
 .meta-field select option{color:var(--text);background:var(--white);}
 
-.act-table-wrap{overflow-x:auto;margin-bottom:12px;border-radius:10px;border:1.5px solid var(--border);}
+.act-table-wrap{overflow-x:auto;margin-bottom:10px;border-radius:10px;border:1.5px solid var(--border);}
 .act-table{width:100%;border-collapse:collapse;min-width:340px;}
 .act-table thead tr{background:var(--navy);color:white;}
 .act-table th{padding:8px 6px;font-size:11px;font-weight:700;text-align:center;white-space:nowrap;}
 .act-table td{border-top:1px solid var(--border);padding:0;vertical-align:top;}
 .act-table tr:nth-child(even){background:#fafafa;}
-.act-row-num{width:28px;padding:0 6px;text-align:center;font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;vertical-align:middle;}
-.tbl-input{border:none;background:transparent;width:100%;padding:7px 8px;font-family:inherit;font-size:13px;color:var(--text);outline:none;min-width:0;}
+.act-row-num{width:22px;padding:0 3px;text-align:center;font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;vertical-align:middle;}
+.tbl-input{border:none;background:transparent;width:100%;padding:6px 5px;font-family:inherit;font-size:12px;color:var(--text);outline:none;min-width:0;}
 .tbl-input:focus{background:#fffbe6;}
-.act-table .add-row-btn-cell{padding:6px;text-align:center;background:#f8fdf9;}
-.add-row-btn{background:none;border:1.5px dashed var(--border);color:var(--muted);border-radius:6px;padding:5px 16px;font-size:12px;cursor:pointer;font-family:inherit;transition:all 0.2s;width:100%;}
+.act-table .add-row-btn-cell{padding:5px;text-align:center;background:#f8fdf9;}
+.add-row-btn{background:none;border:1.5px dashed var(--border);color:var(--muted);border-radius:6px;padding:4px 14px;font-size:11px;cursor:pointer;font-family:inherit;transition:all 0.2s;width:100%;}
 .add-row-btn:hover{border-color:var(--rice);color:var(--rice);}
 
 .submit-box{border:1.5px solid var(--border);border-radius:10px;padding:14px;background:#fafafa;margin-bottom:12px;text-align:center;}
@@ -141,11 +141,11 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
 .sig-actions{display:flex;gap:8px;}
 .sig-actions button{flex:1;}
 
-.btn{width:100%;padding:14px;border:none;border-radius:10px;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer;transition:all 0.18s;letter-spacing:.3px;}
+.btn{width:100%;padding:12px;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.18s;letter-spacing:.3px;}
 .btn-primary{background:linear-gradient(135deg,var(--rice),#1a3a2a);color:white;}
 .btn-gold{background:linear-gradient(135deg,var(--gold),#a07208);color:white;}
 .btn-ghost{background:white;color:var(--rice);border:1.5px solid var(--rice);}
-.btn-sm{padding:8px 14px;font-size:12px;width:auto;border-radius:7px;}
+.btn-sm{padding:7px 12px;font-size:12px;width:auto;border-radius:7px;}
 .btn:active{transform:scale(0.98);}
 .btn-danger{background:white;color:#c0392b;border:1.5px solid #c0392b;}
 
@@ -369,28 +369,34 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
   text-decoration:underline;font-family:inherit;
 }
 
-/* 등록 카드 */
+/* 등록 카드 — 모달 오버레이 */
+.reg-modal-bg{
+  position:fixed;inset:0;z-index:1000;
+  background:rgba(0,0,0,0.45);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+  animation:lsFadeIn 0.2s ease both;
+}
 #loginRegCard{
-  background:rgba(255,255,255,0.88);
-  border:1.5px solid rgba(255,255,255,0.98);
+  background:white;
   border-radius:22px;padding:22px 20px;
-  width:100%;max-width:360px;margin-top:10px;
-  backdrop-filter:blur(18px);
-  box-shadow:0 4px 28px rgba(60,140,20,0.14);
-  position:relative;z-index:2;
+  width:100%;max-width:360px;
+  box-shadow:0 8px 40px rgba(0,0,0,0.22);
+  position:relative;z-index:1001;
+  max-height:90vh;overflow-y:auto;
 }
 
 /* 앱바 로그아웃 버튼 */
 .app-bar-user{
-  display:flex;align-items:center;gap:8px;
+  display:flex;align-items:center;gap:4px;flex-shrink:0;
 }
-.app-bar-user span{font-size:11px;color:rgba(255,255,255,0.7);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.app-bar-user span{font-size:11px;color:rgba(255,255,255,0.8);max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .logout-btn{
-  background:rgba(255,255,255,0.12);border:none;color:rgba(255,255,255,0.8);
-  padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;
-  cursor:pointer;font-family:inherit;transition:all 0.2s;
+  background:rgba(255,255,255,0.12);border:none;color:rgba(255,255,255,0.85);
+  padding:5px 8px;border-radius:6px;font-size:11px;font-weight:600;
+  cursor:pointer;font-family:inherit;transition:all 0.2s;white-space:nowrap;
 }
-.logout-btn:hover{background:rgba(255,255,255,0.2);}
+.logout-btn:hover{background:rgba(255,255,255,0.22);}
 
 /* 비번 변경 모달 */
 .pw-modal-bg{position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;padding:20px;}
@@ -401,33 +407,38 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
 .pw-fg input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:14px;outline:none;}
 .pw-fg input:focus{border-color:var(--rice);}
 .content-picker{
-  position:fixed;z-index:400;
-  background:white;border-radius:14px;
-  box-shadow:0 8px 40px rgba(0,0,0,0.22);
-  border:1.5px solid var(--border);
-  width:calc(100vw - 28px);max-width:420px;
-  overflow:hidden;
-  animation:popIn 0.18s ease;
+  position:fixed;
+  bottom:0;left:0;right:0;
+  z-index:500;
+  background:white;
+  border-radius:20px 20px 0 0;
+  box-shadow:0 -4px 32px rgba(0,0,0,0.22);
+  max-height:72vh;
+  display:flex;flex-direction:column;
+  animation:slideUp 0.22s ease;
 }
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes popIn{from{opacity:0;transform:scale(0.95) translateY(6px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .picker-header{
   display:flex;align-items:center;justify-content:space-between;
-  padding:10px 14px;background:var(--navy);color:white;
+  padding:14px 16px 10px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
 }
-.picker-header span{font-size:13px;font-weight:700;}
-.picker-close{background:none;border:none;color:rgba(255,255,255,0.7);font-size:20px;cursor:pointer;line-height:1;padding:0;}
-.picker-list{overflow-y:auto;max-height:280px;}
+.picker-header span{font-size:14px;font-weight:700;color:var(--text);}
+.picker-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:0;width:32px;height:32px;display:flex;align-items:center;justify-content:center;}
+.picker-list{overflow-y:auto;flex:1;}
 .picker-item{
-  display:flex;align-items:center;gap:10px;
-  padding:12px 16px;border-bottom:1px solid #f0f0f0;
-  cursor:pointer;transition:background 0.15s;font-size:13px;font-weight:500;
+  display:flex;align-items:center;gap:12px;
+  padding:14px 16px;border-bottom:1px solid #f0f0f0;
+  cursor:pointer;transition:background 0.12s;font-size:14px;font-weight:500;
 }
 .picker-item:last-child{border-bottom:none;}
-.picker-item:hover,.picker-item:active{background:var(--rice-bg);}
+.picker-item:active{background:var(--rice-bg);}
 .picker-item.selected{background:var(--rice-bg);}
-.picker-item .pi-icon{font-size:18px;flex-shrink:0;}
+.picker-item .pi-icon{font-size:20px;flex-shrink:0;}
 .picker-item .pi-text{flex:1;color:var(--text);}
-.picker-overlay{position:fixed;inset:0;z-index:399;background:rgba(0,0,0,0.3);}
+.picker-overlay{position:fixed;inset:0;z-index:499;background:rgba(0,0,0,0.4);}
 
 @media print{
   .app-bar,.btm-nav,.toast{display:none!important;}
@@ -580,43 +591,52 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
     </div>
   </div>
 
-  <!-- 지도원 신규 등록 카드 -->
-  <div id="loginRegCard" style="display:none;">
+</div><!-- /loginScreen -->
+
+<!-- 지도원 등록 모달 (로그인 화면 위에 오버레이) -->
+<div id="regModalBg" class="reg-modal-bg" style="display:none;" onclick="if(event.target===this)hideRegFromLogin()">
+  <div id="loginRegCard">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
       <strong style="font-size:15px;font-weight:900;color:#1b4206;">✏️ 지도원 등록</strong>
-      <button onclick="hideRegFromLogin()" style="background:none;border:none;color:#6a9450;font-size:20px;cursor:pointer;">✕</button>
+      <button onclick="hideRegFromLogin()" style="background:none;border:none;color:#6a9450;font-size:20px;cursor:pointer;line-height:1;">✕</button>
     </div>
-    <div class="l-fg">
-      <label>이름</label>
-      <input type="text" id="rlName" placeholder="홍길동">
+    <div class="l-fg" style="--lc:#4a7030;">
+      <label style="color:#4a7030;">이름</label>
+      <input type="text" id="rlName" placeholder="홍길동"
+        style="background:#f5fdf0;border-color:rgba(100,180,50,0.3);color:#1b4206;">
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
       <div class="l-fg">
-        <label>작물</label>
-        <select id="rlCrop" onchange="updateRlRegion()">
+        <label style="color:#4a7030;">작물</label>
+        <select id="rlCrop" onchange="updateRlRegion()"
+          style="background:#f5fdf0;border-color:rgba(100,180,50,0.3);color:#1b4206;">
           <option value="rice">🌾 벼</option>
           <option value="grain">🌿 맥류</option>
           <option value="bean">🫘 콩</option>
         </select>
       </div>
       <div class="l-fg">
-        <label>지역</label>
-        <select id="rlRegion"></select>
+        <label style="color:#4a7030;">지역</label>
+        <select id="rlRegion"
+          style="background:#f5fdf0;border-color:rgba(100,180,50,0.3);color:#1b4206;"></select>
       </div>
     </div>
     <div class="l-fg">
-      <label>단지명</label>
-      <input type="text" id="rlUnit" placeholder="예: 홍성 1단지">
+      <label style="color:#4a7030;">단지명</label>
+      <input type="text" id="rlUnit" placeholder="예: 홍성 1단지"
+        style="background:#f5fdf0;border-color:rgba(100,180,50,0.3);color:#1b4206;">
     </div>
     <div class="l-fg">
-      <label>비밀번호 설정 (4자리 이상)</label>
-      <input type="password" id="rlPw" placeholder="로그인에 사용할 비밀번호">
+      <label style="color:#4a7030;">비밀번호 설정 (4자리 이상)</label>
+      <input type="password" id="rlPw" placeholder="로그인에 사용할 비밀번호"
+        style="background:#f5fdf0;border-color:rgba(100,180,50,0.3);color:#1b4206;">
     </div>
     <div class="l-fg">
-      <label>비밀번호 확인</label>
-      <input type="password" id="rlPw2" placeholder="비밀번호 재입력">
+      <label style="color:#4a7030;">비밀번호 확인</label>
+      <input type="password" id="rlPw2" placeholder="비밀번호 재입력"
+        style="background:#f5fdf0;border-color:rgba(100,180,50,0.3);color:#1b4206;">
     </div>
-    <div id="rlErr" class="l-err"></div>
+    <div id="rlErr" class="l-err" style="color:#c0392b;background:rgba(220,60,50,0.08);border-color:rgba(220,60,50,0.25);"></div>
     <button class="l-btn" onclick="doRegisterFromLogin()">등록 완료</button>
   </div>
 </div>
@@ -645,7 +665,7 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
     </div>
     <div class="app-bar-user" id="appBarUser" style="display:none;">
       <span id="appBarUserName"></span>
-      <button class="logout-btn" onclick="openPwModal()" style="margin-right:4px;">🔒</button>
+      <button class="logout-btn" onclick="openPwModal()" title="비밀번호 변경">🔒</button>
       <button class="logout-btn" onclick="doLogout()">로그아웃</button>
     </div>
     <div class="mode-pills" id="modePills" style="display:none;">
@@ -687,7 +707,7 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
         <div class="group-tabs" id="groupTabs"></div>
         <div id="workerListHome" style="margin-bottom:12px;"></div>
 
-        <button class="btn btn-primary" onclick="goToInput()">선택 후 지도부 작성 →</button>
+        <button class="btn btn-primary" onclick="goToInput()">생산관리 지도부 작성 →</button>
         <div style="height:8px;"></div>
         <button class="btn btn-ghost" onclick="toggleRegPanel()">+ 신규 지도원 등록</button>
       </div>
@@ -722,58 +742,58 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
     <div class="content">
 
       <!-- 내 정보 -->
-      <div style="background:linear-gradient(135deg,var(--navy),#2a3d70);color:white;border-radius:12px;padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:12px;">
-        <div id="myAvatar" style="width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;flex-shrink:0;"></div>
-        <div style="flex:1;">
-          <div style="font-size:16px;font-weight:900;" id="myName">-</div>
-          <div style="font-size:11px;opacity:0.7;" id="myDetail">-</div>
+      <div style="background:linear-gradient(135deg,var(--navy),#2a3d70);color:white;border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+        <div id="myAvatar" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0;"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:900;" id="myName">-</div>
+          <div style="font-size:11px;opacity:0.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="myDetail">-</div>
         </div>
-        <button onclick="goHome()" style="background:rgba(255,255,255,0.15);border:none;color:white;padding:6px 12px;border-radius:8px;font-family:inherit;font-size:12px;cursor:pointer;font-weight:600;">변경</button>
+        <button onclick="goHome()" style="background:rgba(255,255,255,0.15);border:none;color:white;padding:5px 10px;border-radius:7px;font-family:inherit;font-size:11px;cursor:pointer;font-weight:600;flex-shrink:0;">변경</button>
       </div>
 
       <!-- 서식 헤더 -->
       <div class="report-header">
-        <h2 id="reportMonthTitle">( &nbsp; )월 생산관리지도부</h2>
-        <div class="report-meta">
-          <div class="meta-field">
-            <label>월 선택 *</label>
-            <select id="selMonth" onchange="updateReportTitle()">
+        <h2 id="reportMonthTitle" style="font-size:14px;margin-bottom:8px;">( &nbsp; )월 생산관리지도부</h2>
+        <div class="report-meta" style="grid-template-columns:1fr 1fr;gap:5px;">
+          <div class="meta-field" style="padding:6px 8px;">
+            <label style="font-size:9px;margin-bottom:2px;">월 선택 *</label>
+            <select id="selMonth" onchange="updateReportTitle()" style="font-size:12px;">
               <option value="">선택</option>
               <option>1</option><option>2</option><option>3</option><option>4</option>
               <option>5</option><option>6</option><option>7</option><option>8</option>
               <option>9</option><option>10</option><option>11</option><option>12</option>
             </select>
           </div>
-          <div class="meta-field">
-            <label>근무기간</label>
-            <input type="text" id="inPeriod" placeholder="예: 5.1 ~ 5.31">
+          <div class="meta-field" style="padding:6px 8px;">
+            <label style="font-size:9px;margin-bottom:2px;">근무기간</label>
+            <input type="text" id="inPeriod" placeholder="5.1~5.31" style="font-size:12px;">
           </div>
-          <div class="meta-field">
-            <label>근무일수</label>
-            <input type="number" id="inDays" placeholder="12" min="1" max="31">
+          <div class="meta-field" style="padding:6px 8px;">
+            <label style="font-size:9px;margin-bottom:2px;">근무일수</label>
+            <input type="number" id="inDays" placeholder="12" min="1" max="31" style="font-size:12px;">
           </div>
-          <div class="meta-field">
-            <label>단지명</label>
-            <input type="text" id="inUnit" placeholder="단지명" oninput="syncSignUnit()">
+          <div class="meta-field" style="padding:6px 8px;">
+            <label style="font-size:9px;margin-bottom:2px;">단지명</label>
+            <input type="text" id="inUnit" placeholder="단지명" oninput="syncSignUnit()" style="font-size:12px;">
           </div>
         </div>
       </div>
 
       <!-- 활동 입력 테이블 -->
-      <div class="card" style="padding:12px;">
-        <div class="card-hd">
+      <div class="card" style="padding:8px;">
+        <div class="card-hd" style="margin-bottom:8px;">
           📋 지도 상황
-          <span style="font-size:10px;color:var(--muted);font-weight:400;">(근무일자 · 활동시간(h) · 활동내용)</span>
+          <span style="font-size:10px;color:var(--muted);font-weight:400;">근무일자 · 시간 · 활동내용</span>
         </div>
         <div class="act-table-wrap">
           <table class="act-table">
             <thead>
               <tr>
-                <th style="width:28px;">No</th>
-                <th style="width:108px;">근무일자</th>
-                <th style="width:64px;">활동시간</th>
+                <th style="width:22px;">No</th>
+                <th style="width:96px;">근무일자</th>
+                <th style="width:44px;">시간</th>
                 <th>활동내용</th>
-                <th style="width:26px;"></th>
+                <th style="width:22px;"></th>
               </tr>
             </thead>
             <tbody id="actTbody"></tbody>
@@ -784,23 +804,8 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
             </tfoot>
           </table>
         </div>
-        <div style="display:flex;gap:6px;margin-top:6px;">
-          <button class="btn btn-ghost btn-sm" onclick="addBulkRows(5)">+5행</button>
-          <button class="btn btn-ghost btn-sm" onclick="clearEmpty()">빈행 정리</button>
-          <button class="btn btn-ghost btn-sm" onclick="fillTodayDate()">오늘날짜 채우기</button>
-        </div>
       </div>
 
-      <!-- 빠른입력 안내 -->
-      <div class="card" style="padding:12px 14px;background:linear-gradient(135deg,#f0faf4,#e8f5e9);">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:22px;">⚡</span>
-          <div>
-            <div style="font-size:13px;font-weight:700;color:var(--rice);">활동내용 빠른입력</div>
-            <div style="font-size:11px;color:var(--muted);margin-top:2px;">활동내용 칸을 누르면 목록에서 바로 선택할 수 있습니다</div>
-          </div>
-        </div>
-      </div>
 
       <!-- 제출란 -->
       <div class="submit-box">
@@ -946,9 +951,12 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
   </div>
 </div>
 
-<!-- CONTENT PICKER -->
+<!-- CONTENT PICKER — 바텀시트 -->
 <div id="pickerOverlay" class="picker-overlay" style="display:none;" onclick="closePicker()"></div>
 <div id="contentPicker" class="content-picker" style="display:none;">
+  <div style="display:flex;justify-content:center;padding:8px 0 4px;flex-shrink:0;">
+    <div style="width:36px;height:4px;background:#ddd;border-radius:2px;"></div>
+  </div>
   <div class="picker-header">
     <span>⚡ 활동내용 선택</span>
     <button class="picker-close" onclick="closePicker()">✕</button>
@@ -975,7 +983,7 @@ const CROP = {
 // ═══════════════════════════════════════
 //  DB
 // ═══════════════════════════════════════
-let db = JSON.parse(localStorage.getItem('cj3') || '{"workers":[],"reports":[],"adminPw":"admin1234"}');
+let db = JSON.parse(localStorage.getItem('cj3') || '{"workers":[],"reports":[],"adminPw":"1234"}');
 const save = () => localStorage.setItem('cj3', JSON.stringify(db));
 
 // ═══════════════════════════════════════
@@ -1235,21 +1243,26 @@ function addRow(date='', time='', content='') {
   const tr=document.createElement('tr');
   tr.innerHTML=`
     <td class="act-row-num">${rowSeq}</td>
-    <td><input type="date" class="tbl-input r-date" value="${date}"></td>
-    <td><input type="number" class="tbl-input r-time" value="${defaultTime}" min="1" max="12" step="1" style="text-align:center;"></td>
+    <td><input type="date" class="tbl-input r-date" value="${date}" style="font-size:11px;padding:6px 3px;min-width:90px;"></td>
+    <td><input type="number" class="tbl-input r-time" value="${defaultTime}" min="1" max="12" step="1" style="text-align:center;font-size:12px;padding:6px 2px;width:40px;"></td>
     <td>
       <div style="display:flex;align-items:center;position:relative;">
-        <input type="text" class="tbl-input r-content" value="${content}" placeholder="내용 입력 또는 ▼ 선택"
-          onfocus="focusedContent=this" style="padding-right:28px;">
+        <input type="text" class="tbl-input r-content" value="${content}" placeholder="▼눌러 선택"
+          onfocus="focusedContent=this" style="padding-right:22px;font-size:12px;">
         <button type="button" onclick="openPicker(this.previousElementSibling)"
-          style="position:absolute;right:4px;background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:4px;line-height:1;" title="목록에서 선택">▼</button>
+          style="position:absolute;right:2px;background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:4px;line-height:1;touch-action:manipulation;">▼</button>
       </div>
     </td>
-    <td style="text-align:center;vertical-align:middle;width:26px;">
-      <button onclick="this.closest('tr').remove();renumber()" style="background:none;border:none;color:#ccc;font-size:16px;cursor:pointer;">×</button>
+    <td style="text-align:center;vertical-align:middle;width:22px;">
+      <button onclick="this.closest('tr').remove();renumber()" style="background:none;border:none;color:#ccc;font-size:15px;cursor:pointer;padding:2px;touch-action:manipulation;">×</button>
     </td>`;
   document.getElementById('actTbody').appendChild(tr);
 }
+function updateDateIcon(input) {
+  const textEl = input.parentElement.querySelector('.date-icon-text');
+  if(textEl) textEl.textContent = input.value ? input.value.slice(5).replace('-','/') : '　';
+}
+
 function renumber() {
   document.querySelectorAll('#actTbody tr').forEach((tr,i)=>{ tr.querySelector('.act-row-num').textContent=i+1; });
 }
@@ -1289,32 +1302,23 @@ function openPicker(inputEl) {
   pickerTarget = inputEl;
   focusedContent = inputEl;
 
-  // 픽커 위치 계산 (입력칸 아래)
-  const rect = inputEl.getBoundingClientRect();
-  const picker = document.getElementById('contentPicker');
-  const list   = document.getElementById('pickerList');
+  const list = document.getElementById('pickerList');
 
   // 현재 값 하이라이트
-  list.innerHTML = QUICK_ITEMS.map((item,i)=>`
+  list.innerHTML = QUICK_ITEMS.map((item)=>`
     <div class="picker-item ${inputEl.value===item.text?'selected':''}"
       onclick="selectPickerItem('${item.text.replace(/'/g,"\\'")}')">
       <span class="pi-icon">${item.icon}</span>
       <span class="pi-text">${item.text}</span>
-      ${inputEl.value===item.text?'<span style="color:var(--rice);font-size:16px;">✓</span>':''}
+      ${inputEl.value===item.text?'<span style="color:var(--rice);font-size:18px;">✓</span>':''}
     </div>`).join('');
 
-  // 위치 설정
-  const top = Math.min(rect.bottom + 6, window.innerHeight - 320);
-  picker.style.top  = `${top}px`;
-  picker.style.left = `${Math.max(8, rect.left - 4)}px`;
-  picker.style.width= `${Math.min(window.innerWidth - 28, 420)}px`;
-
   document.getElementById('pickerOverlay').style.display='block';
-  picker.style.display='block';
+  document.getElementById('contentPicker').style.display='flex';
 
   // 선택된 항목으로 스크롤
   const selected = list.querySelector('.selected');
-  if(selected) selected.scrollIntoView({block:'center'});
+  if(selected) setTimeout(()=>selected.scrollIntoView({block:'center'}), 50);
 }
 
 function selectPickerItem(text) {
@@ -1885,11 +1889,12 @@ function clearLoginErr() {
 
 // ── 로그인 화면에서 지도원 등록 ──
 function showRegisterFromLogin() {
-  document.getElementById('loginRegCard').style.display='block';
   updateRlRegion();
+  document.getElementById('rlErr').style.display='none';
+  document.getElementById('regModalBg').style.display='flex';
 }
 function hideRegFromLogin() {
-  document.getElementById('loginRegCard').style.display='none';
+  document.getElementById('regModalBg').style.display='none';
 }
 function updateRlRegion() {
   const crop=document.getElementById('rlCrop').value;
@@ -1920,7 +1925,7 @@ function doRegisterFromLogin() {
   document.getElementById('rlUnit').value='';
   document.getElementById('rlPw').value='';
   document.getElementById('rlPw2').value='';
-  document.getElementById('loginRegCard').style.display='none';
+  document.getElementById('regModalBg').style.display='none';
 
   // 로그인 폼 업데이트
   document.getElementById('lCrop').value=crop;
