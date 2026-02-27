@@ -362,7 +362,7 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
 }
 
 /* 링크 */
-.l-link{text-align:center;margin-top:16px;font-size:15px;color:#4fc3f7;font-weight:700;text-shadow:0 1px 6px rgba(0,0,0,0.4);}
+.l-link{text-align:center;margin-top:16px;font-size:15px;color:#000000;font-weight:700;text-shadow:none;}
 .l-link button{
   background:#1565c0;border:none;color:#ffffff;
   font-size:15px;font-weight:900;cursor:pointer;
@@ -715,47 +715,55 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
 
   <!-- 홈: 지도원 선택 -->
   <div class="page on" id="pw-home">
-    <!-- 화면 전체 높이 채우기: 앱바(48px) + 하단네비(58px) 제외 -->
     <div style="
       height:calc(100dvh - 48px - 58px);
       display:flex;
       flex-direction:column;
-      padding:8px 10px 0;
+      padding:0 20px;
       max-width:480px;
       margin:0 auto;
       box-sizing:border-box;
     ">
-
-
       <!-- 로그인 지도원 정보 + 단축버튼 -->
-      <div id="homeWorkerInfo" style="display:none;flex:1;flex-direction:column;gap:8px;padding-bottom:8px;">
+      <div id="homeWorkerInfo" style="display:none;flex-direction:column;height:100%;">
 
+        <!-- 4개 영역을 flex:1로 균등 배분 -->
         <!-- 지도원 정보 배지 -->
-        <div style="background:linear-gradient(135deg,var(--navy),#2a3d70);border-radius:14px;padding:14px 16px;color:white;display:flex;align-items:center;gap:12px;flex-shrink:0;">
-          <div id="homeAvatar" style="width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;"></div>
-          <div style="flex:1;min-width:0;">
-            <div id="homeWorkerName" style="font-size:16px;font-weight:900;"></div>
-            <div id="homeWorkerDetail" style="font-size:11px;opacity:0.75;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-          </div>
-          <div style="font-size:10px;background:rgba(255,255,255,0.15);border-radius:8px;padding:6px 10px;text-align:center;flex-shrink:0;">
-            <div style="font-size:20px;font-weight:900;line-height:1;" id="homeMonthCount">0</div>
-            <div style="opacity:0.8;margin-top:2px;">이번달</div>
+        <div style="flex:1;display:flex;align-items:center;">
+          <div style="background:linear-gradient(135deg,var(--navy),#2a3d70);border-radius:16px;padding:14px 18px;color:white;display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box;box-shadow:0 4px 16px rgba(0,0,0,0.2);">
+            <div id="homeAvatar" style="width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0;"></div>
+            <div style="flex:1;min-width:0;">
+              <div id="homeWorkerName" style="font-size:15px;font-weight:900;"></div>
+              <div id="homeWorkerDetail" style="font-size:11px;opacity:0.75;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+            </div>
+            <div style="font-size:10px;background:rgba(255,255,255,0.15);border-radius:10px;padding:8px 12px;text-align:center;flex-shrink:0;">
+              <div style="font-size:22px;font-weight:900;line-height:1;" id="homeMonthCount">0</div>
+              <div style="opacity:0.8;margin-top:3px;">이번달</div>
+            </div>
           </div>
         </div>
 
-        <!-- 3개 단축버튼 — 정사각형 세로 배치 -->
-        <div style="display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;flex:1;">
-          <button onclick="goToWriteFromHome()" style="width:200px;height:200px;background:linear-gradient(135deg,#2e7d32,#1b5e20);border:none;border-radius:20px;color:white;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;touch-action:manipulation;box-shadow:0 3px 12px rgba(46,125,50,0.3);">
-            <span style="font-size:40px;">📋</span>
-            <span style="font-size:18px;font-weight:900;text-align:center;line-height:1.3;">생산관리<br>지도부 작성</span>
+        <!-- 버튼 1 -->
+        <div style="flex:1;display:flex;align-items:center;">
+          <button onclick="goToWriteFromHome()" style="width:100%;height:80px;background:linear-gradient(135deg,#2e7d32,#1b5e20);border:none;border-radius:18px;color:white;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:16px;touch-action:manipulation;box-shadow:0 4px 16px rgba(46,125,50,0.4);">
+            <span style="font-size:34px;">📋</span>
+            <span style="font-size:19px;font-weight:900;letter-spacing:-0.3px;">생산관리 지도부 작성</span>
           </button>
-          <button onclick="showToast('준비 중입니다 🌱')" style="width:200px;height:200px;background:linear-gradient(135deg,#1565c0,#0d47a1);border:none;border-radius:20px;color:white;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;touch-action:manipulation;box-shadow:0 3px 12px rgba(21,101,192,0.3);">
-            <span style="font-size:40px;">🌱</span>
-            <span style="font-size:18px;font-weight:900;text-align:center;">파종 현황</span>
+        </div>
+
+        <!-- 버튼 2 -->
+        <div style="flex:1;display:flex;align-items:center;">
+          <button onclick="goToSowing()" style="width:100%;height:80px;background:linear-gradient(135deg,#1565c0,#0d47a1);border:none;border-radius:18px;color:white;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:16px;touch-action:manipulation;box-shadow:0 4px 16px rgba(21,101,192,0.4);">
+            <span style="font-size:34px;">🌱</span>
+            <span style="font-size:19px;font-weight:900;">파종 현황</span>
           </button>
-          <button onclick="showToast('준비 중입니다 🌾')" style="width:200px;height:200px;background:linear-gradient(135deg,#e65100,#bf360c);border:none;border-radius:20px;color:white;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;touch-action:manipulation;box-shadow:0 3px 12px rgba(230,81,0,0.3);">
-            <span style="font-size:40px;">🌾</span>
-            <span style="font-size:18px;font-weight:900;text-align:center;">수확 현황</span>
+        </div>
+
+        <!-- 버튼 3 -->
+        <div style="flex:1;display:flex;align-items:center;">
+          <button onclick="goToHarvest()" style="width:100%;height:80px;background:linear-gradient(135deg,#e65100,#bf360c);border:none;border-radius:18px;color:white;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:16px;touch-action:manipulation;box-shadow:0 4px 16px rgba(230,81,0,0.4);">
+            <span style="font-size:34px;">🌾</span>
+            <span style="font-size:19px;font-weight:900;">수확 현황</span>
           </button>
         </div>
 
@@ -860,12 +868,40 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
   </div>
 
   <!-- 제출 내역 -->
-  <div class="page" id="pw-history">
-    <div class="content">
-      <div class="card" style="padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:12px;" id="histWorkerBadge">
-        <div class="empty"><div class="ei">👤</div><p>먼저 홈에서 지도원을 선택하세요</p></div>
+  <!-- 수확현황 페이지 -->
+  <div class="page" id="pw-harvest">
+    <div class="content" style="padding-bottom:80px;">
+      <div style="background:linear-gradient(135deg,#e65100,#bf360c);border-radius:12px;padding:12px 16px;color:white;margin-bottom:12px;">
+        <div style="font-size:15px;font-weight:900;margin-bottom:2px;">🌾 보급종 채종단지 수확실적</div>
+        <div id="harvestWorkerDetail" style="font-size:11px;opacity:0.8;"></div>
       </div>
-      <div id="workerReportList"></div>
+      <div id="harvestCards"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-primary" onclick="saveHarvest()" style="flex:2;padding:13px;font-size:14px;font-weight:700;">💾 저장</button>
+        <button class="btn btn-ghost" onclick="resetHarvest()" style="flex:1;padding:13px;font-size:12px;">초기화</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 파종현황 페이지 -->
+  <div class="page" id="pw-sowing">
+    <div class="content" style="padding-bottom:80px;">
+
+      <!-- 헤더 -->
+      <div style="background:linear-gradient(135deg,#1565c0,#0d47a1);border-radius:12px;padding:12px 16px;color:white;margin-bottom:12px;">
+        <div style="font-size:15px;font-weight:900;margin-bottom:2px;">🌱 보급종 채종단지 파종실적</div>
+        <div id="sowingWorkerDetail" style="font-size:11px;opacity:0.8;"></div>
+      </div>
+
+      <!-- 10개 카드 입력 서식 -->
+      <div id="sowingCards"></div>
+
+      <!-- 저장 버튼 -->
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button class="btn btn-primary" onclick="saveSowing()" style="flex:2;padding:13px;font-size:14px;font-weight:700;">💾 저장</button>
+        <button class="btn btn-ghost" onclick="resetSowing()" style="flex:1;padding:13px;font-size:12px;">초기화</button>
+      </div>
+
     </div>
   </div>
 
@@ -946,7 +982,8 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
 <nav class="btm-nav" id="workerNav">
   <button class="btm-btn on" onclick="switchWorkerTab('home',this)"><span class="ico">🏠</span>홈</button>
   <button class="btm-btn"    onclick="switchWorkerTab('write',this)"><span class="ico">📝</span>지도부작성</button>
-  <button class="btm-btn"    onclick="switchWorkerTab('history',this)"><span class="ico">📋</span>제출내역</button>
+  <button class="btm-btn"    onclick="switchWorkerTab('sowing',this)"><span class="ico">🌱</span>파종현황</button>
+  <button class="btm-btn"    onclick="switchWorkerTab('harvest',this)"><span class="ico">🌾</span>수확현황</button>
 </nav>
 <nav class="btm-nav" id="adminNav" style="display:none;">
   <button class="btm-btn on" onclick="switchAdminTab('dash',this)"><span class="ico">📊</span>현황</button>
@@ -1073,7 +1110,8 @@ function switchWorkerTab(t, btn) {
   document.getElementById('pw-'+t).classList.add('on');
   if(t==='home') renderHome();
   if(t==='write') { if(!selWorker){showToast('먼저 홈에서 지도원을 선택하세요');return;} initWriteForm(); }
-  if(t==='history') renderHistory();
+  if(t==='sowing') initSowing();
+  if(t==='harvest') initHarvest();
 }
 function switchAdminTab(t, btn) {
   document.querySelectorAll('#adminNav .btm-btn').forEach(b=>b.classList.remove('on'));
@@ -1870,8 +1908,243 @@ function renderAdminWorkers() {
 }
 
 // ═══════════════════════════════════════
-//  LOGIN
+//  SOWING (파종현황)
 // ═══════════════════════════════════════
+function formatPeriod(d1, d2) {
+  const fmt = d => {
+    const [,m,day] = d.split('-');
+    return `${parseInt(m)}.${parseInt(day)}`;
+  };
+  return d1 && d2 ? `📅 ${fmt(d1)} ~ ${fmt(d2)}` : '';
+}
+
+function updateSowingPeriod(input) {
+  const card = input.closest('.card');
+  const d1 = card.querySelector('.sow-date1').value;
+  const d2 = card.querySelector('.sow-date2').value;
+  card.querySelector('.sow-period-display').textContent = formatPeriod(d1, d2);
+}
+
+function updateHarvestPeriod(input) {
+  const card = input.closest('.card');
+  const d1 = card.querySelector('.hav-date1').value;
+  const d2 = card.querySelector('.hav-date2').value;
+  card.querySelector('.hav-period-display').textContent = formatPeriod(d1, d2);
+}
+const MAX_SOWING_ROWS = 10;
+
+function goToSowing() {
+  const btn = document.querySelectorAll('#workerNav .btm-btn')[2];
+  switchWorkerTab('sowing', btn);
+}
+
+function initSowing() {
+  const w = selWorker || loginWorkerObj;
+  if(w) {
+    const ci = CROP[w.crop];
+    document.getElementById('sowingWorkerDetail').textContent =
+      `${ci.emoji} ${ci.name} · ${w.region||''} · ${w.unit||''} · ${w.name}`;
+  }
+  const key = w?.id;
+  const saved = (key && db.sowingData && db.sowingData[key]) ? db.sowingData[key] : [];
+  renderSowingCards(saved);
+}
+
+function renderSowingCards(data) {
+  const wrap = document.getElementById('sowingCards');
+  wrap.innerHTML = '';
+  for(let i=0; i<1; i++) {
+    const d = data[i] || {};
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.cssText = 'padding:14px;margin-bottom:10px;';
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <span style="font-size:20px;">🌱</span>
+        <div style="font-size:15px;font-weight:900;color:#1565c0;">파종(이앙) 실적</div>
+      </div>
+
+      <div class="fg" style="margin-bottom:10px;">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">📍 단지명</label>
+        <input type="text" placeholder="단지명 입력" value="${d.unit||''}"
+          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
+      </div>
+
+      <div class="fg" style="margin-bottom:10px;">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">👤 단지대표</label>
+        <input type="text" placeholder="단지대표 이름" value="${d.rep||''}"
+          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
+      </div>
+
+      <div class="fg" style="margin-bottom:10px;">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">🌾 면적 (ha)</label>
+        <input type="number" placeholder="0.00" value="${d.area||''}" step="0.01" min="0"
+          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
+      </div>
+
+      <div class="fg" style="margin-bottom:10px;">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:6px;">📅 파종일(이앙) — 기간</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="date" class="sow-date1" value="${d.date1||''}" onchange="updateSowingPeriod(this)"
+            style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:9px 8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+          <span style="font-size:15px;color:var(--muted);font-weight:700;flex-shrink:0;">~</span>
+          <input type="date" class="sow-date2" value="${d.date2||''}" onchange="updateSowingPeriod(this)"
+            style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:9px 8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+        </div>
+        <div class="sow-period-display" style="margin-top:6px;font-size:14px;font-weight:700;color:#1565c0;text-align:center;min-height:20px;">${d.date1&&d.date2 ? formatPeriod(d.date1,d.date2) : ''}</div>
+      </div>
+
+      <div class="fg" style="margin-bottom:10px;">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">📊 파종(이앙)률 (%)</label>
+        <input type="number" placeholder="0 ~ 100" value="${d.rate||''}" min="0" max="100"
+          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
+      </div>
+
+      <div class="fg">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">📝 비고 (특이사항)</label>
+        <textarea placeholder="특이사항 입력" rows="2"
+          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:13px;font-family:inherit;resize:none;">${d.note||''}</textarea>
+      </div>
+    `;
+    wrap.appendChild(card);
+  }
+}
+
+function getSowingCards() {
+  return Array.from(document.querySelectorAll('#sowingCards .card')).map(card => {
+    const inputs = card.querySelectorAll('input');
+    const textarea = card.querySelector('textarea');
+    return {
+      unit:  inputs[0].value.trim(),
+      rep:   inputs[1].value.trim(),
+      area:  inputs[2].value,
+      date1: inputs[3].value,
+      date2: inputs[4].value,
+      rate:  inputs[5].value,
+      note:  textarea ? textarea.value.trim() : '',
+    };
+  });
+}
+
+function saveSowing() {
+  const w = selWorker || loginWorkerObj;
+  if(!w) { showToast('지도원 정보가 없습니다'); return; }
+  if(!db.sowingData) db.sowingData = {};
+  db.sowingData[w.id] = getSowingCards();
+  save();
+  showToast('파종 실적이 저장되었습니다 ✅');
+}
+
+function resetSowing() {
+  if(!confirm('입력 내용을 모두 초기화하시겠습니까?')) return;
+  renderSowingCards([]);
+}
+
+// ═══════════════════════════════════════
+//  HARVEST (수확현황)
+// ═══════════════════════════════════════
+function goToHarvest() {
+  const btn = document.querySelectorAll('#workerNav .btm-btn')[3];
+  switchWorkerTab('harvest', btn);
+}
+
+function initHarvest() {
+  const w = selWorker || loginWorkerObj;
+  if(w) {
+    const ci = CROP[w.crop];
+    document.getElementById('harvestWorkerDetail').textContent =
+      `${ci.emoji} ${ci.name} · ${w.region||''} · ${w.unit||''} · ${w.name}`;
+  }
+  const key = w?.id;
+  const saved = (key && db.harvestData && db.harvestData[key]) ? db.harvestData[key] : [];
+  renderHarvestCards(saved);
+}
+
+function renderHarvestCards(data) {
+  const wrap = document.getElementById('harvestCards');
+  wrap.innerHTML = '';
+  for(let i=0; i<1; i++) {
+    const d = data[i] || {};
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.cssText = 'padding:14px;margin-bottom:10px;';
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+        <span style="font-size:20px;">🌾</span>
+        <div style="font-size:15px;font-weight:900;color:#e65100;">수확 실적</div>
+      </div>
+      <div class="fg" style="margin-bottom:10px;">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">📍 단지명</label>
+        <input type="text" placeholder="단지명 입력" value="${d.unit||''}"
+          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
+      </div>
+      <div class="fg" style="margin-bottom:10px;">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">👤 단지대표</label>
+        <input type="text" placeholder="단지대표 이름" value="${d.rep||''}"
+          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
+      </div>
+      <div class="fg" style="margin-bottom:10px;">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">🌾 면적 (ha)</label>
+        <input type="number" placeholder="0.00" value="${d.area||''}" step="0.01" min="0"
+          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
+      </div>
+      <div class="fg" style="margin-bottom:10px;">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:6px;">📅 수확일 — 기간</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="date" class="hav-date1" value="${d.date1||''}" onchange="updateHarvestPeriod(this)"
+            style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:9px 8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+          <span style="font-size:15px;color:var(--muted);font-weight:700;flex-shrink:0;">~</span>
+          <input type="date" class="hav-date2" value="${d.date2||''}" onchange="updateHarvestPeriod(this)"
+            style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:9px 8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
+        </div>
+        <div class="hav-period-display" style="margin-top:6px;font-size:14px;font-weight:700;color:#e65100;text-align:center;min-height:20px;">${d.date1&&d.date2 ? formatPeriod(d.date1,d.date2) : ''}</div>
+      </div>
+      <div class="fg" style="margin-bottom:10px;">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">📊 수확률 (%)</label>
+        <input type="number" placeholder="0 ~ 100" value="${d.rate||''}" min="0" max="100"
+          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
+      </div>
+      <div class="fg">
+        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">📝 비고 (특이사항)</label>
+        <textarea placeholder="특이사항 입력" rows="2"
+          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:13px;font-family:inherit;resize:none;">${d.note||''}</textarea>
+      </div>
+    `;
+    wrap.appendChild(card);
+  }
+}
+
+function getHarvestCards() {
+  return Array.from(document.querySelectorAll('#harvestCards .card')).map(card => {
+    const inputs = card.querySelectorAll('input');
+    const textarea = card.querySelector('textarea');
+    return {
+      unit:  inputs[0].value.trim(),
+      rep:   inputs[1].value.trim(),
+      area:  inputs[2].value,
+      date1: inputs[3].value,
+      date2: inputs[4].value,
+      rate:  inputs[5].value,
+      note:  textarea ? textarea.value.trim() : '',
+    };
+  });
+}
+
+function saveHarvest() {
+  const w = selWorker || loginWorkerObj;
+  if(!w) { showToast('지도원 정보가 없습니다'); return; }
+  if(!db.harvestData) db.harvestData = {};
+  db.harvestData[w.id] = getHarvestCards();
+  save();
+  showToast('수확 실적이 저장되었습니다 ✅');
+}
+
+function resetHarvest() {
+  if(!confirm('입력 내용을 모두 초기화하시겠습니까?')) return;
+  renderHarvestCards([]);
+}
+
+
 function initLoginScreen() {
   updateLoginUnitList();
   updateRlRegion();
@@ -1957,10 +2230,8 @@ function enterApp(type) {
     document.getElementById('homeMonthCount').textContent=mCnt;
     const hwi=document.getElementById('homeWorkerInfo');
     hwi.style.display='flex';
-    hwi.style.flex='1';
     hwi.style.flexDirection='column';
-    hwi.style.gap='8px';
-    hwi.style.paddingBottom='8px';
+    hwi.style.height='100%';
   } else {
     document.getElementById('adminMode').style.display='block';
     document.getElementById('adminNav').style.display='flex';
