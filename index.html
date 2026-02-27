@@ -52,11 +52,11 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--cre
 .card{background:var(--white);border-radius:var(--radius);padding:12px;margin-bottom:10px;border:1px solid var(--border);box-shadow:var(--shadow);}
 .card-hd{font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
 
-.crop-tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:12px;}
-.crop-tab{padding:10px 4px;border-radius:10px;border:2px solid var(--border);background:var(--white);cursor:pointer;text-align:center;transition:all 0.2s;}
-.crop-tab .crop-emoji{font-size:22px;display:block;margin-bottom:3px;}
-.crop-tab .crop-name{font-size:12px;font-weight:700;}
-.crop-tab .crop-cnt{font-size:10px;color:var(--muted);margin-top:2px;}
+.crop-tabs{display:flex;flex-direction:column;gap:5px;margin-bottom:8px;}
+.crop-tab{padding:11px 14px;border-radius:10px;border:2px solid var(--border);background:var(--white);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:12px;flex:1;}
+.crop-tab .crop-emoji{font-size:24px;flex-shrink:0;}
+.crop-tab .crop-name{font-size:14px;font-weight:700;flex:1;}
+.crop-tab .crop-cnt{font-size:10px;color:var(--muted);white-space:nowrap;}
 .crop-tab.rice.on{border-color:var(--rice);background:var(--rice-bg);}
 .crop-tab.rice.on .crop-name{color:var(--rice);}
 .crop-tab.grain.on{border-color:var(--grain);background:var(--grain-bg);}
@@ -64,16 +64,16 @@ html,body{height:100%;font-family:'Noto Sans KR',sans-serif;background:var(--cre
 .crop-tab.bean.on{border-color:var(--bean);background:var(--bean-bg);}
 .crop-tab.bean.on .crop-name{color:var(--bean);}
 
-.group-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
-.group-tab{padding:6px 11px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);cursor:pointer;text-align:center;font-size:12px;font-weight:600;color:var(--muted);transition:all 0.2s;font-family:inherit;white-space:nowrap;}
+.group-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px;}
+.group-tab{padding:5px 10px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);cursor:pointer;text-align:center;font-size:11px;font-weight:600;color:var(--muted);transition:all 0.2s;font-family:inherit;white-space:nowrap;}
 
-.worker-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--white);cursor:pointer;transition:all 0.2s;margin-bottom:6px;}
+.worker-card{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1.5px solid var(--border);border-radius:10px;background:var(--white);cursor:pointer;transition:all 0.2s;margin-bottom:5px;}
 .worker-card:hover{border-color:var(--rice);}
 .worker-card.selected{border-color:var(--rice);background:var(--rice-bg);}
-.w-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0;}
+.w-avatar{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0;}
 .w-info{flex:1;min-width:0;}
 .w-name{font-size:13px;font-weight:700;}
-.w-detail{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.w-detail{font-size:10px;color:var(--muted);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
 .fg{margin-bottom:11px;}
 label{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;letter-spacing:.3px;}
@@ -198,10 +198,10 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--navy);color:white;padding:10px 22px;border-radius:24px;font-size:13px;font-weight:600;white-space:nowrap;z-index:9999;opacity:0;transition:all 0.28s;box-shadow:0 4px 18px rgba(0,0,0,0.22);pointer-events:none;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
-.reg-card{max-width:380px;margin:16px auto;}
-.reg-card .login-hero{font-size:52px;text-align:center;margin-bottom:8px;}
-.reg-card h2{font-size:18px;font-weight:900;text-align:center;color:var(--navy);margin-bottom:4px;}
-.reg-card p{font-size:12px;color:var(--muted);text-align:center;margin-bottom:20px;}
+.reg-card{max-width:480px;margin:0 auto;}
+.reg-card .login-hero{font-size:32px;text-align:center;margin-bottom:4px;}
+.reg-card h2{font-size:15px;font-weight:900;text-align:center;color:var(--navy);margin-bottom:2px;}
+.reg-card p{font-size:11px;color:var(--muted);text-align:center;margin-bottom:10px;}
 
 /* 서식 미리보기 */
 .preview-wrap{font-family:'Noto Serif KR',serif;padding:4px;}
@@ -362,11 +362,13 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
 }
 
 /* 링크 */
-.l-link{text-align:center;margin-top:13px;font-size:12px;color:#6a9450;}
+.l-link{text-align:center;margin-top:16px;font-size:15px;color:#4fc3f7;font-weight:700;text-shadow:0 1px 6px rgba(0,0,0,0.4);}
 .l-link button{
-  background:none;border:none;color:#2d8a06;
-  font-size:12px;font-weight:700;cursor:pointer;
-  text-decoration:underline;font-family:inherit;
+  background:#1565c0;border:none;color:#ffffff;
+  font-size:15px;font-weight:900;cursor:pointer;
+  font-family:inherit;
+  padding:5px 16px;border-radius:8px;margin-left:6px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.2);
 }
 
 /* 등록 카드 — 모달 오버레이 */
@@ -545,8 +547,7 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
   <div class="login-card">
     <div class="login-logo">
       <div class="l-emblem">🌾</div>
-      <h1>채종단지 생산관리</h1>
-      <p>생산관리지도부 작성 시스템</p>
+      <h1>채종단지 생산관리 시스템</h1>
     </div>
 
     <!-- 지도원 / 관리자 탭 -->
@@ -563,7 +564,7 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
         <select id="lCrop" onchange="updateLoginUnitList()">
           <option value="rice">🌾 벼</option>
           <option value="grain">🌿 맥류</option>
-          <option value="bean">🫘 콩</option>
+          <option value="bean">🟤 콩</option>
         </select>
       </div>
       <div class="l-fg">
@@ -612,7 +613,7 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
           style="background:#f5fdf0;border-color:rgba(100,180,50,0.3);color:#1b4206;">
           <option value="rice">🌾 벼</option>
           <option value="grain">🌿 맥류</option>
-          <option value="bean">🫘 콩</option>
+          <option value="bean">🟤 콩</option>
         </select>
       </div>
       <div class="l-fg">
@@ -638,6 +639,40 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
     </div>
     <div id="rlErr" class="l-err" style="color:#c0392b;background:rgba(220,60,50,0.08);border-color:rgba(220,60,50,0.25);"></div>
     <button class="l-btn" onclick="doRegisterFromLogin()">등록 완료</button>
+  </div>
+</div>
+
+<!-- 신규 지도원 등록 모달 -->
+<div id="regPanelBg" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;padding:20px;" onclick="if(event.target===this)toggleRegPanel()">
+  <div id="regPanel" style="background:white;border-radius:18px;padding:20px;width:100%;max-width:360px;box-shadow:0 8px 40px rgba(0,0,0,0.22);max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <strong style="font-size:15px;font-weight:900;color:var(--navy);">✏️ 신규 지도원 등록</strong>
+      <button onclick="toggleRegPanel()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;padding:0;">✕</button>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>이름</label><input type="text" id="rName" placeholder="홍길동"></div>
+      <div class="fg">
+        <label>작물</label>
+        <select id="rCrop" onchange="updateRegionSelect()">
+          <option value="rice">🌾 벼</option>
+          <option value="grain">🌿 맥류</option>
+          <option value="bean">🟤 콩</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="fg">
+        <label>지역</label>
+        <select id="rRegion"></select>
+      </div>
+      <div class="fg"><label>단지명</label><input type="text" id="rUnit" placeholder="예: 홍성 1단지"></div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label>비밀번호 (4자리 이상)</label><input type="password" id="rPw" placeholder="비밀번호 설정"></div>
+      <div class="fg"><label>비밀번호 확인</label><input type="password" id="rPw2" placeholder="재입력"></div>
+    </div>
+    <div id="rErr" style="font-size:12px;color:#c0392b;margin-bottom:8px;display:none;"></div>
+    <button class="btn btn-gold" onclick="registerWorker()">등록하기</button>
   </div>
 </div>
 
@@ -680,61 +715,59 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
 
   <!-- 홈: 지도원 선택 -->
   <div class="page on" id="pw-home">
-    <div class="content">
-      <div class="card reg-card">
-        <div class="login-hero">👨‍🌾</div>
-        <h2>지도원 선택</h2>
-        <p>작물 → 지역 → 본인을 선택하세요</p>
+    <!-- 화면 전체 높이 채우기: 앱바(48px) + 하단네비(58px) 제외 -->
+    <div style="
+      height:calc(100dvh - 48px - 58px);
+      display:flex;
+      flex-direction:column;
+      padding:8px 10px 0;
+      max-width:480px;
+      margin:0 auto;
+      box-sizing:border-box;
+    ">
 
-        <div class="crop-tabs" id="cropTabsWrap">
-          <div class="crop-tab rice on" onclick="selectCrop('rice',this)">
-            <span class="crop-emoji">🌾</span>
-            <div class="crop-name">벼</div>
-            <div class="crop-cnt">7개 지역</div>
+
+      <!-- 로그인 지도원 정보 + 단축버튼 -->
+      <div id="homeWorkerInfo" style="display:none;flex:1;flex-direction:column;gap:8px;padding-bottom:8px;">
+
+        <!-- 지도원 정보 배지 -->
+        <div style="background:linear-gradient(135deg,var(--navy),#2a3d70);border-radius:14px;padding:14px 16px;color:white;display:flex;align-items:center;gap:12px;flex-shrink:0;">
+          <div id="homeAvatar" style="width:46px;height:46px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div id="homeWorkerName" style="font-size:16px;font-weight:900;"></div>
+            <div id="homeWorkerDetail" style="font-size:11px;opacity:0.75;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
           </div>
-          <div class="crop-tab grain" onclick="selectCrop('grain',this)">
-            <span class="crop-emoji">🌿</span>
-            <div class="crop-name">맥류</div>
-            <div class="crop-cnt">5개 지역</div>
-          </div>
-          <div class="crop-tab bean" onclick="selectCrop('bean',this)">
-            <span class="crop-emoji">🫘</span>
-            <div class="crop-name">콩</div>
-            <div class="crop-cnt">6개 지역</div>
+          <div style="font-size:10px;background:rgba(255,255,255,0.15);border-radius:8px;padding:6px 10px;text-align:center;flex-shrink:0;">
+            <div style="font-size:20px;font-weight:900;line-height:1;" id="homeMonthCount">0</div>
+            <div style="opacity:0.8;margin-top:2px;">이번달</div>
           </div>
         </div>
 
-        <div class="group-tabs" id="groupTabs"></div>
-        <div id="workerListHome" style="margin-bottom:12px;"></div>
-
-        <button class="btn btn-primary" onclick="goToInput()">생산관리 지도부 작성 →</button>
-        <div style="height:8px;"></div>
-        <button class="btn btn-ghost" onclick="toggleRegPanel()">+ 신규 지도원 등록</button>
-      </div>
-
-      <div class="card reg-card" id="regPanel" style="display:none;">
-        <div class="card-hd">✏️ 신규 지도원 등록</div>
-        <div class="row2">
-          <div class="fg"><label>이름</label><input type="text" id="rName" placeholder="홍길동"></div>
-          <div class="fg">
-            <label>작물</label>
-            <select id="rCrop" onchange="updateRegionSelect()">
-              <option value="rice">🌾 벼</option>
-              <option value="grain">🌿 맥류</option>
-              <option value="bean">🫘 콩</option>
-            </select>
-          </div>
+        <!-- 3개 단축버튼 — 정사각형 세로 배치 -->
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;flex:1;">
+          <button onclick="goToWriteFromHome()" style="width:200px;height:200px;background:linear-gradient(135deg,#2e7d32,#1b5e20);border:none;border-radius:20px;color:white;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;touch-action:manipulation;box-shadow:0 3px 12px rgba(46,125,50,0.3);">
+            <span style="font-size:40px;">📋</span>
+            <span style="font-size:18px;font-weight:900;text-align:center;line-height:1.3;">생산관리<br>지도부 작성</span>
+          </button>
+          <button onclick="showToast('준비 중입니다 🌱')" style="width:200px;height:200px;background:linear-gradient(135deg,#1565c0,#0d47a1);border:none;border-radius:20px;color:white;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;touch-action:manipulation;box-shadow:0 3px 12px rgba(21,101,192,0.3);">
+            <span style="font-size:40px;">🌱</span>
+            <span style="font-size:18px;font-weight:900;text-align:center;">파종 현황</span>
+          </button>
+          <button onclick="showToast('준비 중입니다 🌾')" style="width:200px;height:200px;background:linear-gradient(135deg,#e65100,#bf360c);border:none;border-radius:20px;color:white;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;touch-action:manipulation;box-shadow:0 3px 12px rgba(230,81,0,0.3);">
+            <span style="font-size:40px;">🌾</span>
+            <span style="font-size:18px;font-weight:900;text-align:center;">수확 현황</span>
+          </button>
         </div>
-        <div class="row2">
-          <div class="fg">
-            <label>지역</label>
-            <select id="rRegion"></select>
-          </div>
-          <div class="fg"><label>단지명</label><input type="text" id="rUnit" placeholder="예: 홍성 1단지"></div>
-        </div>
-        <button class="btn btn-gold" onclick="registerWorker()">등록하기</button>
+
       </div>
     </div>
+  </div>
+
+  <!-- JS가 참조하는 숨김 요소들 (renderHome, buildRegionTabs 등에서 사용) -->
+  <div style="display:none;" aria-hidden="true">
+    <div id="cropTabsWrap"></div>
+    <div id="groupTabs"></div>
+    <div id="workerListHome"></div>
   </div>
 
   <!-- 지도부 작성 -->
@@ -743,7 +776,7 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
 
       <!-- 내 정보 -->
       <div style="background:linear-gradient(135deg,var(--navy),#2a3d70);color:white;border-radius:10px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
-        <div id="myAvatar" style="width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;flex-shrink:0;"></div>
+        <div id="myAvatar" style="width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0;"></div>
         <div style="flex:1;min-width:0;">
           <div style="font-size:14px;font-weight:900;" id="myName">-</div>
           <div style="font-size:11px;opacity:0.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="myDetail">-</div>
@@ -818,7 +851,7 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
             ✍️ 서명
           </button>
         </div>
-        <p style="font-size:12px;color:var(--muted);">국립종자원 &nbsp;( &nbsp;&nbsp; )지원장 귀하</p>
+        <p style="font-size:12px;color:var(--muted);">국립종자원 전북지원장 귀하</p>
       </div>
 
       <button class="btn btn-primary" onclick="saveReport()" style="margin-bottom:8px;">💾 저장하기</button>
@@ -854,7 +887,7 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
       <div class="crop-stat-row">
         <div class="crop-stat rice"><div class="emoji">🌾</div><div class="cnum" id="aRiceW">0</div><div class="clbl">벼 지도원</div></div>
         <div class="crop-stat grain"><div class="emoji">🌿</div><div class="cnum" id="aGrainW">0</div><div class="clbl">맥류 지도원</div></div>
-        <div class="crop-stat bean"><div class="emoji">🫘</div><div class="cnum" id="aBeanW">0</div><div class="clbl">콩 지도원</div></div>
+        <div class="crop-stat bean"><div class="emoji">🟤</div><div class="cnum" id="aBeanW">0</div><div class="clbl">콩 지도원</div></div>
       </div>
       <div class="card">
         <div class="card-hd">📊 작물별 제출 현황</div>
@@ -877,7 +910,7 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
               <option value="">전체</option>
               <option value="rice">🌾 벼</option>
               <option value="grain">🌿 맥류</option>
-              <option value="bean">🫘 콩</option>
+              <option value="bean">🟤 콩</option>
             </select>
           </div>
           <div class="fg" style="margin-bottom:0;"><label>지역</label>
@@ -901,7 +934,7 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
       <div class="crop-tabs" id="adminCropFilter">
         <div class="crop-tab rice on" onclick="setAdminCropFilter('rice',this)"><span class="crop-emoji">🌾</span><div class="crop-name">벼</div></div>
         <div class="crop-tab grain" onclick="setAdminCropFilter('grain',this)"><span class="crop-emoji">🌿</span><div class="crop-name">맥류</div></div>
-        <div class="crop-tab bean" onclick="setAdminCropFilter('bean',this)"><span class="crop-emoji">🫘</span><div class="crop-name">콩</div></div>
+        <div class="crop-tab bean" onclick="setAdminCropFilter('bean',this)"><span class="crop-emoji">🟤</span><div class="crop-name">콩</div></div>
       </div>
       <div id="adminWorkersByGroup"></div>
     </div>
@@ -952,7 +985,7 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
 </div>
 
 <!-- CONTENT PICKER — 바텀시트 -->
-<div id="pickerOverlay" class="picker-overlay" style="display:none;" onclick="closePicker()"></div>
+<div id="pickerOverlay" class="picker-overlay" style="display:none;" onclick="closePicker();closeTimePicker()"></div>
 <div id="contentPicker" class="content-picker" style="display:none;">
   <div style="display:flex;justify-content:center;padding:8px 0 4px;flex-shrink:0;">
     <div style="width:36px;height:4px;background:#ddd;border-radius:2px;"></div>
@@ -962,6 +995,18 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
     <button class="picker-close" onclick="closePicker()">✕</button>
   </div>
   <div class="picker-list" id="pickerList"></div>
+</div>
+
+<!-- TIME PICKER — 바텀시트 -->
+<div id="timePicker" class="content-picker" style="display:none;">
+  <div style="display:flex;justify-content:center;padding:8px 0 4px;flex-shrink:0;">
+    <div style="width:36px;height:4px;background:#ddd;border-radius:2px;"></div>
+  </div>
+  <div class="picker-header">
+    <span>⏱ 활동시간 선택</span>
+    <button class="picker-close" onclick="closeTimePicker()">✕</button>
+  </div>
+  <div class="picker-list" id="timePickerList"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -975,7 +1020,7 @@ const CROP = {
           regions:['정읍','김제','익산','군산','남원','부안','무주']},
   grain: {name:'맥류', emoji:'🌿',color:'var(--grain)',bg:'var(--grain-bg)',lt:'var(--grain-lt)',badge:'badge-grain',cls:'grain',
           regions:['정읍','김제','군산','부안','고창']},
-  bean:  {name:'콩',   emoji:'🫘',color:'var(--bean)', bg:'var(--bean-bg)', lt:'var(--bean-lt)', badge:'badge-bean',  cls:'bean',
+  bean:  {name:'콩',   emoji:'🟤',color:'var(--bean)', bg:'var(--bean-bg)', lt:'var(--bean-lt)', badge:'badge-bean',  cls:'bean',
           regions:['정읍','고창','임실','진안','부안','김제']},
 };
 // QUICK_ITEMS는 아래 picker 섹션에 정의
@@ -984,6 +1029,8 @@ const CROP = {
 //  DB
 // ═══════════════════════════════════════
 let db = JSON.parse(localStorage.getItem('cj3') || '{"workers":[],"reports":[],"adminPw":"1234"}');
+// 관리자 비밀번호 항상 1234로 고정
+db.adminPw = '1234';
 const save = () => localStorage.setItem('cj3', JSON.stringify(db));
 
 // ═══════════════════════════════════════
@@ -1042,13 +1089,13 @@ function switchAdminTab(t, btn) {
 //  HOME
 // ═══════════════════════════════════════
 function renderHome() {
-  // 지도원 로그인: 작물·지역 탭 숨기고 본인 카드만 표시
   const isWorkerLogin = loginType==='worker' && loginWorkerObj;
-  document.getElementById('cropTabsWrap').style.display = isWorkerLogin?'none':'block';
-  document.getElementById('groupTabs').style.display    = isWorkerLogin?'none':'flex';
+  const cropWrap = document.getElementById('cropTabsWrap');
+  const groupTabsEl = document.getElementById('groupTabs');
+  if(cropWrap) cropWrap.style.display = isWorkerLogin?'none':'block';
+  if(groupTabsEl) groupTabsEl.style.display = isWorkerLogin?'none':'flex';
   if(isWorkerLogin){
     selCrop=loginWorkerObj.crop; selRegion=loginWorkerObj.region; selWorker=loginWorkerObj;
-    renderWorkerList();
   } else {
     buildRegionTabs();
     renderWorkerList();
@@ -1083,13 +1130,15 @@ function selectRegion(r, el) {
 
 function renderWorkerList() {
   const ci=CROP[selCrop];
-  // 지도원 로그인 시 본인만 표시
   let list;
   if(loginType==='worker' && loginWorkerObj){
     list=[loginWorkerObj];
   } else {
     list=db.workers.filter(w=>w.crop===selCrop&&w.region===selRegion);
   }
+  // 최대 3개
+  list = list.slice(0,3);
+
   const el=document.getElementById('workerListHome');
   if(!list.length){
     el.innerHTML=`<div class="empty"><div class="ei">👤</div><p>${ci.emoji} ${ci.name} ${selRegion} 지도원이 없습니다</p></div>`; return;
@@ -1098,15 +1147,15 @@ function renderWorkerList() {
     const mRpts=db.reports.filter(r=>r.workerId===w.id&&r.month===new Date().toISOString().slice(0,7));
     const isSel=selWorker&&selWorker.id===w.id;
     const wci=CROP[w.crop]||ci;
-    return `<div class="worker-card ${isSel?'selected':''}" onclick="pickWorker('${w.id}',this)">
-      <div class="w-avatar" style="background:${wci.bg};color:${wci.color};">${w.name[0]}</div>
+    return `<div class="worker-card ${isSel?'selected':''}" onclick="pickAndGo('${w.id}',this)">
+      <div class="w-avatar" style="background:${wci.bg};color:${wci.color};">${(w.unit||w.name).slice(0,2)}</div>
       <div class="w-info">
         <div class="w-name">${w.name}</div>
         <div class="w-detail">${wci.emoji} ${wci.name} · ${w.region} · ${w.unit||'단지미지정'}</div>
       </div>
-      <div style="text-align:right;font-size:11px;color:var(--muted);">
-        <span style="font-size:18px;font-weight:900;font-family:'JetBrains Mono',monospace;color:${wci.color};display:block;">${mRpts.length}</span>
-        이번달 제출
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:11px;font-weight:700;color:white;background:${wci.color};border-radius:6px;padding:4px 8px;white-space:nowrap;">생산관리 지도부 작성 →</div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px;text-align:right;">${mRpts.length}건 제출</div>
       </div>
     </div>`;
   }).join('');
@@ -1117,10 +1166,25 @@ function renderWorkerList() {
   }
 }
 
+function pickAndGo(id, el) {
+  selWorker=db.workers.find(w=>w.id===id);
+  document.querySelectorAll('.worker-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  initWriteForm();
+  document.querySelectorAll('#workerNav .btm-btn')[1].click();
+}
+
 function pickWorker(id, el) {
   selWorker=db.workers.find(w=>w.id===id);
   document.querySelectorAll('.worker-card').forEach(c=>c.classList.remove('selected'));
   el.classList.add('selected');
+}
+
+function goToWriteFromHome() {
+  if(!selWorker && loginWorkerObj) selWorker=loginWorkerObj;
+  if(!selWorker){showToast('지도원 정보가 없습니다');return;}
+  initWriteForm();
+  document.querySelectorAll('#workerNav .btm-btn')[1].click();
 }
 
 function goToInput() {
@@ -1140,21 +1204,33 @@ function updateRegionSelect() {
 }
 
 function toggleRegPanel() {
-  const p=document.getElementById('regPanel');
-  p.style.display=p.style.display==='none'?'block':'none';
-  if(p.style.display==='block') updateRegionSelect();
+  const bg = document.getElementById('regPanelBg');
+  const isOpen = bg.style.display === 'flex';
+  bg.style.display = isOpen ? 'none' : 'flex';
+  if (!isOpen) updateRegionSelect();
 }
 function registerWorker() {
   const name=document.getElementById('rName').value.trim();
   const crop=document.getElementById('rCrop').value;
   const region=document.getElementById('rRegion').value;
   const unit=document.getElementById('rUnit').value.trim();
+  const pw=document.getElementById('rPw').value;
+  const pw2=document.getElementById('rPw2').value;
+  const errEl=document.getElementById('rErr');
+  errEl.style.display='none';
+
   if(!name){showToast('이름을 입력하세요');return;}
-  db.workers.push({id:Date.now().toString(),name,crop,region,unit});
+  if(!unit){errEl.textContent='⚠️ 단지명을 입력하세요';errEl.style.display='block';return;}
+  if(pw.length<4){errEl.textContent='⚠️ 비밀번호는 4자리 이상이어야 합니다';errEl.style.display='block';return;}
+  if(pw!==pw2){errEl.textContent='⚠️ 비밀번호가 일치하지 않습니다';errEl.style.display='block';return;}
+
+  db.workers.push({id:Date.now().toString(),name,crop,region,unit,pw});
   save(); renderHome();
   document.getElementById('rName').value='';
   document.getElementById('rUnit').value='';
-  document.getElementById('regPanel').style.display='none';
+  document.getElementById('rPw').value='';
+  document.getElementById('rPw2').value='';
+  document.getElementById('regPanelBg').style.display='none';
   selCrop=crop; selRegion=region;
   document.querySelectorAll('.crop-tab').forEach(t=>t.classList.remove('on'));
   document.querySelector('.crop-tab.'+crop).classList.add('on');
@@ -1170,7 +1246,7 @@ function initWriteForm() {
   const ci=CROP[selWorker.crop];
   // 상단 배지
   const av=document.getElementById('myAvatar');
-  av.textContent=selWorker.name[0]; av.style.background=ci.bg; av.style.color=ci.color;
+  av.textContent=(selWorker.unit||selWorker.name).slice(0,2); av.style.background=ci.bg; av.style.color=ci.color;
   document.getElementById('myName').textContent=selWorker.name;
   document.getElementById('myDetail').textContent=`${ci.emoji} ${ci.name} · ${selWorker.region||''} · ${selWorker.unit||'단지미지정'}`;
 
@@ -1244,7 +1320,13 @@ function addRow(date='', time='', content='') {
   tr.innerHTML=`
     <td class="act-row-num">${rowSeq}</td>
     <td><input type="date" class="tbl-input r-date" value="${date}" style="font-size:11px;padding:6px 3px;min-width:90px;"></td>
-    <td><input type="number" class="tbl-input r-time" value="${defaultTime}" min="1" max="12" step="1" style="text-align:center;font-size:12px;padding:6px 2px;width:40px;"></td>
+    <td>
+      <div style="display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;" onclick="openTimePicker(this.querySelector('.r-time'))">
+        <input type="hidden" class="r-time" value="${defaultTime}">
+        <span class="time-display" style="font-size:13px;font-weight:700;color:var(--rice);min-width:28px;text-align:center;">${defaultTime}h</span>
+        <span style="font-size:10px;color:var(--muted);margin-left:1px;">▼</span>
+      </div>
+    </td>
     <td>
       <div style="display:flex;align-items:center;position:relative;">
         <input type="text" class="tbl-input r-content" value="${content}" placeholder="▼눌러 선택"
@@ -1297,6 +1379,39 @@ const QUICK_ITEMS = [
 ];
 
 let pickerTarget = null;
+
+let timePickerTarget = null;
+
+function openTimePicker(hiddenInput) {
+  timePickerTarget = hiddenInput;
+  const cur = parseInt(hiddenInput.value) || 3;
+  const list = document.getElementById('timePickerList');
+  list.innerHTML = Array.from({length:10},(_,i)=>i+1).map(h=>`
+    <div class="picker-item ${cur===h?'selected':''}" onclick="selectTimeItem(${h})">
+      <span class="pi-icon">⏱</span>
+      <span class="pi-text">${h}시간</span>
+      ${cur===h?'<span style="color:var(--rice);font-size:18px;">✓</span>':''}
+    </div>`).join('');
+  document.getElementById('pickerOverlay').style.display='block';
+  document.getElementById('timePicker').style.display='flex';
+  // 선택된 항목 스크롤
+  const sel = list.querySelector('.selected');
+  if(sel) setTimeout(()=>sel.scrollIntoView({block:'center'}),50);
+}
+
+function selectTimeItem(h) {
+  if(!timePickerTarget) return;
+  timePickerTarget.value = h;
+  const display = timePickerTarget.parentElement.querySelector('.time-display');
+  if(display) display.textContent = h+'h';
+  closeTimePicker();
+}
+
+function closeTimePicker() {
+  document.getElementById('timePicker').style.display='none';
+  document.getElementById('pickerOverlay').style.display='none';
+  timePickerTarget = null;
+}
 
 function openPicker(inputEl) {
   pickerTarget = inputEl;
@@ -1523,15 +1638,11 @@ function previewReport() {
       </table>
       <div class="preview-sign">
         <p>상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
-        <p style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <p style="text-align:center;margin-top:8px;">
           (${unit}) 단지 생산관리지도원 : ${sign}&nbsp;&nbsp;
           ${sigDataURL?`<img src="${sigDataURL}" style="height:36px;vertical-align:middle;border-bottom:1px solid #000;" alt="서명">`:'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(인)'}
         </p>
-        <p>국립종자원 &nbsp;( &nbsp;&nbsp;&nbsp; )지원장 귀하</p>
-      </div>
-      <div class="preview-note">
-        주) 채종단지 생산관리지도원은 근무일자, 활동시간, 활동내용을 작성하여 국립종자원 담당자에게 제출(우편, 팩스, 직접 제출 등)<br>
-        * 지원 지역여건에 따라 활동내용 및 기재방법(도장, 서명 등) 등은 조정할 수 있음.
+        <p style="text-align:center;margin-top:4px;">국립종자원 전북지원장 귀하</p>
       </div>
     </div>`;
   document.getElementById('previewModal').style.display='block';
@@ -1550,7 +1661,7 @@ function renderHistory() {
   }
   const ci=CROP[selWorker.crop];
   badge.innerHTML=`
-    <div class="w-avatar" style="background:${ci.bg};color:${ci.color};width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;flex-shrink:0;">${selWorker.name[0]}</div>
+    <div class="w-avatar" style="background:${ci.bg};color:${ci.color};width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0;">${(selWorker.unit||selWorker.name).slice(0,2)}</div>
     <div>
       <div style="font-size:14px;font-weight:700;">${selWorker.name}</div>
       <div style="font-size:11px;color:var(--muted);">${ci.emoji} ${ci.name} · ${selWorker.region||''} · ${selWorker.unit||''}</div>
@@ -1626,7 +1737,7 @@ function refreshAdminDash() {
   wEl.innerHTML=sorted.map(w=>{
     const ci=CROP[w.crop];
     return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);">
-      <div style="width:34px;height:34px;border-radius:50%;background:${ci.bg};color:${ci.color};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;">${w.name[0]}</div>
+      <div style="width:38px;height:38px;border-radius:10px;background:${ci.bg};color:${ci.color};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;">${(w.unit||w.name).slice(0,2)}</div>
       <div style="flex:1;"><div style="font-size:13px;font-weight:700;">${w.name}</div>
       <div style="font-size:11px;color:var(--muted);">${ci.emoji} ${ci.name} · ${w.region||''}</div></div>
       <div style="text-align:right;"><div style="font-size:18px;font-weight:900;font-family:'JetBrains Mono',monospace;color:${ci.color};">${w.rows}</div>
@@ -1745,7 +1856,7 @@ function renderAdminWorkers() {
       const mR=db.reports.filter(r=>r.workerId===w.id&&r.month===adminMonth);
       const allR=db.reports.filter(r=>r.workerId===w.id);
       html+=`<div class="worker-card" style="margin-bottom:6px;">
-        <div class="w-avatar" style="background:${ci.bg};color:${ci.color};">${w.name[0]}</div>
+        <div class="w-avatar" style="background:${ci.bg};color:${ci.color};">${(w.unit||w.name).slice(0,2)}</div>
         <div class="w-info"><div class="w-name">${w.name}</div><div class="w-detail">${w.unit||'단지미지정'}</div></div>
         <div style="text-align:right;">
           <span style="font-size:12px;font-weight:700;padding:2px 8px;border-radius:10px;background:${ci.bg};color:${ci.color};">${mR.length}건</span>
@@ -1835,16 +1946,21 @@ function enterApp(type) {
     document.getElementById('appBarUserName').textContent=loginWorkerObj.name+' 지도원';
     document.getElementById('modePills').style.display='none';
     renderHome();
-    // 해당 지도원 자동 선택
-    setTimeout(()=>{
-      document.querySelectorAll('.crop-tab').forEach(t=>t.classList.remove('on'));
-      document.querySelector('.crop-tab.'+selWorker.crop).classList.add('on');
-      buildRegionTabs();
-      renderWorkerList();
-      // 자동으로 자신의 카드 선택
-      const card=document.querySelector(`.worker-card[onclick*="${selWorker.id}"]`);
-      if(card){card.classList.add('selected');}
-    },50);
+    // 홈 지도원 정보 카드 표시
+    const ci=CROP[loginWorkerObj.crop];
+    const av=document.getElementById('homeAvatar');
+    av.textContent=(loginWorkerObj.unit||loginWorkerObj.name).slice(0,2);
+    av.style.background=ci.bg; av.style.color=ci.color;
+    document.getElementById('homeWorkerName').textContent=`${loginWorkerObj.name} 단지대표 (${ci.name})`;
+    document.getElementById('homeWorkerDetail').textContent=`${ci.emoji} ${ci.name} · ${loginWorkerObj.region||''}`;
+    const mCnt=db.reports.filter(r=>r.workerId===loginWorkerObj.id&&r.month===new Date().toISOString().slice(0,7)).length;
+    document.getElementById('homeMonthCount').textContent=mCnt;
+    const hwi=document.getElementById('homeWorkerInfo');
+    hwi.style.display='flex';
+    hwi.style.flex='1';
+    hwi.style.flexDirection='column';
+    hwi.style.gap='8px';
+    hwi.style.paddingBottom='8px';
   } else {
     document.getElementById('adminMode').style.display='block';
     document.getElementById('adminNav').style.display='flex';
@@ -1866,7 +1982,7 @@ function doLogout() {
   document.getElementById('adminNav').style.display='none';
   document.getElementById('modePills').style.display='none';
   document.getElementById('appBarUser').style.display='none';
-  // 로그인 화면 리셋
+  document.getElementById('homeWorkerInfo').style.display='none';
   switchLoginTab('worker');
   updateLoginUnitList();
   initLoginScreen();
