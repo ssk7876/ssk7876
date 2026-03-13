@@ -715,56 +715,69 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
 
   <!-- 홈: 지도원 선택 -->
   <div class="page on" id="pw-home">
-    <div style="
-      height:calc(100dvh - 48px - 58px);
-      display:flex;
-      flex-direction:column;
-      padding:0 20px;
-      max-width:480px;
-      margin:0 auto;
-      box-sizing:border-box;
-    ">
-      <!-- 로그인 지도원 정보 + 단축버튼 -->
+    <div style="height:calc(100dvh - 48px - 58px);display:flex;flex-direction:column;max-width:480px;margin:0 auto;box-sizing:border-box;">
+
       <div id="homeWorkerInfo" style="display:none;flex-direction:column;height:100%;">
 
-        <!-- 4개 영역을 flex:1로 균등 배분 -->
-        <!-- 지도원 정보 배지 -->
-        <div style="flex:1;display:flex;align-items:center;">
-          <div style="background:linear-gradient(135deg,var(--navy),#2a3d70);border-radius:16px;padding:14px 18px;color:white;display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box;box-shadow:0 4px 16px rgba(0,0,0,0.2);">
-            <div id="homeAvatar" style="width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0;"></div>
+        <!-- 상단: 사용자 프로필 -->
+        <div style="flex-shrink:0;background:var(--navy);padding:20px 20px 24px;">
+          <!-- 공지 배너 -->
+          <div id="noticeBanner" style="display:none;background:linear-gradient(135deg,#ff6b00,#ff9a00);border-radius:12px;padding:12px 14px;margin-bottom:16px;align-items:flex-start;gap:10px;box-shadow:0 4px 16px rgba(255,107,0,0.45);border:2px solid rgba(255,255,255,0.35);">
+            <span style="font-size:20px;flex-shrink:0;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.2));">📢</span>
             <div style="flex:1;min-width:0;">
-              <div id="homeWorkerName" style="font-size:15px;font-weight:900;"></div>
-              <div id="homeWorkerDetail" style="font-size:11px;opacity:0.75;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+              <div style="font-size:10px;color:rgba(255,255,255,0.9);font-weight:900;margin-bottom:3px;letter-spacing:1.5px;text-transform:uppercase;">📌 공지사항</div>
+              <div id="noticeText" style="font-size:13px;color:#fff;font-weight:700;line-height:1.6;word-break:keep-all;text-shadow:0 1px 2px rgba(0,0,0,0.15);"></div>
             </div>
-            <div style="font-size:10px;background:rgba(255,255,255,0.15);border-radius:10px;padding:8px 12px;text-align:center;flex-shrink:0;">
-              <div style="font-size:22px;font-weight:900;line-height:1;" id="homeMonthCount">0</div>
-              <div style="opacity:0.8;margin-top:3px;">이번달</div>
+          </div>
+
+          <!-- 프로필 -->
+          <div style="display:flex;align-items:center;gap:14px;">
+            <div id="homeAvatar" style="width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0;"></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:11px;color:rgba(255,255,255,0.55);font-weight:600;margin-bottom:4px;letter-spacing:0.5px;">단지대표</div>
+              <div id="homeWorkerName" style="font-size:18px;font-weight:900;color:white;line-height:1.2;"></div>
+              <div id="homeWorkerDetail" style="font-size:11px;color:rgba(255,255,255,0.6);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+            </div>
+            <div style="text-align:center;flex-shrink:0;">
+              <div style="font-size:26px;font-weight:900;color:white;line-height:1;" id="homeMonthCount">0</div>
+              <div style="font-size:10px;color:rgba(255,255,255,0.55);margin-top:3px;font-weight:600;">이번달 제출</div>
             </div>
           </div>
         </div>
 
-        <!-- 버튼 1 -->
-        <div style="flex:1;display:flex;align-items:center;">
-          <button onclick="goToWriteFromHome()" style="width:100%;height:80px;background:linear-gradient(135deg,#2e7d32,#1b5e20);border:none;border-radius:18px;color:white;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:16px;touch-action:manipulation;box-shadow:0 4px 16px rgba(46,125,50,0.4);">
-            <span style="font-size:34px;">📋</span>
-            <span style="font-size:19px;font-weight:900;letter-spacing:-0.3px;">생산관리 지도부 작성</span>
-          </button>
-        </div>
+        <!-- 메뉴 버튼 영역 -->
+        <div style="flex:1;display:flex;flex-direction:column;padding:20px 20px;gap:12px;background:#f5f6fa;">
 
-        <!-- 버튼 2 -->
-        <div style="flex:1;display:flex;align-items:center;">
-          <button onclick="goToSowing()" style="width:100%;height:80px;background:linear-gradient(135deg,#1565c0,#0d47a1);border:none;border-radius:18px;color:white;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:16px;touch-action:manipulation;box-shadow:0 4px 16px rgba(21,101,192,0.4);">
-            <span style="font-size:34px;">🌱</span>
-            <span style="font-size:19px;font-weight:900;">파종 현황</span>
+          <!-- 버튼 1 -->
+          <button onclick="goToWriteFromHome()" style="flex:1;background:white;border:none;border-radius:16px;padding:0 20px;color:var(--text);font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:16px;touch-action:manipulation;box-shadow:0 2px 12px rgba(0,0,0,0.07);text-align:left;">
+            <div style="width:46px;height:46px;border-radius:12px;background:#e8f5e9;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">📋</div>
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:800;color:#1a1a1a;">생산관리 지도부 작성</div>
+              <div style="font-size:11px;color:#888;margin-top:3px;">월별 활동 내역 작성 및 제출</div>
+            </div>
+            <div style="font-size:18px;color:#ccc;">›</div>
           </button>
-        </div>
 
-        <!-- 버튼 3 -->
-        <div style="flex:1;display:flex;align-items:center;">
-          <button onclick="goToHarvest()" style="width:100%;height:80px;background:linear-gradient(135deg,#e65100,#bf360c);border:none;border-radius:18px;color:white;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:16px;touch-action:manipulation;box-shadow:0 4px 16px rgba(230,81,0,0.4);">
-            <span style="font-size:34px;">🌾</span>
-            <span style="font-size:19px;font-weight:900;">수확 현황</span>
+          <!-- 버튼 2 -->
+          <button onclick="goToSowing()" style="flex:1;background:white;border:none;border-radius:16px;padding:0 20px;color:var(--text);font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:16px;touch-action:manipulation;box-shadow:0 2px 12px rgba(0,0,0,0.07);text-align:left;">
+            <div style="width:46px;height:46px;border-radius:12px;background:#e3f2fd;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🌱</div>
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:800;color:#1a1a1a;">파종 현황</div>
+              <div style="font-size:11px;color:#888;margin-top:3px;">파종(이앙) 실적 입력 및 조회</div>
+            </div>
+            <div style="font-size:18px;color:#ccc;">›</div>
           </button>
+
+          <!-- 버튼 3 -->
+          <button onclick="goToHarvest()" style="flex:1;background:white;border:none;border-radius:16px;padding:0 20px;color:var(--text);font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:16px;touch-action:manipulation;box-shadow:0 2px 12px rgba(0,0,0,0.07);text-align:left;">
+            <div style="width:46px;height:46px;border-radius:12px;background:#fff3e0;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">🌾</div>
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:800;color:#1a1a1a;">수확 현황</div>
+              <div style="font-size:11px;color:#888;margin-top:3px;">수확 실적 입력 및 조회</div>
+            </div>
+            <div style="font-size:18px;color:#ccc;">›</div>
+          </button>
+
         </div>
 
       </div>
@@ -967,6 +980,21 @@ textarea{min-height:72px;resize:vertical;line-height:1.6;}
   <!-- 지도원 관리 -->
   <div class="page" id="pa-workers">
     <div class="content">
+
+      <!-- 공지사항 입력 카드 -->
+      <div class="card" style="padding:14px;margin-bottom:12px;border:none;background:linear-gradient(135deg,#ff6b00,#ff9a00);border-radius:14px;box-shadow:0 6px 24px rgba(255,107,0,0.4);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span style="font-size:22px;">📢</span>
+          <span style="font-size:15px;font-weight:900;color:#fff;letter-spacing:0.3px;">공지사항 관리</span>
+        </div>
+        <textarea id="adminNoticeInput" rows="3" placeholder="지도원 홈 화면에 표시할 공지사항을 입력하세요..."
+          style="width:100%;box-sizing:border-box;border:2px solid rgba(255,255,255,0.5);border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;resize:none;outline:none;background:rgba(255,255,255,0.95);color:#1a1a1a;font-weight:600;"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button onclick="saveNotice()" style="flex:2;padding:11px;font-size:13px;font-weight:800;border:none;border-radius:9px;background:#fff;color:#ff6b00;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-family:inherit;">📌 공지 등록</button>
+          <button onclick="clearNotice()" style="flex:1;padding:11px;font-size:12px;font-weight:700;border:2px solid rgba(255,255,255,0.6);border-radius:9px;background:transparent;color:#fff;cursor:pointer;font-family:inherit;">삭제</button>
+        </div>
+      </div>
+
       <div class="crop-tabs" id="adminCropFilter">
         <div class="crop-tab rice on" onclick="setAdminCropFilter('rice',this)"><span class="crop-emoji">🌾</span><div class="crop-name">벼</div></div>
         <div class="crop-tab grain" onclick="setAdminCropFilter('grain',this)"><span class="crop-emoji">🌿</span><div class="crop-name">맥류</div></div>
@@ -1120,7 +1148,11 @@ function switchAdminTab(t, btn) {
   document.getElementById('pa-'+t).classList.add('on');
   if(t==='dash')    refreshAdminDash();
   if(t==='list')    { updateAdminListFilters(); renderAdminList(); }
-  if(t==='workers') renderAdminWorkers();
+  if(t==='workers') {
+    renderAdminWorkers();
+    const input = document.getElementById('adminNoticeInput');
+    if(input) input.value = db.notice || '';
+  }
 }
 
 // ═══════════════════════════════════════
@@ -1138,6 +1170,8 @@ function renderHome() {
     buildRegionTabs();
     renderWorkerList();
   }
+  // 공지 배너
+  renderNoticeBanner();
 }
 
 function selectCrop(c, el) {
@@ -1908,6 +1942,39 @@ function renderAdminWorkers() {
 }
 
 // ═══════════════════════════════════════
+//  NOTICE (공지사항)
+// ═══════════════════════════════════════
+function renderNoticeBanner() {
+  const banner = document.getElementById('noticeBanner');
+  const textEl = document.getElementById('noticeText');
+  if(!banner || !textEl) return;
+  const notice = db.notice || '';
+  if(notice.trim()) {
+    textEl.textContent = notice;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function saveNotice() {
+  const text = document.getElementById('adminNoticeInput').value.trim();
+  db.notice = text;
+  save();
+  renderNoticeBanner();
+  showToast(text ? '공지사항이 등록되었습니다 📢' : '공지사항이 삭제되었습니다');
+}
+
+function clearNotice() {
+  if(!confirm('공지사항을 삭제하시겠습니까?')) return;
+  db.notice = '';
+  document.getElementById('adminNoticeInput').value = '';
+  save();
+  renderNoticeBanner();
+  showToast('공지사항이 삭제되었습니다');
+}
+
+// ═══════════════════════════════════════
 //  SOWING (파종현황)
 // ═══════════════════════════════════════
 function formatPeriod(d1, d2) {
@@ -1950,80 +2017,311 @@ function initSowing() {
   renderSowingCards(saved);
 }
 
+/* ── 파종률 게이지 UI ── */
+function buildRateGauge(containerId, rate, color, acreage) {
+  const pct = Math.min(100, Math.max(0, Number(rate)||0));
+  const area = parseFloat(acreage)||0;
+  const doneArea = area ? (area * pct / 100).toFixed(2) : null;
+
+  return `
+    <div id="${containerId}" data-rate="${pct}" data-area="${area}" data-color="${color}">
+      <!-- 수치 배너 -->
+      <div data-banner style="display:flex;justify-content:space-between;align-items:center;
+        background:linear-gradient(135deg,${color},${color}cc);
+        border-radius:12px;padding:12px 16px;margin-bottom:14px;color:white;">
+        <div>
+          <div style="font-size:11px;opacity:0.8;font-weight:600;margin-bottom:2px;">파종(이앙)률</div>
+          <div data-pct-display style="font-size:32px;font-weight:900;line-height:1;">${pct}<span style="font-size:16px;font-weight:700;">%</span></div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;opacity:0.8;font-weight:600;margin-bottom:2px;">파종 면적</div>
+          <div data-area-display style="font-size:20px;font-weight:900;line-height:1;">
+            ${doneArea!==null ? `${doneArea} <span style="font-size:12px;font-weight:700;">/ ${area} ha</span>` : '<span style="font-size:13px;opacity:0.7;">면적 미입력</span>'}
+          </div>
+        </div>
+      </div>
+      <!-- 슬라이더 트랙 + 눈금 -->
+      <div style="padding:0 6px;margin-bottom:4px;">
+        <!-- 눈금 라벨 (0·25·50·75·100%) -->
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;padding:0 2px;">
+          ${[0,25,50,75,100].map(v=>`<span style="font-size:10px;font-weight:700;color:#888;">${v}%</span>`).join('')}
+        </div>
+        <!-- 트랙 -->
+        <div data-track style="position:relative;height:36px;cursor:pointer;user-select:none;"
+          onmousedown="sowDragStart(event,'${containerId}')"
+          ontouchstart="sowDragStart(event,'${containerId}')">
+          <!-- 배경 트랙 -->
+          <div style="position:absolute;top:50%;left:0;right:0;height:12px;transform:translateY(-50%);background:#e0e0e0;border-radius:6px;overflow:hidden;">
+            <!-- 눈금선 (1% 단위) -->
+            ${Array.from({length:99},(_,i)=>{const v=i+1; return `<div style="position:absolute;left:${v}%;top:0;bottom:0;width:1px;background:${v%10===0?'rgba(0,0,0,0.3)':v%5===0?'rgba(0,0,0,0.15)':'rgba(0,0,0,0.06)'};"></div>`;}).join('')}
+            <!-- 채워진 바 -->
+            <div data-progress style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:linear-gradient(90deg,#43a047,#2e7d32);border-radius:6px;transition:width 0.08s ease;"></div>
+          </div>
+          <!-- 드래그 핸들 -->
+          <div data-handle style="position:absolute;top:50%;left:${pct}%;transform:translate(-50%,-50%);
+            width:32px;height:32px;border-radius:50%;
+            background:white;border:3px solid #2e7d32;
+            box-shadow:0 2px 8px rgba(0,0,0,0.22);
+            display:flex;align-items:center;justify-content:center;
+            cursor:grab;transition:left 0.08s ease;touch-action:none;">
+            <span style="font-size:13px;line-height:1;">🌱</span>
+          </div>
+        </div>
+        <!-- 눈금 틱 (10% 단위 라벨, 5% 단위 중간 틱) -->
+        <div style="position:relative;height:12px;margin-top:2px;">
+          ${Array.from({length:101},(_,i)=>{
+            const v=i;
+            if(v%10===0) return `<div style="position:absolute;left:${v}%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:1px;"><div style="width:1.5px;height:8px;background:#999;"></div></div>`;
+            if(v%5===0)  return `<div style="position:absolute;left:${v}%;transform:translateX(-50%);width:1px;height:5px;background:#bbb;"></div>`;
+            return `<div style="position:absolute;left:${v}%;transform:translateX(-50%);width:1px;height:3px;background:#ddd;"></div>`;
+          }).join('')}
+        </div>
+        <!-- 라벨 (10% 단위) -->
+        <div style="position:relative;height:14px;">
+          ${[0,10,20,30,40,50,60,70,80,90,100].map(v=>`<span style="position:absolute;left:${v}%;transform:translateX(-50%);font-size:9px;font-weight:700;color:#999;">${v}%</span>`).join('')}
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:900;color:#1b5e20;text-align:center;margin-top:6px;letter-spacing:0.2px;">🌱 핸들을 드래그하거나 바를 탭해서 파종률을 설정하세요</div>
+    </div>
+  `;
+}
+
+function _applySowGauge(containerId, val) {
+  const c = document.getElementById(containerId);
+  if(!c) return;
+  const area = parseFloat(c.dataset.area)||0;
+  c.dataset.rate = val;
+
+  const pctEl = c.querySelector('[data-pct-display]');
+  if(pctEl) pctEl.innerHTML = `${val}<span style="font-size:16px;font-weight:700;">%</span>`;
+
+  const areaEl = c.querySelector('[data-area-display]');
+  if(areaEl) areaEl.innerHTML = area
+    ? `${(area*val/100).toFixed(2)} <span style="font-size:12px;font-weight:700;">/ ${area} ha</span>`
+    : '<span style="font-size:13px;opacity:0.7;">면적 미입력</span>';
+
+  const prog   = c.querySelector('[data-progress]');
+  const handle = c.querySelector('[data-handle]');
+  if(prog)   prog.style.width  = val + '%';
+  if(handle) handle.style.left = val + '%';
+}
+
+function setSowRate(containerId, val) { _applySowGauge(containerId, val); }
+
+function setSowRateByClick(trackEl, e, containerId) {
+  const rect = trackEl.getBoundingClientRect();
+  const cx   = e.touches ? e.touches[0].clientX : e.clientX;
+  const pct  = Math.round(Math.min(100, Math.max(0, (cx - rect.left) / rect.width * 100)));
+  _applySowGauge(containerId, pct);
+}
+
+let _sowDrag = null;
+function sowDragStart(e, containerId) {
+  e.preventDefault();
+  _sowDrag = containerId;
+  const move = ev => {
+    if(!_sowDrag) return;
+    const track = document.getElementById(_sowDrag).querySelector('[data-track]');
+    const rect  = track.getBoundingClientRect();
+    const cx    = ev.touches ? ev.touches[0].clientX : ev.clientX;
+    const pct   = Math.round(Math.min(100, Math.max(0, (cx - rect.left) / rect.width * 100)));
+    _applySowGauge(_sowDrag, pct);
+  };
+  const end = () => {
+    _sowDrag = null;
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('mouseup', end);
+    document.removeEventListener('touchmove', move);
+    document.removeEventListener('touchend', end);
+  };
+  document.addEventListener('mousemove', move);
+  document.addEventListener('mouseup', end);
+  document.addEventListener('touchmove', move, {passive:false});
+  document.addEventListener('touchend', end);
+  move(e);
+}
+
+function onSowAreaChange(input) {
+  const card = input.closest('.card');
+  const area = parseFloat(input.value)||0;
+  const c = card.querySelector('[data-rate][data-color]');
+  if(!c) return;
+  c.dataset.area = area;
+  _applySowGauge(c.id, parseInt(c.dataset.rate)||0);
+}
+
+/* 농가 슬롯 — 한 줄 행 */
+function _sowFarmRowHTML(f, idx) {
+  const period = (f.date1 && f.date2) ? formatPeriod(f.date1, f.date2) : '';
+  return `
+    <div class="sow-farm-row" style="display:flex;align-items:center;gap:6px;background:#f0f7ff;border:1.5px solid #bbdefb;border-radius:10px;padding:8px 10px;margin-bottom:6px;">
+      <!-- 번호 뱃지 -->
+      <div style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:#1565c0;color:white;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;">${idx+1}</div>
+      <!-- 농가명 -->
+      <input type="text" class="sow-farm-name" placeholder="농가명" value="${f.name||''}"
+        onchange="updateSowTotalPeriod()"
+        style="width:80px;flex-shrink:0;border:1.5px solid #90caf9;border-radius:7px;padding:6px 7px;font-size:12px;font-family:inherit;background:white;box-sizing:border-box;">
+      <!-- 날짜 시작 -->
+      <input type="date" class="sow-farm-date1" value="${f.date1||''}"
+        onchange="updateSowFarmPeriod(this);updateSowTotalPeriod()"
+        style="flex:1;min-width:0;border:1.5px solid #90caf9;border-radius:7px;padding:6px 4px;font-size:11px;font-family:inherit;background:white;box-sizing:border-box;">
+      <span style="flex-shrink:0;font-size:12px;color:#888;font-weight:700;">~</span>
+      <!-- 날짜 종료 -->
+      <input type="date" class="sow-farm-date2" value="${f.date2||''}"
+        onchange="updateSowFarmPeriod(this);updateSowTotalPeriod()"
+        style="flex:1;min-width:0;border:1.5px solid #90caf9;border-radius:7px;padding:6px 4px;font-size:11px;font-family:inherit;background:white;box-sizing:border-box;">
+      <!-- 기간 텍스트 -->
+      <div class="sow-farm-period-display" style="flex-shrink:0;font-size:10px;font-weight:700;color:#1565c0;min-width:52px;text-align:center;">${period}</div>
+      <!-- 삭제 -->
+      <button onclick="removeSowFarmRow(this)" style="flex-shrink:0;background:none;border:none;color:#e57373;font-size:15px;cursor:pointer;padding:0;line-height:1;">✕</button>
+    </div>
+  `;
+}
+
+function updateSowFarmPeriod(input) {
+  const row = input.closest('.sow-farm-row');
+  const d1 = row.querySelector('.sow-farm-date1').value;
+  const d2 = row.querySelector('.sow-farm-date2').value;
+  row.querySelector('.sow-farm-period-display').textContent = (d1 && d2) ? formatPeriod(d1, d2) : '';
+}
+
+function updateSowTotalPeriod() {
+  const rows = document.querySelectorAll('.sow-farm-row');
+  const allDates = [];
+  rows.forEach(row => {
+    const d1 = row.querySelector('.sow-farm-date1')?.value;
+    const d2 = row.querySelector('.sow-farm-date2')?.value;
+    if(d1) allDates.push(new Date(d1));
+    if(d2) allDates.push(new Date(d2));
+  });
+  const el = document.getElementById('sowTotalPeriodDisp');
+  if(!el) return;
+  if(allDates.length < 2) { el.textContent = ''; return; }
+  const min = new Date(Math.min(...allDates));
+  const max = new Date(Math.max(...allDates));
+  const fmt = d => `${d.getMonth()+1}.${d.getDate()}`;
+  el.textContent = `${fmt(min)} ~ ${fmt(max)}`;
+}
+
+function removeSowFarmRow(btn) {
+  const row = btn.closest('.sow-farm-row');
+  const wrap = row.closest('.sow-farm-list');
+  row.remove();
+  wrap.querySelectorAll('.sow-farm-row').forEach((r,i)=>{
+    r.querySelector('div[style*="border-radius:50%"]').textContent = i+1;
+  });
+  updateSowTotalPeriod();
+}
+
+function addSowFarmRow() {
+  const wrap = document.querySelector('.sow-farm-list');
+  if(!wrap) return;
+  const idx = wrap.querySelectorAll('.sow-farm-row').length;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = _sowFarmRowHTML({}, idx);
+  wrap.appendChild(tmp.firstElementChild);
+}
+
 function renderSowingCards(data) {
   const wrap = document.getElementById('sowingCards');
   wrap.innerHTML = '';
-  for(let i=0; i<1; i++) {
-    const d = data[i] || {};
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.style.cssText = 'padding:14px;margin-bottom:10px;';
-    card.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-        <span style="font-size:20px;">🌱</span>
-        <div style="font-size:15px;font-weight:900;color:#1565c0;">파종(이앙) 실적</div>
-      </div>
+  const d = (data && data[0]) ? data[0] : {};
+  const rate  = Number(d.rate)||0;
+  const area  = d.area||'';
+  const farms = (d.farms && d.farms.length) ? d.farms : [{},{},{}];
 
-      <div class="fg" style="margin-bottom:10px;">
-        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">📍 단지명</label>
-        <input type="text" placeholder="단지명 입력" value="${d.unit||''}"
-          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
-      </div>
-
-      <div class="fg" style="margin-bottom:10px;">
-        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">👤 단지대표</label>
-        <input type="text" placeholder="단지대표 이름" value="${d.rep||''}"
-          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
-      </div>
-
-      <div class="fg" style="margin-bottom:10px;">
-        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">🌾 면적 (ha)</label>
-        <input type="number" placeholder="0.00" value="${d.area||''}" step="0.01" min="0"
-          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
-      </div>
-
-      <div class="fg" style="margin-bottom:10px;">
-        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:6px;">📅 파종일(이앙) — 기간</label>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input type="date" class="sow-date1" value="${d.date1||''}" onchange="updateSowingPeriod(this)"
-            style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:9px 8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
-          <span style="font-size:15px;color:var(--muted);font-weight:700;flex-shrink:0;">~</span>
-          <input type="date" class="sow-date2" value="${d.date2||''}" onchange="updateSowingPeriod(this)"
-            style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:9px 8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
-        </div>
-        <div class="sow-period-display" style="margin-top:6px;font-size:14px;font-weight:700;color:#1565c0;text-align:center;min-height:20px;">${d.date1&&d.date2 ? formatPeriod(d.date1,d.date2) : ''}</div>
-      </div>
-
-      <div class="fg" style="margin-bottom:10px;">
-        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">📊 파종(이앙)률 (%)</label>
-        <input type="number" placeholder="0 ~ 100" value="${d.rate||''}" min="0" max="100"
-          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
-      </div>
-
-      <div class="fg">
-        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">📝 비고 (특이사항)</label>
-        <textarea placeholder="특이사항 입력" rows="2"
-          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:13px;font-family:inherit;resize:none;">${d.note||''}</textarea>
-      </div>
-    `;
-    wrap.appendChild(card);
+  // 전체 기간 계산
+  const allDates = [];
+  farms.forEach(f => {
+    if(f.date1) allDates.push(new Date(f.date1));
+    if(f.date2) allDates.push(new Date(f.date2));
+  });
+  let totalPeriod = '';
+  if(allDates.length >= 2) {
+    const min = new Date(Math.min(...allDates));
+    const max = new Date(Math.max(...allDates));
+    const fmt = d => `${d.getMonth()+1}.${d.getDate()}`;
+    totalPeriod = `${fmt(min)} ~ ${fmt(max)}`;
   }
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.cssText = 'padding:14px;margin-bottom:10px;';
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <span style="font-size:20px;">🌱</span>
+      <div style="font-size:15px;font-weight:900;color:#1565c0;">파종(이앙) 실적</div>
+    </div>
+
+    <!-- 단지명 · 면적 · 농가수 — 한 줄 -->
+    <div class="fg" style="margin-bottom:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end;">
+        <div>
+          <label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px;">📍 단지명</label>
+          <input type="text" class="sow-unit" placeholder="단지명 입력" value="${d.unit||''}"
+            style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;">
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px;">🌾 면적(ha)</label>
+          <input type="number" class="sow-area" placeholder="0.00" value="${area}" step="0.01" min="0"
+            oninput="onSowAreaChange(this)"
+            style="width:100%;box-sizing:border-box;border:1.5px solid #1565c0;border-radius:8px;padding:8px 8px;font-size:13px;font-family:inherit;background:#e8f0fe;">
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px;">🏠 농가수</label>
+          <input type="number" class="sow-farm-count" placeholder="0" value="${d.farmCount||''}" min="0" step="1"
+            style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:8px 8px;font-size:13px;font-family:inherit;">
+        </div>
+      </div>
+      <div style="font-size:10px;color:#1565c0;margin-top:3px;font-weight:600;">※ 면적 입력 시 파종률 게이지에 자동 반영됩니다</div>
+    </div>
+
+    <!-- 농가별 파종일 슬롯 -->
+    <div class="fg" style="margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;">
+        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+          <label style="font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap;margin:0;">🏡 농가별 파종일(이앙) 기간</label>
+          <span id="sowTotalPeriodDisp" style="font-size:11px;font-weight:900;color:#1565c0;background:#dbeafe;border-radius:6px;padding:2px 8px;white-space:nowrap;">${totalPeriod}</span>
+        </div>
+        <button onclick="addSowFarmRow()" style="flex-shrink:0;background:#1565c0;color:white;border:none;border-radius:7px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">+ 농가 추가</button>
+      </div>
+      <div class="sow-farm-list">
+        ${farms.map((f,i) => _sowFarmRowHTML(f,i)).join('')}
+      </div>
+    </div>
+
+    <!-- 파종률 게이지 -->
+    <div class="fg" style="margin-bottom:10px;">
+      <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:8px;">📊 파종(이앙)률 — 게이지 선택</label>
+      ${buildRateGauge('sowRateGauge0', rate, '#1565c0', area)}
+    </div>
+
+    <div class="fg">
+      <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">📝 비고 (특이사항)</label>
+      <textarea class="sow-note" placeholder="특이사항 입력" rows="2"
+        style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:13px;font-family:inherit;resize:none;">${d.note||''}</textarea>
+    </div>
+  `;
+  wrap.appendChild(card);
 }
 
 function getSowingCards() {
-  return Array.from(document.querySelectorAll('#sowingCards .card')).map(card => {
-    const inputs = card.querySelectorAll('input');
-    const textarea = card.querySelector('textarea');
-    return {
-      unit:  inputs[0].value.trim(),
-      rep:   inputs[1].value.trim(),
-      area:  inputs[2].value,
-      date1: inputs[3].value,
-      date2: inputs[4].value,
-      rate:  inputs[5].value,
-      note:  textarea ? textarea.value.trim() : '',
-    };
-  });
+  const card = document.querySelector('#sowingCards .card');
+  if(!card) return [];
+  const gaugeEl = card.querySelector('[data-rate]');
+  const farms = Array.from(card.querySelectorAll('.sow-farm-row')).map(row => ({
+    name:  row.querySelector('.sow-farm-name')?.value.trim()||'',
+    date1: row.querySelector('.sow-farm-date1')?.value||'',
+    date2: row.querySelector('.sow-farm-date2')?.value||'',
+  }));
+  return [{
+    unit:       card.querySelector('.sow-unit')?.value.trim()||'',
+    area:       card.querySelector('.sow-area')?.value||'',
+    farmCount:  card.querySelector('.sow-farm-count')?.value||'',
+    farms,
+    rate:  gaugeEl ? gaugeEl.dataset.rate : '0',
+    note:  card.querySelector('.sow-note')?.value.trim()||'',
+  }];
 }
 
 function saveSowing() {
@@ -2060,74 +2358,290 @@ function initHarvest() {
   renderHarvestCards(saved);
 }
 
+function buildHarvestRateGauge(containerId, rate, acreage) {
+  const color = '#e65100';
+  const pct = Math.min(100, Math.max(0, Number(rate)||0));
+  const area = parseFloat(acreage)||0;
+  const doneArea = area ? (area * pct / 100).toFixed(2) : null;
+  return `
+    <div id="${containerId}" data-rate="${pct}" data-area="${area}" data-color="${color}">
+      <div data-banner style="display:flex;justify-content:space-between;align-items:center;
+        background:linear-gradient(135deg,${color},#bf360c);
+        border-radius:12px;padding:12px 16px;margin-bottom:14px;color:white;">
+        <div>
+          <div style="font-size:11px;opacity:0.8;font-weight:600;margin-bottom:2px;">수확률</div>
+          <div data-pct-display style="font-size:32px;font-weight:900;line-height:1;">${pct}<span style="font-size:16px;font-weight:700;">%</span></div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;opacity:0.8;font-weight:600;margin-bottom:2px;">수확 면적</div>
+          <div data-area-display style="font-size:20px;font-weight:900;line-height:1;">
+            ${doneArea!==null ? `${doneArea} <span style="font-size:12px;font-weight:700;">/ ${area} ha</span>` : '<span style="font-size:13px;opacity:0.7;">면적 미입력</span>'}
+          </div>
+        </div>
+      </div>
+      <div style="padding:0 6px;margin-bottom:4px;">
+        <div data-track style="position:relative;height:36px;cursor:pointer;user-select:none;"
+          onmousedown="havDragStart(event,'${containerId}')"
+          ontouchstart="havDragStart(event,'${containerId}')">
+          <div style="position:absolute;top:50%;left:0;right:0;height:12px;transform:translateY(-50%);background:#e0e0e0;border-radius:6px;overflow:hidden;">
+            ${Array.from({length:99},(_,i)=>{const v=i+1; return `<div style="position:absolute;left:${v}%;top:0;bottom:0;width:1px;background:${v%10===0?'rgba(0,0,0,0.3)':v%5===0?'rgba(0,0,0,0.15)':'rgba(0,0,0,0.06)'};"></div>`;}).join('')}
+            <div data-progress style="position:absolute;left:0;top:0;bottom:0;width:${pct}%;background:linear-gradient(90deg,#43a047,#2e7d32);border-radius:6px;transition:width 0.08s ease;"></div>
+          </div>
+          <div data-handle style="position:absolute;top:50%;left:${pct}%;transform:translate(-50%,-50%);
+            width:32px;height:32px;border-radius:50%;
+            background:white;border:3px solid #2e7d32;
+            box-shadow:0 2px 8px rgba(0,0,0,0.22);
+            display:flex;align-items:center;justify-content:center;
+            cursor:grab;transition:left 0.08s ease;touch-action:none;">
+            <span style="font-size:13px;line-height:1;">🌾</span>
+          </div>
+        </div>
+        <div style="position:relative;height:12px;margin-top:2px;">
+          ${Array.from({length:101},(_,i)=>{
+            const v=i;
+            if(v%10===0) return `<div style="position:absolute;left:${v}%;transform:translateX(-50%);width:1.5px;height:8px;background:#999;"></div>`;
+            if(v%5===0)  return `<div style="position:absolute;left:${v}%;transform:translateX(-50%);width:1px;height:5px;background:#bbb;"></div>`;
+            return `<div style="position:absolute;left:${v}%;transform:translateX(-50%);width:1px;height:3px;background:#ddd;"></div>`;
+          }).join('')}
+        </div>
+        <div style="position:relative;height:14px;">
+          ${[0,10,20,30,40,50,60,70,80,90,100].map(v=>`<span style="position:absolute;left:${v}%;transform:translateX(-50%);font-size:9px;font-weight:700;color:#999;">${v}%</span>`).join('')}
+        </div>
+      </div>
+      <div style="font-size:11px;font-weight:900;color:#1b5e20;text-align:center;margin-top:6px;letter-spacing:0.2px;">🌾 핸들을 드래그하거나 바를 탭해서 수확률을 설정하세요</div>
+    </div>
+  `;
+}
+
+function _applyHavGauge(containerId, val) {
+  const c = document.getElementById(containerId);
+  if(!c) return;
+  const area = parseFloat(c.dataset.area)||0;
+  c.dataset.rate = val;
+
+  const pctEl = c.querySelector('[data-pct-display]');
+  if(pctEl) pctEl.innerHTML = `${val}<span style="font-size:16px;font-weight:700;">%</span>`;
+
+  const areaEl = c.querySelector('[data-area-display]');
+  if(areaEl) areaEl.innerHTML = area
+    ? `${(area*val/100).toFixed(2)} <span style="font-size:12px;font-weight:700;">/ ${area} ha</span>`
+    : '<span style="font-size:13px;opacity:0.7;">면적 미입력</span>';
+
+  const prog   = c.querySelector('[data-progress]');
+  const handle = c.querySelector('[data-handle]');
+  if(prog)   prog.style.width  = val + '%';
+  if(handle) handle.style.left = val + '%';
+}
+
+function setHavRate(containerId, val) { _applyHavGauge(containerId, val); }
+
+function setHavRateByClick(trackEl, e, containerId) {
+  const rect = trackEl.getBoundingClientRect();
+  const cx   = e.touches ? e.touches[0].clientX : e.clientX;
+  const pct  = Math.round(Math.min(100, Math.max(0, (cx - rect.left) / rect.width * 100)));
+  _applyHavGauge(containerId, pct);
+}
+
+let _havDrag = null;
+function havDragStart(e, containerId) {
+  e.preventDefault();
+  _havDrag = containerId;
+  const move = ev => {
+    if(!_havDrag) return;
+    const track = document.getElementById(_havDrag).querySelector('[data-track]');
+    const rect  = track.getBoundingClientRect();
+    const cx    = ev.touches ? ev.touches[0].clientX : ev.clientX;
+    const pct   = Math.round(Math.min(100, Math.max(0, (cx - rect.left) / rect.width * 100)));
+    _applyHavGauge(_havDrag, pct);
+  };
+  const end = () => {
+    _havDrag = null;
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('mouseup', end);
+    document.removeEventListener('touchmove', move);
+    document.removeEventListener('touchend', end);
+  };
+  document.addEventListener('mousemove', move);
+  document.addEventListener('mouseup', end);
+  document.addEventListener('touchmove', move, {passive:false});
+  document.addEventListener('touchend', end);
+  move(e);
+}
+
+function onHavAreaChange(input) {
+  const card = input.closest('.card');
+  const area = parseFloat(input.value)||0;
+  const c = card.querySelector('[data-rate][data-color]');
+  if(!c) return;
+  c.dataset.area = area;
+  _applyHavGauge(c.id, parseInt(c.dataset.rate)||0);
+}
+
+/* 수확 농가 슬롯 — 한 줄 행 */
+function _havFarmRowHTML(f, idx) {
+  const period = (f.date1 && f.date2) ? formatPeriod(f.date1, f.date2) : '';
+  return `
+    <div class="hav-farm-row" style="display:flex;align-items:center;gap:6px;background:#fff3e0;border:1.5px solid #ffcc80;border-radius:10px;padding:8px 10px;margin-bottom:6px;">
+      <div style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:#e65100;color:white;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;">${idx+1}</div>
+      <input type="text" class="hav-farm-name" placeholder="농가명" value="${f.name||''}"
+        onchange="updateHavTotalPeriod()"
+        style="width:80px;flex-shrink:0;border:1.5px solid #ffb74d;border-radius:7px;padding:6px 7px;font-size:12px;font-family:inherit;background:white;box-sizing:border-box;">
+      <input type="date" class="hav-farm-date1" value="${f.date1||''}"
+        onchange="updateHavFarmPeriod(this);updateHavTotalPeriod()"
+        style="flex:1;min-width:0;border:1.5px solid #ffb74d;border-radius:7px;padding:6px 4px;font-size:11px;font-family:inherit;background:white;box-sizing:border-box;">
+      <span style="flex-shrink:0;font-size:12px;color:#888;font-weight:700;">~</span>
+      <input type="date" class="hav-farm-date2" value="${f.date2||''}"
+        onchange="updateHavFarmPeriod(this);updateHavTotalPeriod()"
+        style="flex:1;min-width:0;border:1.5px solid #ffb74d;border-radius:7px;padding:6px 4px;font-size:11px;font-family:inherit;background:white;box-sizing:border-box;">
+      <div class="hav-farm-period-display" style="flex-shrink:0;font-size:10px;font-weight:700;color:#e65100;min-width:52px;text-align:center;">${period}</div>
+      <button onclick="removeHavFarmRow(this)" style="flex-shrink:0;background:none;border:none;color:#e57373;font-size:15px;cursor:pointer;padding:0;line-height:1;">✕</button>
+    </div>
+  `;
+}
+
+function updateHavFarmPeriod(input) {
+  const row = input.closest('.hav-farm-row');
+  const d1 = row.querySelector('.hav-farm-date1').value;
+  const d2 = row.querySelector('.hav-farm-date2').value;
+  row.querySelector('.hav-farm-period-display').textContent = (d1 && d2) ? formatPeriod(d1, d2) : '';
+}
+
+function updateHavTotalPeriod() {
+  const rows = document.querySelectorAll('.hav-farm-row');
+  const allDates = [];
+  rows.forEach(row => {
+    const d1 = row.querySelector('.hav-farm-date1')?.value;
+    const d2 = row.querySelector('.hav-farm-date2')?.value;
+    if(d1) allDates.push(new Date(d1));
+    if(d2) allDates.push(new Date(d2));
+  });
+  const el = document.getElementById('havTotalPeriodDisp');
+  if(!el) return;
+  if(allDates.length < 2) { el.textContent = ''; return; }
+  const min = new Date(Math.min(...allDates));
+  const max = new Date(Math.max(...allDates));
+  const fmt = d => `${d.getMonth()+1}.${d.getDate()}`;
+  el.textContent = `${fmt(min)} ~ ${fmt(max)}`;
+}
+
+function removeHavFarmRow(btn) {
+  const row = btn.closest('.hav-farm-row');
+  const wrap = row.closest('.hav-farm-list');
+  row.remove();
+  wrap.querySelectorAll('.hav-farm-row').forEach((r,i)=>{
+    r.querySelector('div[style*="border-radius:50%"]').textContent = i+1;
+  });
+  updateHavTotalPeriod();
+}
+
+function addHavFarmRow() {
+  const wrap = document.querySelector('.hav-farm-list');
+  if(!wrap) return;
+  const idx = wrap.querySelectorAll('.hav-farm-row').length;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = _havFarmRowHTML({}, idx);
+  wrap.appendChild(tmp.firstElementChild);
+}
+
 function renderHarvestCards(data) {
   const wrap = document.getElementById('harvestCards');
   wrap.innerHTML = '';
-  for(let i=0; i<1; i++) {
-    const d = data[i] || {};
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.style.cssText = 'padding:14px;margin-bottom:10px;';
-    card.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-        <span style="font-size:20px;">🌾</span>
-        <div style="font-size:15px;font-weight:900;color:#e65100;">수확 실적</div>
-      </div>
-      <div class="fg" style="margin-bottom:10px;">
-        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">📍 단지명</label>
-        <input type="text" placeholder="단지명 입력" value="${d.unit||''}"
-          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
-      </div>
-      <div class="fg" style="margin-bottom:10px;">
-        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">👤 단지대표</label>
-        <input type="text" placeholder="단지대표 이름" value="${d.rep||''}"
-          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
-      </div>
-      <div class="fg" style="margin-bottom:10px;">
-        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">🌾 면적 (ha)</label>
-        <input type="number" placeholder="0.00" value="${d.area||''}" step="0.01" min="0"
-          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
-      </div>
-      <div class="fg" style="margin-bottom:10px;">
-        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:6px;">📅 수확일 — 기간</label>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <input type="date" class="hav-date1" value="${d.date1||''}" onchange="updateHarvestPeriod(this)"
-            style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:9px 8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
-          <span style="font-size:15px;color:var(--muted);font-weight:700;flex-shrink:0;">~</span>
-          <input type="date" class="hav-date2" value="${d.date2||''}" onchange="updateHarvestPeriod(this)"
-            style="flex:1;border:1.5px solid #ddd;border-radius:8px;padding:9px 8px;font-size:13px;font-family:inherit;box-sizing:border-box;">
-        </div>
-        <div class="hav-period-display" style="margin-top:6px;font-size:14px;font-weight:700;color:#e65100;text-align:center;min-height:20px;">${d.date1&&d.date2 ? formatPeriod(d.date1,d.date2) : ''}</div>
-      </div>
-      <div class="fg" style="margin-bottom:10px;">
-        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">📊 수확률 (%)</label>
-        <input type="number" placeholder="0 ~ 100" value="${d.rate||''}" min="0" max="100"
-          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit;">
-      </div>
-      <div class="fg">
-        <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">📝 비고 (특이사항)</label>
-        <textarea placeholder="특이사항 입력" rows="2"
-          style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:13px;font-family:inherit;resize:none;">${d.note||''}</textarea>
-      </div>
-    `;
-    wrap.appendChild(card);
+  const d = (data && data[0]) ? data[0] : {};
+  const rate  = Number(d.rate)||0;
+  const area  = d.area||'';
+  const farms = (d.farms && d.farms.length) ? d.farms : [{},{},{}];
+
+  const allDates = [];
+  farms.forEach(f => {
+    if(f.date1) allDates.push(new Date(f.date1));
+    if(f.date2) allDates.push(new Date(f.date2));
+  });
+  let totalPeriod = '';
+  if(allDates.length >= 2) {
+    const min = new Date(Math.min(...allDates));
+    const max = new Date(Math.max(...allDates));
+    const fmt = dt => `${dt.getMonth()+1}.${dt.getDate()}`;
+    totalPeriod = `${fmt(min)} ~ ${fmt(max)}`;
   }
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.cssText = 'padding:14px;margin-bottom:10px;';
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <span style="font-size:20px;">🌾</span>
+      <div style="font-size:15px;font-weight:900;color:#e65100;">수확 실적</div>
+    </div>
+
+    <!-- 단지명 · 면적 · 농가수 — 한 줄 -->
+    <div class="fg" style="margin-bottom:10px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end;">
+        <div>
+          <label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px;">📍 단지명</label>
+          <input type="text" class="hav-unit" placeholder="단지명 입력" value="${d.unit||''}"
+            style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;">
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px;">🌾 면적(ha)</label>
+          <input type="number" class="hav-area" placeholder="0.00" value="${area}" step="0.01" min="0"
+            oninput="onHavAreaChange(this)"
+            style="width:100%;box-sizing:border-box;border:1.5px solid #e65100;border-radius:8px;padding:8px 8px;font-size:13px;font-family:inherit;background:#fbe9e7;">
+        </div>
+        <div>
+          <label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:3px;">🏠 농가수</label>
+          <input type="number" class="hav-farm-count" placeholder="0" value="${d.farmCount||''}" min="0" step="1"
+            style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:8px 8px;font-size:13px;font-family:inherit;">
+        </div>
+      </div>
+      <div style="font-size:10px;color:#e65100;margin-top:3px;font-weight:600;">※ 면적 입력 시 수확률 게이지에 자동 반영됩니다</div>
+    </div>
+
+    <!-- 농가별 수확일 슬롯 -->
+    <div class="fg" style="margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;">
+        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+          <label style="font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap;margin:0;">🏡 농가별 수확일 기간</label>
+          <span id="havTotalPeriodDisp" style="font-size:11px;font-weight:900;color:#e65100;background:#ffe0b2;border-radius:6px;padding:2px 8px;white-space:nowrap;">${totalPeriod}</span>
+        </div>
+        <button onclick="addHavFarmRow()" style="flex-shrink:0;background:#e65100;color:white;border:none;border-radius:7px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">+ 농가 추가</button>
+      </div>
+      <div class="hav-farm-list">
+        ${farms.map((f,i) => _havFarmRowHTML(f,i)).join('')}
+      </div>
+    </div>
+
+    <!-- 수확률 게이지 -->
+    <div class="fg" style="margin-bottom:10px;">
+      <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:8px;">📊 수확률 — 게이지 선택</label>
+      ${buildHarvestRateGauge('havRateGauge0', rate, area)}
+    </div>
+
+    <div class="fg">
+      <label style="font-size:11px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px;">📝 비고 (특이사항)</label>
+      <textarea class="hav-note" placeholder="특이사항 입력" rows="2"
+        style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:9px 10px;font-size:13px;font-family:inherit;resize:none;">${d.note||''}</textarea>
+    </div>
+  `;
+  wrap.appendChild(card);
 }
 
 function getHarvestCards() {
-  return Array.from(document.querySelectorAll('#harvestCards .card')).map(card => {
-    const inputs = card.querySelectorAll('input');
-    const textarea = card.querySelector('textarea');
-    return {
-      unit:  inputs[0].value.trim(),
-      rep:   inputs[1].value.trim(),
-      area:  inputs[2].value,
-      date1: inputs[3].value,
-      date2: inputs[4].value,
-      rate:  inputs[5].value,
-      note:  textarea ? textarea.value.trim() : '',
-    };
-  });
+  const card = document.querySelector('#harvestCards .card');
+  if(!card) return [];
+  const gaugeEl = card.querySelector('[data-rate]');
+  const farms = Array.from(card.querySelectorAll('.hav-farm-row')).map(row => ({
+    name:  row.querySelector('.hav-farm-name')?.value.trim()||'',
+    date1: row.querySelector('.hav-farm-date1')?.value||'',
+    date2: row.querySelector('.hav-farm-date2')?.value||'',
+  }));
+  return [{
+    unit:       card.querySelector('.hav-unit')?.value.trim()||'',
+    area:       card.querySelector('.hav-area')?.value||'',
+    farmCount:  card.querySelector('.hav-farm-count')?.value||'',
+    farms,
+    rate:  gaugeEl ? gaugeEl.dataset.rate : '0',
+    note:  card.querySelector('.hav-note')?.value.trim()||'',
+  }];
 }
 
 function saveHarvest() {
@@ -2231,8 +2745,7 @@ function enterApp(type) {
     const hwi=document.getElementById('homeWorkerInfo');
     hwi.style.display='flex';
     hwi.style.flexDirection='column';
-    hwi.style.height='100%';
-  } else {
+    hwi.style.height='100%';  } else {
     document.getElementById('adminMode').style.display='block';
     document.getElementById('adminNav').style.display='flex';
     document.getElementById('modePills').style.display='none';
