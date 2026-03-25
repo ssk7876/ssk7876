@@ -62,11 +62,11 @@ html,body,#root{height:100%;margin:0;padding:0;background:#f3f4f6;}
 .ds-field-row{margin-bottom:14px;}
 .ds-field-row>label{font-size:13px;font-weight:700;color:#374151;display:block;margin-bottom:6px;}
 .ds-field-row-inline{display:flex;align-items:center;gap:10px;margin-bottom:14px;min-height:38px;}
-.ds-field-label-inline{font-size:13px;font-weight:700;color:#166534;flex:0 0 auto;width:170px;line-height:1.4;}
+.ds-field-label-inline{font-size:13px;font-weight:700;color:#166534;flex:0 0 auto;width:140px;line-height:1.4;}
 .ds-field-content-inline{flex:1;min-width:0;}
 /* 소독육묘 통일 레이아웃 */
 .ds-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;min-height:36px;}
-.ds-label{font-size:13px;font-weight:700;color:#166534;flex:0 0 170px;line-height:1.4;padding-top:8px;}
+.ds-label{font-size:13px;font-weight:700;color:#166534;flex:0 0 140px;line-height:1.4;padding-top:8px;}
 .ds-content{flex:1;min-width:0;}
 .ds-check-group{display:flex;gap:14px;flex-wrap:wrap;margin-top:4px;}
 .ds-check-label{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;font-size:14px;}
@@ -157,7 +157,9 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
   const[stayLogin,setStayLogin]=useState(()=>!!localStorage.getItem("stay_login"));
 
   const doLogin=()=>{
-    const u=app.users.find(u=>u.id===id&&u.pw===pw);
+    // 최신 저장 데이터에서 사용자 찾기 (로그아웃 후 재로그인 시 최신 정보 보장)
+    const freshApp=ld()||{users:app.users};
+    const u=(freshApp.users||app.users).find(u=>u.id===id&&u.pw===pw);
     if(u){
       // 아이디 기억
       if(remId) localStorage.setItem("saved_id",id);
@@ -165,7 +167,7 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
       // 로그인 상태 유지
       if(stayLogin) localStorage.setItem("stay_login",id);
       else localStorage.removeItem("stay_login");
-      setApp(p=>({...p,currentUser:u}));
+      setApp(p=>({...p,...freshApp,currentUser:u}));
       onLogin();
     } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
   };
@@ -523,6 +525,11 @@ function HomeScreen({app,setApp,onNoticeMore,onDisasterLink}){
         <h1 style={{fontSize:20,fontWeight:900,color:"white",margin:0}}>🌾 채종단지 생산관리</h1>
       </div>
       <div style={{padding:"16px 16px 0"}}>
+      {/* 재해 및 병해충 발생 시 수시 보고 */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+        <h2 style={{fontSize:15,fontWeight:900,color:"#1f2937",margin:0}}>🚨 재해 및 병해충 발생 시 수시 보고</h2>
+        <button onClick={onDisasterLink} style={{background:"none",border:"none",color:"#16a34a",fontSize:13,fontWeight:900,cursor:"pointer",padding:"4px 0"}}>→ 바로가기</button>
+      </div>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
         <h2 style={{fontSize:15,fontWeight:900,color:"#1f2937",margin:0}}>📢 공지사항</h2>
         <button onClick={onNoticeMore} style={{background:"none",border:"none",color:"#16a34a",fontSize:13,fontWeight:900,cursor:"pointer",padding:"4px 0"}}>+ 더보기</button>
@@ -547,11 +554,6 @@ function HomeScreen({app,setApp,onNoticeMore,onDisasterLink}){
           <p style={{fontSize:12,color:"#9ca3af",margin:0}}>📍 {s.location} · {s.date}</p>
         </div>
       ))}
-      {/* 재해 및 병해충 발생 시 수시 보고 */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:8,marginBottom:12}}>
-        <h2 style={{fontSize:15,fontWeight:900,color:"#1f2937",margin:0}}>🚨 재해 및 병해충 발생 시 수시 보고</h2>
-        <button onClick={onDisasterLink} style={{background:"none",border:"none",color:"#16a34a",fontSize:13,fontWeight:900,cursor:"pointer",padding:"4px 0"}}>→ 바로가기</button>
-      </div>
       </div>
     </div>
   );
@@ -776,7 +778,7 @@ function MyScreen({app,setApp,onLogout}){
             )}
             <div style={{marginBottom:16}}>
               <label style={{fontSize:12,fontWeight:700,color:"#6b7280",display:"block",marginBottom:4}}>서명</label>
-              <div onClick={()=>setSigModal(true)} style={{border:"2px dashed #d1d5db",borderRadius:10,padding:12,display:"flex",alignItems:"center",justifyContent:"center",minHeight:64,cursor:"pointer"}}>
+              <div onClick={e=>{e.stopPropagation();setSigModal(true);}} onTouchEnd={e=>e.stopPropagation()} style={{border:"2px dashed #d1d5db",borderRadius:10,padding:12,display:"flex",alignItems:"center",justifyContent:"center",minHeight:64,cursor:"pointer"}}>
                 {form.signature?<img src={form.signature} alt="서명" style={{maxHeight:56}}/>:<span style={{color:"#16a34a",fontWeight:700,fontSize:14}}>✍️ 터치하여 서명하세요</span>}
               </div>
             </div>
@@ -790,7 +792,7 @@ function MyScreen({app,setApp,onLogout}){
                 style={{width:"100%",border:"2px solid #d1d5db",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",boxSizing:"border-box"}}/>
               {pwErr&&<p style={{color:"#ef4444",fontSize:12,fontWeight:700,margin:"6px 0 0"}}>{pwErr}</p>}
             </div>
-            <button onClick={doSave} style={bigBtn("#16a34a","white")}>저장</button>
+            <button onClick={e=>{e.stopPropagation();doSave();}} style={bigBtn("#16a34a","white")}>저장</button>
           </>
         ):(
           <>
@@ -836,33 +838,21 @@ function MyScreen({app,setApp,onLogout}){
    so it is never clipped by any parent overflow.       */
 function DatePicker({value,onChange}){
   const[open,setOpen]=useState(false);
-  const btnRef=useRef();
   const today=new Date();
   const[cy,setCy]=useState(today.getFullYear());const[cm,setCm]=useState(today.getMonth());
 
-  // 표시용: YYYY-MM-DD → MM.DD, 또는 그냥 입력값
+  // 표시용: YYYY-MM-DD → MM.DD
   const displayVal=value
     ?value.replace(/^(\d{4})-(\d{2})-(\d{2})$/,"$2.$3")
     :"";
 
-  // 입력 처리: MM.DD 형식 숫자 입력
-  const handleInput=(e)=>{
-    const raw=e.target.value.replace(/[^\d.]/g,"");
-    onChange(raw);
-  };
-
-  const openCal=()=>{ setOpen(true); };
   const fd=new Date(cy,cm,1).getDay();const dim=new Date(cy,cm+1,0).getDate();
   const cells=[];for(let i=0;i<fd;i++)cells.push(null);for(let d=1;d<=dim;d++)cells.push(d);
   return(
     <div style={{position:"relative",width:"100%",overflow:"visible"}}>
-      <div style={{display:"flex",gap:1,alignItems:"center",width:"100%"}}>
-        <input value={displayVal} onChange={handleInput} placeholder="월.일"
-          style={{minWidth:0,flex:1,width:0,border:"1px solid #d1d5db",borderRadius:4,padding:"4px 2px",fontSize:"0.72rem",outline:"none",textAlign:"center"}}
-          onFocus={e=>e.target.style.borderColor="#16a34a"} onBlur={e=>e.target.style.borderColor="#d1d5db"}/>
-        <button ref={btnRef} onClick={openCal}
-          style={{flexShrink:0,width:18,height:20,minWidth:18,border:"1px solid #d1d5db",borderRadius:4,background:"white",cursor:"pointer",fontSize:"0.55rem",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>📅</button>
-      </div>
+      <input value={displayVal} readOnly placeholder="월.일" onClick={()=>setOpen(o=>!o)}
+        style={{width:"100%",boxSizing:"border-box",border:"1px solid #d1d5db",borderRadius:4,padding:"4px 2px",fontSize:"0.72rem",outline:"none",textAlign:"center",cursor:"pointer",background:"white"}}
+        onFocus={e=>e.target.style.borderColor="#16a34a"} onBlur={e=>e.target.style.borderColor="#d1d5db"}/>
       {open&&(
         <>
           <div style={{position:"fixed",inset:0,zIndex:40}} onClick={()=>setOpen(false)}/>
@@ -876,7 +866,6 @@ function DatePicker({value,onChange}){
               {["일","월","화","수","목","금","토"].map(d=><div key={d} style={{fontWeight:700,color:"#9ca3af",padding:"4px 0"}}>{d}</div>)}
               {cells.map((d,i)=>d
                 ?<button key={i} onClick={()=>{
-                    // MM.DD 형식으로 저장
                     onChange(`${String(cm+1).padStart(2,"0")}.${String(d).padStart(2,"0")}`);
                     setOpen(false);
                   }}
@@ -1569,20 +1558,17 @@ function DsDateRange({value,onChange}){
   const getRect=ref=>ref.current?ref.current.getBoundingClientRect():null;
   const upd=(ns,ne)=>{setS(ns);setE(ne);onChange({start:ns,end:ne});};
   React.useEffect(()=>{setS(value?.start||"");setE(value?.end||"");},[value?.start,value?.end]);
-  const calBtnSt={flexShrink:0,width:26,height:28,border:"1.5px solid #9ca3af",borderRadius:7,background:"white",cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",padding:0};
   return(
     <div style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>
-      <div style={{position:"relative",display:"flex",alignItems:"center",gap:2}}>
-        <input ref={sRef} value={s} readOnly onClick={()=>setShow(show==="s"?null:"s")}
-          placeholder="##.##" className="ds-input" style={{width:56,textAlign:"center",padding:"4px 0px",cursor:"pointer"}}/>
-        <button style={calBtnSt} onClick={()=>setShow(show==="s"?null:"s")}>📅</button>
+      <div style={{position:"relative"}}>
+        <input ref={sRef} value={s} readOnly placeholder="월.일" onClick={()=>setShow(show==="s"?null:"s")}
+          className="ds-input" style={{width:56,textAlign:"center",padding:"4px 0px",cursor:"pointer"}}/>
         {show==="s"&&<DsMiniCal anchorRect={getRect(sRef)} onChange={v=>upd(v,e)} onClose={()=>setShow(null)}/>}
       </div>
       <span style={{fontWeight:600}}>~</span>
-      <div style={{position:"relative",display:"flex",alignItems:"center",gap:2}}>
-        <input ref={eRef} value={e} readOnly onClick={()=>setShow(show==="e"?null:"e")}
-          placeholder="##.##" className="ds-input" style={{width:56,textAlign:"center",padding:"4px 0px",cursor:"pointer"}}/>
-        <button style={calBtnSt} onClick={()=>setShow(show==="e"?null:"e")}>📅</button>
+      <div style={{position:"relative"}}>
+        <input ref={eRef} value={e} readOnly placeholder="월.일" onClick={()=>setShow(show==="e"?null:"e")}
+          className="ds-input" style={{width:56,textAlign:"center",padding:"4px 0px",cursor:"pointer"}}/>
         {show==="e"&&<DsMiniCal anchorRect={getRect(eRef)} onChange={v=>upd(s,v)} onClose={()=>setShow(null)}/>}
       </div>
     </div>
@@ -2350,12 +2336,13 @@ function RecordScreen({app,setApp,initDisaster}){
   }
   if(sel==="disseed")return<DisSeedScreen app={app} onBack={()=>setSel(null)}/>;
   if(sel==="disaster")return<DisasterScreen app={app} setApp={setApp} onBack={()=>setSel(null)}/>;
+  const isBye=app.currentUser?.crop==="벼";
   const menuItems=[
-    {key:"production",icon:"📋",color:"#dcfce7",label:"생산관리지도부",           desc:"월별 활동 내역 작성 및 발송"},
-    {key:"sowing",    icon:"🌱",color:"#dbeafe",label:"파종현황",                 desc:"파종(이앙) 실적 입력 및 저장"},
-    {key:"disseed",   icon:"🧪",color:"#fef9c3",label:"소독 · 육묘 관리",         desc:"침종(소독) 및 육묘 관리 입력"},
-    {key:"harvest",   icon:"🌾",color:"#fef3c7",label:"수확현황",                 desc:"수확 실적 입력 및 저장"},
     {key:"disaster",  icon:"🚨",color:"#fee2e2",label:"재해 및 병해충 발생 상황",  desc:"재해·병해충 발생 상황 보고"},
+    {key:"production",icon:"📋",color:"#dcfce7",label:"생산관리지도부",           desc:"월별 활동 내역 작성 및 발송"},
+    ...(isBye?[{key:"disseed",icon:"🧪",color:"#fef9c3",label:"소독 · 육묘 관리",desc:"침종(소독) 및 육묘 관리 입력"}]:[]),
+    {key:"sowing",    icon:"🌱",color:"#dbeafe",label:"파종현황",                 desc:"파종(이앙) 실적 입력 및 저장"},
+    {key:"harvest",   icon:"🌾",color:"#fef3c7",label:"수확현황",                 desc:"수확 실적 입력 및 저장"},
   ];
   return(
     <div style={{minHeight:"100vh",background:"#f9fafb",paddingBottom:90}}>
@@ -2932,7 +2919,7 @@ function AdminDisSeedScreen({app,onBack}){
         <div style={{background:"white",borderRadius:16,border:"1px solid #e5e7eb",padding:16,marginBottom:16,boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
           <p style={{fontWeight:900,color:"#111827",fontSize:14,margin:"0 0 12px"}}>🌿 작물별 모아보기</p>
           <div style={{display:"flex",gap:10}}>
-            {Object.keys(CROP_GROUPS).map(g=>(
+            {["벼"].map(g=>(
               <button key={g} onClick={()=>setSel(sel===g?null:g)}
                 style={{flex:1,padding:"12px 0",borderRadius:12,border:"2px solid",borderColor:sel===g?"#16a34a":"#d1fae5",background:sel===g?"#16a34a":"white",color:sel===g?"white":"#16a34a",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"all .2s"}}>
                 {cropIcon(g)} {g}
@@ -2984,11 +2971,11 @@ function AdminScreen({app,setApp}){
 
   const menuItems=[
     {key:"users",      icon:"👥",color:"#fef9c3",label:"사용자 관리",              desc:"가입 사용자 목록 확인",           active:true},
-    {key:"production", icon:"📋",color:"#dcfce7",label:"생산관리지도부",           desc:"작물별 제출 현황 확인",            active:true},
-    {key:"sowing",     icon:"🌱",color:"#dbeafe",label:"파종현황",                 desc:"작물별 파종 현황 확인",            active:true},
-    {key:"disseed",    icon:"🧪",color:"#fef9c3",label:"소독 · 육묘 관리",         desc:"작물별 소독·육묘 현황 확인",      active:true},
-    {key:"harvest",    icon:"🌾",color:"#fef3c7",label:"수확현황",                 desc:"작물별 수확 현황 확인",            active:true},
     {key:"disaster",   icon:"🚨",color:"#fee2e2",label:"재해 및 병해충 발생 상황", desc:"작물별 재해·병해충 발생 현황",     active:true},
+    {key:"production", icon:"📋",color:"#dcfce7",label:"생산관리지도부",           desc:"작물별 제출 현황 확인",            active:true},
+    {key:"disseed",    icon:"🧪",color:"#fef9c3",label:"소독 · 육묘 관리",         desc:"작물별 소독·육묘 현황 확인",      active:true},
+    {key:"sowing",     icon:"🌱",color:"#dbeafe",label:"파종현황",                 desc:"작물별 파종 현황 확인",            active:true},
+    {key:"harvest",    icon:"🌾",color:"#fef3c7",label:"수확현황",                 desc:"작물별 수확 현황 확인",            active:true},
   ];
   return(
     <div style={{minHeight:"100vh",background:"#f9fafb",paddingBottom:90}}>
@@ -3099,7 +3086,12 @@ function App(){
   };
   const onLogout=()=>{
     localStorage.removeItem("stay_login");
-    setApp(p=>{const n={...p,currentUser:null};sv(n);return n;});
+    // users 정보는 유지하고 currentUser만 null로 저장
+    setApp(p=>{
+      const n={...p,currentUser:null};
+      sv(n);
+      return n;
+    });
     navStack.current=[];
     history.replaceState({idx:0},"","");
     setScreen("login");setNoticeOpen(false);setDisasterOpen(false);
@@ -3120,7 +3112,6 @@ function App(){
     <div style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",background:"white",position:"relative"}}>
       <NoticeScreen app={app} setApp={setApp} noticeModalCloser={noticeModalCloser} onBack={()=>{pushNav({screen:"app",tab,noticeOpen:true,disasterOpen});setNoticeOpen(false);}}/>
       <NavBar active={tab} setActive={t=>{goTab(t);setNoticeOpen(false);}} isAdmin={isAdmin}/>
-      {backBtn}
     </div>
   );
   const goDisaster=()=>{
@@ -3135,7 +3126,6 @@ function App(){
       {tab==="my"       &&<MyScreen       app={app} setApp={setApp} onLogout={onLogout}/>}
       {tab==="admin"    &&isAdmin&&<AdminScreen app={app} setApp={setApp}/>}
       <NavBar active={tab} setActive={goTab} isAdmin={isAdmin}/>
-      {backBtn}
     </div>
   );
 }
@@ -3524,15 +3514,25 @@ function updateHavTotalPeriod() {
     if(actHidD2) actHidD2.value=d2;
   });
 }
+function updateSowFarmPeriod2(row){
+  // 새 구조: .sow-farm-date1, .sow-farm-date2 value로 처리
+  if(!row) return;
+  const d1=row.querySelector('.sow-farm-date1')?.value;
+  const d2=row.querySelector('.sow-farm-date2')?.value;
+  const disp=row.querySelector('.sow-farm-period-display');
+  if(disp) disp.textContent=(d1&&d2)?formatPeriod(d1,d2):'';
+}
 function updateSowFarmPeriod(input) {
   const row = input.closest('.sow-farm-row');
-  const d1 = row.querySelector('.sow-farm-date1').value, d2 = row.querySelector('.sow-farm-date2').value;
-  row.querySelector('.sow-farm-period-display').textContent = (d1&&d2) ? formatPeriod(d1,d2) : '';
+  updateSowFarmPeriod2(row);
 }
 function updateHavFarmPeriod(input) {
   const row = input.closest('.hav-farm-row');
-  const d1 = row.querySelector('.hav-farm-date1').value, d2 = row.querySelector('.hav-farm-date2').value;
-  row.querySelector('.hav-farm-period-display').textContent = (d1&&d2) ? formatPeriod(d1,d2) : '';
+  if(!row) return;
+  const d1=row.querySelector('.hav-farm-date1')?.value;
+  const d2=row.querySelector('.hav-farm-date2')?.value;
+  const disp=row.querySelector('.hav-farm-period-display');
+  if(disp) disp.textContent=(d1&&d2)?formatPeriod(d1,d2):'';
 }
 
 /* 파종 게이지 */
@@ -3623,14 +3623,20 @@ function onHavAreaChange(input){const c=input.closest('.card');const a=parseFloa
 
 /* 파종 농가 행 */
 function _sowFarmRowHTML(f,idx){
-  const period=(f.date1&&f.date2)?formatPeriod(f.date1,f.date2):'';
+  const fmtDisp=v=>v?v.replace(/^(\d{4})-(\d{2})-(\d{2})$/,'$2.$3'):'';
   return `<div class="sow-farm-row" style="display:flex;align-items:center;gap:6px;background:#f0f7ff;border:1.5px solid #bbdefb;border-radius:10px;padding:8px 10px;margin-bottom:6px;">
     <div style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:#1565c0;color:white;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;">${idx+1}</div>
-    <input type="text" class="sow-farm-name" placeholder="농가명" value="${f.name||''}" onchange="updateSowTotalPeriod()" style="width:80px;flex-shrink:0;border:1.5px solid #90caf9;border-radius:7px;padding:6px 7px;font-size:12px;font-family:inherit;background:white;box-sizing:border-box;">
-    <input type="date" class="sow-farm-date1" value="${f.date1||''}" onchange="updateSowFarmPeriod(this);updateSowTotalPeriod()" style="flex:1;min-width:0;border:1.5px solid #90caf9;border-radius:7px;padding:6px 4px;font-size:11px;font-family:inherit;background:white;box-sizing:border-box;">
+    <input type="text" class="sow-farm-name" placeholder="농가명" value="${f.name||''}" onchange="updateSowTotalPeriod()" style="width:68px;flex-shrink:0;border:1.5px solid #90caf9;border-radius:7px;padding:6px 7px;font-size:12px;font-family:inherit;background:white;box-sizing:border-box;">
+    <div style="position:relative;flex:1;min-width:0;" onclick="const d=this.querySelector('input[type=date]');d&&(d.showPicker?d.showPicker():d.click())">
+      <input type="text" class="sow-farm-date1-txt" placeholder="월.일" readonly value="${fmtDisp(f.date1)}" onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()" style="width:100%;box-sizing:border-box;border:1.5px solid #90caf9;border-radius:7px;padding:6px 4px;font-size:12px;font-family:inherit;background:white;text-align:center;cursor:pointer;pointer-events:none;">
+      <input type="date" class="sow-farm-date1" value="${f.date1||''}" onchange="(function(el){const v=el.value;const txt=el.previousElementSibling;if(txt)txt.value=v?v.replace(/^(\\d{4})-(\\d{2})-(\\d{2})$/,'$2.$3'):'';updateSowFarmPeriod2(el.closest('.sow-farm-row'));updateSowTotalPeriod();})(this)" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
+    </div>
     <span style="flex-shrink:0;font-size:12px;color:#888;font-weight:700;">~</span>
-    <input type="date" class="sow-farm-date2" value="${f.date2||''}" onchange="updateSowFarmPeriod(this);updateSowTotalPeriod()" style="flex:1;min-width:0;border:1.5px solid #90caf9;border-radius:7px;padding:6px 4px;font-size:11px;font-family:inherit;background:white;box-sizing:border-box;">
-    <div class="sow-farm-period-display" style="display:none;">${period}</div>
+    <div style="position:relative;flex:1;min-width:0;" onclick="const d=this.querySelector('input[type=date]');d&&(d.showPicker?d.showPicker():d.click())">
+      <input type="text" class="sow-farm-date2-txt" placeholder="월.일" readonly value="${fmtDisp(f.date2)}" onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()" style="width:100%;box-sizing:border-box;border:1.5px solid #90caf9;border-radius:7px;padding:6px 4px;font-size:12px;font-family:inherit;background:white;text-align:center;cursor:pointer;pointer-events:none;">
+      <input type="date" class="sow-farm-date2" value="${f.date2||''}" onchange="(function(el){const v=el.value;const txt=el.previousElementSibling;if(txt)txt.value=v?v.replace(/^(\\d{4})-(\\d{2})-(\\d{2})$/,'$2.$3'):'';updateSowFarmPeriod2(el.closest('.sow-farm-row'));updateSowTotalPeriod();})(this)" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
+    </div>
+    <div class="sow-farm-period-display" style="display:none;"></div>
     <button onclick="removeSowFarmRow(this)" style="flex-shrink:0;background:none;border:none;color:#e57373;font-size:15px;cursor:pointer;padding:0;line-height:1;">✕</button>
   </div>`;
 }
@@ -3646,14 +3652,20 @@ function addSowFarmRow(btnOrEl){
 
 /* 수확 농가 행 */
 function _havFarmRowHTML(f,idx){
-  const period=(f.date1&&f.date2)?formatPeriod(f.date1,f.date2):'';
+  const fmtDisp=v=>v?v.replace(/^(\d{4})-(\d{2})-(\d{2})$/,'$2.$3'):'';
   return `<div class="hav-farm-row" style="display:flex;align-items:center;gap:6px;background:#fff3e0;border:1.5px solid #ffcc80;border-radius:10px;padding:8px 10px;margin-bottom:6px;">
     <div style="flex-shrink:0;width:20px;height:20px;border-radius:50%;background:#e65100;color:white;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center;">${idx+1}</div>
-    <input type="text" class="hav-farm-name" placeholder="농가명" value="${f.name||''}" onchange="updateHavTotalPeriod()" style="width:80px;flex-shrink:0;border:1.5px solid #ffb74d;border-radius:7px;padding:6px 7px;font-size:12px;font-family:inherit;background:white;box-sizing:border-box;">
-    <input type="date" class="hav-farm-date1" value="${f.date1||''}" onchange="updateHavFarmPeriod(this);updateHavTotalPeriod()" style="flex:1;min-width:0;border:1.5px solid #ffb74d;border-radius:7px;padding:6px 4px;font-size:11px;font-family:inherit;background:white;box-sizing:border-box;">
+    <input type="text" class="hav-farm-name" placeholder="농가명" value="${f.name||''}" onchange="updateHavTotalPeriod()" style="width:68px;flex-shrink:0;border:1.5px solid #ffb74d;border-radius:7px;padding:6px 7px;font-size:12px;font-family:inherit;background:white;box-sizing:border-box;">
+    <div style="position:relative;flex:1;min-width:0;" onclick="const d=this.querySelector('input[type=date]');d&&(d.showPicker?d.showPicker():d.click())">
+      <input type="text" class="hav-farm-date1-txt" placeholder="월.일" readonly value="${fmtDisp(f.date1)}" style="width:100%;box-sizing:border-box;border:1.5px solid #ffb74d;border-radius:7px;padding:6px 4px;font-size:12px;font-family:inherit;background:white;text-align:center;cursor:pointer;pointer-events:none;">
+      <input type="date" class="hav-farm-date1" value="${f.date1||''}" onchange="(function(el){const v=el.value;const txt=el.previousElementSibling;if(txt)txt.value=v?v.replace(/^(\\d{4})-(\\d{2})-(\\d{2})$/,'$2.$3'):'';updateHavTotalPeriod();})(this)" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
+    </div>
     <span style="flex-shrink:0;font-size:12px;color:#888;font-weight:700;">~</span>
-    <input type="date" class="hav-farm-date2" value="${f.date2||''}" onchange="updateHavFarmPeriod(this);updateHavTotalPeriod()" style="flex:1;min-width:0;border:1.5px solid #ffb74d;border-radius:7px;padding:6px 4px;font-size:11px;font-family:inherit;background:white;box-sizing:border-box;">
-    <div class="hav-farm-period-display" style="display:none;">${period}</div>
+    <div style="position:relative;flex:1;min-width:0;" onclick="const d=this.querySelector('input[type=date]');d&&(d.showPicker?d.showPicker():d.click())">
+      <input type="text" class="hav-farm-date2-txt" placeholder="월.일" readonly value="${fmtDisp(f.date2)}" style="width:100%;box-sizing:border-box;border:1.5px solid #ffb74d;border-radius:7px;padding:6px 4px;font-size:12px;font-family:inherit;background:white;text-align:center;cursor:pointer;pointer-events:none;">
+      <input type="date" class="hav-farm-date2" value="${f.date2||''}" onchange="(function(el){const v=el.value;const txt=el.previousElementSibling;if(txt)txt.value=v?v.replace(/^(\\d{4})-(\\d{2})-(\\d{2})$/,'$2.$3'):'';updateHavTotalPeriod();})(this)" style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
+    </div>
+    <div class="hav-farm-period-display" style="display:none;"></div>
     <button onclick="removeHavFarmRow(this)" style="flex-shrink:0;background:none;border:none;color:#e57373;font-size:15px;cursor:pointer;padding:0;line-height:1;">✕</button>
   </div>`;
 }
@@ -3712,32 +3724,28 @@ function _makeSowingCardHTML(d, user, idx){
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
       <label style="font-size:11px;color:#666;font-weight:700;white-space:nowrap;">🌱 단지 파종(이앙) 예정일</label>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+        <div style="display:flex;align-items:center;gap:2px;position:relative;" onclick="const d=this.querySelector('input[type=date]');d&&(d.showPicker?d.showPicker():d.click())">
           <input type="text" class="sow-plan-d1-text" placeholder="월.일" readonly
             value="${(defaultPlanM1&&defaultPlanD1)?String(defaultPlanM1).padStart(2,'0')+'.'+String(defaultPlanD1).padStart(2,'0'):''}"
-            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;pointer-events:none;"
             onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
           <input type="date" class="sow-plan-date1"
             value="${(defaultPlanM1&&defaultPlanD1)?'2026-'+String(defaultPlanM1).padStart(2,'0')+'-'+String(defaultPlanD1).padStart(2,'0'):''}"
             onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.sow-card');const txt=card.querySelector('.sow-plan-d1-text');if(txt)txt.value=p[1]+'.'+p[2];const m1=card.querySelector('.sow-plan-m1');const d1=card.querySelector('.sow-plan-d1');if(m1)m1.value=parseInt(p[1]);if(d1)d1.value=parseInt(p[2]);})(this)"
             style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
-          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
-            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
           <input type="hidden" class="sow-plan-m1" value="${defaultPlanM1}">
           <input type="hidden" class="sow-plan-d1" value="${defaultPlanD1}">
         </div>
         <span style="font-size:12px;color:#666;margin:0 2px;">~</span>
-        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+        <div style="display:flex;align-items:center;gap:2px;position:relative;" onclick="const d=this.querySelector('input[type=date]');d&&(d.showPicker?d.showPicker():d.click())">
           <input type="text" class="sow-plan-d2-text" placeholder="월.일" readonly
             value="${(defaultPlanM2&&defaultPlanD2)?String(defaultPlanM2).padStart(2,'0')+'.'+String(defaultPlanD2).padStart(2,'0'):''}"
-            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;pointer-events:none;"
             onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
           <input type="date" class="sow-plan-date2"
             value="${(defaultPlanM2&&defaultPlanD2)?'2026-'+String(defaultPlanM2).padStart(2,'0')+'-'+String(defaultPlanD2).padStart(2,'0'):''}"
             onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.sow-card');const txt=card.querySelector('.sow-plan-d2-text');if(txt)txt.value=p[1]+'.'+p[2];const m2=card.querySelector('.sow-plan-m2');const d2=card.querySelector('.sow-plan-d2');if(m2)m2.value=parseInt(p[1]);if(d2)d2.value=parseInt(p[2]);})(this)"
             style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
-          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
-            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
           <input type="hidden" class="sow-plan-m2" value="${defaultPlanM2}">
           <input type="hidden" class="sow-plan-d2" value="${defaultPlanD2}">
         </div>
@@ -3746,32 +3754,28 @@ function _makeSowingCardHTML(d, user, idx){
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
       <label style="font-size:11px;color:#666;font-weight:700;white-space:nowrap;">🌱 단지 파종(이앙) 실시일</label>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+        <div style="display:flex;align-items:center;gap:2px;position:relative;" onclick="const d=this.querySelector('input[type=date]');d&&(d.showPicker?d.showPicker():d.click())">
           <input type="text" class="sow-act-d1-text" placeholder="월.일" readonly
             value="${(defaultActM1&&defaultActD1)?String(defaultActM1).padStart(2,'0')+'.'+String(defaultActD1).padStart(2,'0'):''}"
-            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;pointer-events:none;"
             onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
           <input type="date" class="sow-act-date1"
             value="${(defaultActM1&&defaultActD1)?'2026-'+String(defaultActM1).padStart(2,'0')+'-'+String(defaultActD1).padStart(2,'0'):''}"
             onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.sow-card');const txt=card.querySelector('.sow-act-d1-text');if(txt)txt.value=p[1]+'.'+p[2];const m1=card.querySelector('.sow-act-m1');const d1=card.querySelector('.sow-act-d1');if(m1)m1.value=parseInt(p[1]);if(d1)d1.value=parseInt(p[2]);})(this)"
             style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
-          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
-            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
           <input type="hidden" class="sow-act-m1" value="${defaultActM1}">
           <input type="hidden" class="sow-act-d1" value="${defaultActD1}">
         </div>
         <span style="font-size:12px;color:#666;margin:0 2px;">~</span>
-        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+        <div style="display:flex;align-items:center;gap:2px;position:relative;" onclick="const d=this.querySelector('input[type=date]');d&&(d.showPicker?d.showPicker():d.click())">
           <input type="text" class="sow-act-d2-text" placeholder="월.일" readonly
             value="${(defaultActM2&&defaultActD2)?String(defaultActM2).padStart(2,'0')+'.'+String(defaultActD2).padStart(2,'0'):''}"
-            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;pointer-events:none;"
             onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
           <input type="date" class="sow-act-date2"
             value="${(defaultActM2&&defaultActD2)?'2026-'+String(defaultActM2).padStart(2,'0')+'-'+String(defaultActD2).padStart(2,'0'):''}"
             onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.sow-card');const txt=card.querySelector('.sow-act-d2-text');if(txt)txt.value=p[1]+'.'+p[2];const m2=card.querySelector('.sow-act-m2');const d2=card.querySelector('.sow-act-d2');if(m2)m2.value=parseInt(p[1]);if(d2)d2.value=parseInt(p[2]);})(this)"
             style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
-          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
-            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
           <input type="hidden" class="sow-act-m2" value="${defaultActM2}">
           <input type="hidden" class="sow-act-d2" value="${defaultActD2}">
         </div>
@@ -3909,32 +3913,28 @@ function _makeHarvestCardHTML(d, user, idx){
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
       <label style="font-size:11px;color:#666;font-weight:700;white-space:nowrap;">🌾 단지 수확 예정일</label>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+        <div style="display:flex;align-items:center;gap:2px;position:relative;" onclick="const d=this.querySelector('input[type=date]');d&&(d.showPicker?d.showPicker():d.click())">
           <input type="text" class="hav-plan-d1-text" placeholder="월.일" readonly
             value="${(defaultPlanM1&&defaultPlanD1)?String(defaultPlanM1).padStart(2,'0')+'.'+String(defaultPlanD1).padStart(2,'0'):''}"
-            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;pointer-events:none;"
             onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
           <input type="date" class="hav-plan-date1"
             value="${(defaultPlanM1&&defaultPlanD1)?'2026-'+String(defaultPlanM1).padStart(2,'0')+'-'+String(defaultPlanD1).padStart(2,'0'):''}"
             onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.hav-card');const txt=card.querySelector('.hav-plan-d1-text');if(txt)txt.value=p[1]+'.'+p[2];const m1=card.querySelector('.hav-plan-m1');const d1=card.querySelector('.hav-plan-d1');if(m1)m1.value=parseInt(p[1]);if(d1)d1.value=parseInt(p[2]);})(this)"
             style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
-          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
-            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
           <input type="hidden" class="hav-plan-m1" value="${defaultPlanM1}">
           <input type="hidden" class="hav-plan-d1" value="${defaultPlanD1}">
         </div>
         <span style="font-size:12px;color:#666;margin:0 2px;">~</span>
-        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+        <div style="display:flex;align-items:center;gap:2px;position:relative;" onclick="const d=this.querySelector('input[type=date]');d&&(d.showPicker?d.showPicker():d.click())">
           <input type="text" class="hav-plan-d2-text" placeholder="월.일" readonly
             value="${(defaultPlanM2&&defaultPlanD2)?String(defaultPlanM2).padStart(2,'0')+'.'+String(defaultPlanD2).padStart(2,'0'):''}"
-            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;pointer-events:none;"
             onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
           <input type="date" class="hav-plan-date2"
             value="${(defaultPlanM2&&defaultPlanD2)?'2026-'+String(defaultPlanM2).padStart(2,'0')+'-'+String(defaultPlanD2).padStart(2,'0'):''}"
             onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.hav-card');const txt=card.querySelector('.hav-plan-d2-text');if(txt)txt.value=p[1]+'.'+p[2];const m2=card.querySelector('.hav-plan-m2');const d2=card.querySelector('.hav-plan-d2');if(m2)m2.value=parseInt(p[1]);if(d2)d2.value=parseInt(p[2]);})(this)"
             style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
-          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
-            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
           <input type="hidden" class="hav-plan-m2" value="${defaultPlanM2}">
           <input type="hidden" class="hav-plan-d2" value="${defaultPlanD2}">
         </div>
@@ -3943,32 +3943,28 @@ function _makeHarvestCardHTML(d, user, idx){
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
       <label style="font-size:11px;color:#666;font-weight:700;white-space:nowrap;">🌾 단지 수확 실시일</label>
       <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+        <div style="display:flex;align-items:center;gap:2px;position:relative;" onclick="const d=this.querySelector('input[type=date]');d&&(d.showPicker?d.showPicker():d.click())">
           <input type="text" class="hav-act-d1-text" placeholder="월.일" readonly
             value="${(defaultActM1&&defaultActD1)?String(defaultActM1).padStart(2,'0')+'.'+String(defaultActD1).padStart(2,'0'):''}"
-            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;pointer-events:none;"
             onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
           <input type="date" class="hav-act-date1"
             value="${(defaultActM1&&defaultActD1)?'2026-'+String(defaultActM1).padStart(2,'0')+'-'+String(defaultActD1).padStart(2,'0'):''}"
             onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.hav-card');const txt=card.querySelector('.hav-act-d1-text');if(txt)txt.value=p[1]+'.'+p[2];const m1=card.querySelector('.hav-act-m1');const d1=card.querySelector('.hav-act-d1');if(m1)m1.value=parseInt(p[1]);if(d1)d1.value=parseInt(p[2]);})(this)"
             style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
-          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
-            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
           <input type="hidden" class="hav-act-m1" value="${defaultActM1}">
           <input type="hidden" class="hav-act-d1" value="${defaultActD1}">
         </div>
         <span style="font-size:12px;color:#666;margin:0 2px;">~</span>
-        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+        <div style="display:flex;align-items:center;gap:2px;position:relative;" onclick="const d=this.querySelector('input[type=date]');d&&(d.showPicker?d.showPicker():d.click())">
           <input type="text" class="hav-act-d2-text" placeholder="월.일" readonly
             value="${(defaultActM2&&defaultActD2)?String(defaultActM2).padStart(2,'0')+'.'+String(defaultActD2).padStart(2,'0'):''}"
-            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;pointer-events:none;"
             onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
           <input type="date" class="hav-act-date2"
             value="${(defaultActM2&&defaultActD2)?'2026-'+String(defaultActM2).padStart(2,'0')+'-'+String(defaultActD2).padStart(2,'0'):''}"
             onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.hav-card');const txt=card.querySelector('.hav-act-d2-text');if(txt)txt.value=p[1]+'.'+p[2];const m2=card.querySelector('.hav-act-m2');const d2=card.querySelector('.hav-act-d2');if(m2)m2.value=parseInt(p[1]);if(d2)d2.value=parseInt(p[2]);})(this)"
             style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
-          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
-            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
           <input type="hidden" class="hav-act-m2" value="${defaultActM2}">
           <input type="hidden" class="hav-act-d2" value="${defaultActD2}">
         </div>
