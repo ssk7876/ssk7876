@@ -62,8 +62,12 @@ html,body,#root{height:100%;margin:0;padding:0;background:#f3f4f6;}
 .ds-field-row{margin-bottom:14px;}
 .ds-field-row>label{font-size:13px;font-weight:700;color:#374151;display:block;margin-bottom:6px;}
 .ds-field-row-inline{display:flex;align-items:center;gap:10px;margin-bottom:14px;min-height:38px;}
-.ds-field-label-inline{font-size:13px;font-weight:700;color:#374151;flex:0 0 auto;width:160px;line-height:1.4;}
+.ds-field-label-inline{font-size:13px;font-weight:700;color:#166534;flex:0 0 auto;width:170px;line-height:1.4;}
 .ds-field-content-inline{flex:1;min-width:0;}
+/* 소독육묘 통일 레이아웃 */
+.ds-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;min-height:36px;}
+.ds-label{font-size:13px;font-weight:700;color:#166534;flex:0 0 170px;line-height:1.4;padding-top:8px;}
+.ds-content{flex:1;min-width:0;}
 .ds-check-group{display:flex;gap:14px;flex-wrap:wrap;margin-top:4px;}
 .ds-check-label{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;font-size:14px;}
 .ds-check-box{width:22px;height:22px;border-radius:5px;border:2px solid #9ca3af;display:flex;align-items:center;justify-content:center;background:#fff;flex-shrink:0;transition:.15s;}
@@ -77,7 +81,7 @@ html,body,#root{height:100%;margin:0;padding:0;background:#f3f4f6;}
 </head>
 <body><div id="root"></div>
 <script type="text/babel">
-const {useState,useRef,useEffect}=React;
+const {useState,useRef,useEffect,useCallback}=React;
 
 /* ── storage ── */
 const SK="seedfarm_v8";
@@ -99,7 +103,7 @@ const INIT={
     {id:3,date:"2025-06-15",title:"포장관리 점검",     location:"전북 고창군"},
   ],
 };
-const ACTS=["단지 회원 교육 및 유의사항 안내","원종 배부","종자소독","육묘관리","이앙(모내기)","포장관리-이형주, 이품종, 잡초 제거","콤바인 청소","건조기 청소","수확작업","건조작업","수매 준비","기타"];
+const ACTS=["단지 회원 교육 및 유의사항 안내","원종 배부","포장관리(이형주, 잡초 제거 등)","관개수 관리 지도","병해충 방제 지도","비료 관리 지도","콤바인/건조기점검 또는 수확/탈곡 지도","공동 수확/건조 작업","수매 준비 작업","기상재해 피해 점검","포장검사 실시","생육상태 점검","기타"];
 
 /* ── icons ── */
 const IcoHome=()=><svg viewBox="0 0 24 24" fill="currentColor" style={{width:24,height:24}}><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>;
@@ -431,7 +435,7 @@ function NoticeModal({notice,isAdmin,onSave,onDelete,onClose}){
 }
 
 /* ════════════════════ NOTICE SCREEN ════════════════════ */
-function NoticeScreen({app,setApp,onBack}){
+function NoticeScreen({app,setApp,onBack,noticeModalCloser}){
   const u=app.currentUser;const isAdmin=u?.role==="admin";
   const[page,setPage]=useState(0);const[modal,setModal]=useState(null);
   const PAGE_SIZE=10;
@@ -439,6 +443,21 @@ function NoticeScreen({app,setApp,onBack}){
   const visible=(app.notices||[]).filter(n=>{if(!n.targets||n.targets.includes("전체"))return true;if(!userGroup)return true;return n.targets.includes(userGroup);});
   const totalPages=Math.max(1,Math.ceil(visible.length/PAGE_SIZE));
   const paged=visible.slice(page*PAGE_SIZE,page*PAGE_SIZE+PAGE_SIZE);
+
+  const closeModal=()=>setModal(null);
+
+  // 모달 열릴 때 App의 뒤로가기 핸들러에 닫기 함수 등록
+  const openModal=(m)=>{
+    setModal(m);
+    if(noticeModalCloser) noticeModalCloser.current=closeModal;
+    history.pushState({noticeModal:true},"","");
+  };
+
+  // 모달 닫힐 때 ref 해제
+  useEffect(()=>{
+    if(!modal&&noticeModalCloser) noticeModalCloser.current=null;
+  },[modal]);
+
   const saveNotice=notice=>{
     const exists=(app.notices||[]).some(n=>n.id===notice.id);
     const updated=exists?(app.notices||[]).map(n=>n.id===notice.id?notice:n):[notice,...(app.notices||[])];
@@ -448,7 +467,7 @@ function NoticeScreen({app,setApp,onBack}){
   return(
     <div style={{minHeight:"100vh",background:"#f9fafb"}}>
       {modal&&<NoticeModal notice={modal==="new"?null:modal} isAdmin={isAdmin} onSave={saveNotice}
-        onDelete={modal!=="new"?()=>deleteNotice(modal.id):undefined} onClose={()=>setModal(null)}/>}
+        onDelete={modal!=="new"?()=>deleteNotice(modal.id):undefined} onClose={closeModal}/>}
       <div style={{background:"#16a34a",padding:"16px",display:"flex",alignItems:"center"}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:22,cursor:"pointer",marginRight:8,lineHeight:1}}>←</button>
         <h1 style={{color:"white",fontWeight:900,fontSize:18,flex:1,textAlign:"center",margin:0}}>📢 공지사항</h1>
@@ -457,7 +476,7 @@ function NoticeScreen({app,setApp,onBack}){
         {paged.length===0
           ?<p style={{textAlign:"center",color:"#9ca3af",marginTop:64,fontSize:14}}>공지사항이 없습니다.</p>
           :paged.map(n=>(
-            <div key={n.id} onClick={()=>setModal(n)}
+            <div key={n.id} onClick={()=>openModal(n)}
               style={{...card,padding:16,marginBottom:10,cursor:"pointer"}}>
               <div style={{display:"flex",alignItems:"flex-start",gap:6,marginBottom:4,flexWrap:"wrap"}}>
                 {n.urgent&&<span style={{background:"#ef4444",color:"white",fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:700,flexShrink:0}}>긴급</span>}
@@ -483,7 +502,7 @@ function NoticeScreen({app,setApp,onBack}){
       </div>
       {isAdmin&&(
         <div style={{position:"fixed",bottom:72,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,padding:"0 16px",boxSizing:"border-box"}}>
-          <button onClick={()=>setModal("new")}
+          <button onClick={()=>openModal("new")}
             style={{width:"100%",background:"#16a34a",color:"white",border:"none",borderRadius:20,padding:"18px 0",fontSize:17,fontWeight:900,cursor:"pointer",boxShadow:"0 4px 16px rgba(22,163,74,.35)"}}>
             ✏️ 작성하기
           </button>
@@ -521,7 +540,7 @@ function HomeScreen({app,setApp,onNoticeMore,onDisasterLink}){
           <p style={{fontSize:13,color:"#6b7280",margin:0}}>{n.summary}</p>
         </div>
       ))}
-      <h2 style={{fontSize:15,fontWeight:900,color:"#1f2937",marginTop:8,marginBottom:12}}>📅 오늘의 주요 일정</h2>
+      <h2 style={{fontSize:15,fontWeight:900,color:"#1f2937",marginTop:8,marginBottom:12}}>📅 주요 일정</h2>
       {app.schedules.map(s=>(
         <div key={s.id} style={{...card,borderLeft:"4px solid #16a34a",padding:16,marginBottom:10}}>
           <p style={{fontWeight:700,color:"#111827",margin:"0 0 4px",fontSize:15}}>{s.title}</p>
@@ -820,18 +839,29 @@ function DatePicker({value,onChange}){
   const btnRef=useRef();
   const today=new Date();
   const[cy,setCy]=useState(today.getFullYear());const[cm,setCm]=useState(today.getMonth());
+
+  // 표시용: YYYY-MM-DD → MM.DD, 또는 그냥 입력값
+  const displayVal=value
+    ?value.replace(/^(\d{4})-(\d{2})-(\d{2})$/,"$2.$3")
+    :"";
+
+  // 입력 처리: MM.DD 형식 숫자 입력
+  const handleInput=(e)=>{
+    const raw=e.target.value.replace(/[^\d.]/g,"");
+    onChange(raw);
+  };
+
   const openCal=()=>{ setOpen(true); };
   const fd=new Date(cy,cm,1).getDay();const dim=new Date(cy,cm+1,0).getDate();
   const cells=[];for(let i=0;i<fd;i++)cells.push(null);for(let d=1;d<=dim;d++)cells.push(d);
   return(
     <div style={{position:"relative",width:"100%",overflow:"visible"}}>
-      {/* Input + icon strictly within 근무일자 column width */}
       <div style={{display:"flex",gap:1,alignItems:"center",width:"100%"}}>
-        <input value={value||""} onChange={e=>onChange(e.target.value)} placeholder="날짜"
-          style={{minWidth:0,flex:1,width:0,border:"1px solid #d1d5db",borderRadius:4,padding:"3px 2px",fontSize:"0.6rem",outline:"none"}}
+        <input value={displayVal} onChange={handleInput} placeholder="월.일"
+          style={{minWidth:0,flex:1,width:0,border:"1px solid #d1d5db",borderRadius:4,padding:"4px 2px",fontSize:"0.72rem",outline:"none",textAlign:"center"}}
           onFocus={e=>e.target.style.borderColor="#16a34a"} onBlur={e=>e.target.style.borderColor="#d1d5db"}/>
         <button ref={btnRef} onClick={openCal}
-          style={{flexShrink:0,width:17,height:19,minWidth:17,border:"1px solid #d1d5db",borderRadius:4,background:"white",cursor:"pointer",fontSize:"0.55rem",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>📅</button>
+          style={{flexShrink:0,width:18,height:20,minWidth:18,border:"1px solid #d1d5db",borderRadius:4,background:"white",cursor:"pointer",fontSize:"0.55rem",display:"flex",alignItems:"center",justifyContent:"center",padding:0}}>📅</button>
       </div>
       {open&&(
         <>
@@ -845,7 +875,11 @@ function DatePicker({value,onChange}){
             <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:2,textAlign:"center",fontSize:12}}>
               {["일","월","화","수","목","금","토"].map(d=><div key={d} style={{fontWeight:700,color:"#9ca3af",padding:"4px 0"}}>{d}</div>)}
               {cells.map((d,i)=>d
-                ?<button key={i} onClick={()=>{onChange(`${cy}-${String(cm+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`);setOpen(false);}}
+                ?<button key={i} onClick={()=>{
+                    // MM.DD 형식으로 저장
+                    onChange(`${String(cm+1).padStart(2,"0")}.${String(d).padStart(2,"0")}`);
+                    setOpen(false);
+                  }}
                     style={{background:"none",border:"none",padding:"4px 0px",cursor:"pointer",borderRadius:4,fontSize:12}}
                     onMouseOver={e=>e.target.style.background="#dcfce7"} onMouseOut={e=>e.target.style.background="none"}>{d}</button>
                 :<div key={i}/>
@@ -962,7 +996,7 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
   };
   const doDel=()=>{const next={...app};delete next.records[rk];setApp(next);sv(next);setRows(Array.from({length:TOTAL},emptyRow));setSent(false);setDel(false);};
   const INFO=[["단지명",u.danjiName],["작물명",u.crop],["성명",u.chairName],["근무일수",`${filled}일`]];
-  const COL="25% 27% 48%";
+  const COL="25% 22% 53%";
 
   const openDownloadWindow=()=>{
     const infoRows=INFO.map(([k,v])=>`<tr><td style="border:1px solid #555;padding:8px 16px;font-weight:700;background:#f0fdf4;width:144px;white-space:nowrap;font-size:22px">${k}</td><td style="border:1px solid #555;padding:8px 16px;font-size:22px">${v}</td></tr>`).join("");
@@ -1161,14 +1195,20 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
             <div key={i} style={{display:"grid",gridTemplateColumns:COL,borderBottom:"1px solid #f3f4f6",alignItems:"center",background:sent?"#fafafa":"white",overflow:"visible"}}>
               <div style={{padding:"6px 4px",borderRight:"1px solid #f3f4f6"}}>
                 {sent
-                  ?<span style={{fontSize:"0.7rem",color:"#374151",padding:"3px 4px",display:"block",textAlign:"center"}}>{row.date||""}</span>
+                  ?<span style={{fontSize:"0.72rem",color:"#374151",padding:"3px 4px",display:"block",textAlign:"center"}}>{(row.date||"").replace(/^(\d{4})-(\d{2})-(\d{2})$/,"$2.$3")||row.date||""}</span>
                   :<DatePicker value={row.date} onChange={v=>updRow(i,"date",v)}/>
                 }
               </div>
               <div style={{padding:"6px 4px",borderRight:"1px solid #f3f4f6",fontSize:"0.72rem"}}>
                 {sent
-                  ?<span style={{fontSize:"0.7rem",color:"#374151",padding:"3px 4px",display:"block",textAlign:"center"}}>{row.time||""}</span>
-                  :<TimePicker value={row.time} onChange={v=>updRow(i,"time",v)}/>
+                  ?<span style={{fontSize:"0.82rem",color:"#374151",padding:"3px 4px",display:"block",textAlign:"center"}}>{row.time||""}</span>
+                  :<select value={row.time||""} onChange={e=>updRow(i,"time",e.target.value)}
+                      style={{width:"100%",border:"1px solid #d1d5db",borderRadius:6,padding:"4px 2px",fontSize:"0.72rem",fontFamily:"inherit",background:"white",textAlign:"center"}}>
+                      <option value="">-</option>
+                      <option value="3시간">3시간</option>
+                      <option value="2시간">2시간</option>
+                      <option value="1시간">1시간</option>
+                    </select>
                 }
               </div>
               <div style={{padding:"6px 4px"}}>
@@ -1528,19 +1568,21 @@ function DsDateRange({value,onChange}){
   const sRef=useRef(); const eRef=useRef();
   const getRect=ref=>ref.current?ref.current.getBoundingClientRect():null;
   const upd=(ns,ne)=>{setS(ns);setE(ne);onChange({start:ns,end:ne});};
-  // value prop이 외부에서 바뀌면 내부 state 동기화
   React.useEffect(()=>{setS(value?.start||"");setE(value?.end||"");},[value?.start,value?.end]);
+  const calBtnSt={flexShrink:0,width:26,height:28,border:"1.5px solid #9ca3af",borderRadius:7,background:"white",cursor:"pointer",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",padding:0};
   return(
-    <div style={{display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-      <div style={{position:"relative"}}>
-        <input ref={sRef} value={s} readOnly onClick={()=>setShow("s")}
+    <div style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}>
+      <div style={{position:"relative",display:"flex",alignItems:"center",gap:2}}>
+        <input ref={sRef} value={s} readOnly onClick={()=>setShow(show==="s"?null:"s")}
           placeholder="##.##" className="ds-input" style={{width:56,textAlign:"center",padding:"4px 0px",cursor:"pointer"}}/>
+        <button style={calBtnSt} onClick={()=>setShow(show==="s"?null:"s")}>📅</button>
         {show==="s"&&<DsMiniCal anchorRect={getRect(sRef)} onChange={v=>upd(v,e)} onClose={()=>setShow(null)}/>}
       </div>
       <span style={{fontWeight:600}}>~</span>
-      <div style={{position:"relative"}}>
-        <input ref={eRef} value={e} readOnly onClick={()=>setShow("e")}
+      <div style={{position:"relative",display:"flex",alignItems:"center",gap:2}}>
+        <input ref={eRef} value={e} readOnly onClick={()=>setShow(show==="e"?null:"e")}
           placeholder="##.##" className="ds-input" style={{width:56,textAlign:"center",padding:"4px 0px",cursor:"pointer"}}/>
+        <button style={calBtnSt} onClick={()=>setShow(show==="e"?null:"e")}>📅</button>
         {show==="e"&&<DsMiniCal anchorRect={getRect(eRef)} onChange={v=>upd(s,v)} onClose={()=>setShow(null)}/>}
       </div>
     </div>
@@ -1581,16 +1623,25 @@ function DsFR({label,children,inline=false}){
 function DisinfectionTab({userId}){
   const SK_DIS="seedfarm_dis_v1";
   const load=()=>{try{const d=JSON.parse(localStorage.getItem(SK_DIS)||"{}");return d[userId]||{};}catch{return{};}};
-  const[form,setForm]=useState({hotDate:{start:"",end:""},hotTemp:"",hotCompliance:"",cleanState:"",soakDate:{start:"",end:""},extraDrugUse:"",insecticide:"",fungicide:"",drugTemp:"",otherNote:"",hotPhotos:[],photos:[],...load()});
+  const[form,setForm]=useState({hotDate:{start:"",end:""},hotTemp:"60",hotCompliance:"",cleanState:"",soakDate:{start:"",end:""},extraDrugUse:"",insecticide:"사용안함",fungicide:"",drugTemp:"30",otherNote:"",hotPhotos:[],photos:[],...load()});
   const[saved,setSaved]=useState(false);
-  const set=(k,v)=>setForm(f=>({...f,[k]:v}));
+  const set=(k,v)=>{
+    setForm(f=>{
+      const next={...f,[k]:v};
+      // 변경 즉시 저장
+      try{const d=JSON.parse(localStorage.getItem(SK_DIS)||"{}");d[userId]=next;localStorage.setItem(SK_DIS,JSON.stringify(d));}catch{}
+      return next;
+    });
+    setSaved(false);
+  };
 
+  const saveNow=(next)=>{try{const d=JSON.parse(localStorage.getItem(SK_DIS)||"{}");d[userId]=next;localStorage.setItem(SK_DIS,JSON.stringify(d));}catch{}};
   const addPhotos=(e)=>{
     const files=Array.from(e.target.files);
     files.forEach(file=>{
       const reader=new FileReader();
       reader.onload=ev=>{
-        setForm(p=>({...p,photos:[...(p.photos||[]),ev.target.result]}));
+        setForm(p=>{const next={...p,photos:[...(p.photos||[]),ev.target.result]};saveNow(next);return next;});
         setSaved(false);
       };
       reader.readAsDataURL(file);
@@ -1598,7 +1649,7 @@ function DisinfectionTab({userId}){
     e.target.value="";
   };
   const removePhoto=(idx)=>{
-    setForm(p=>({...p,photos:(p.photos||[]).filter((_,i)=>i!==idx)}));
+    setForm(p=>{const next={...p,photos:(p.photos||[]).filter((_,i)=>i!==idx)};saveNow(next);return next;});
     setSaved(false);
   };
   const addHotPhotos=(e)=>{
@@ -1606,7 +1657,7 @@ function DisinfectionTab({userId}){
     files.forEach(file=>{
       const reader=new FileReader();
       reader.onload=ev=>{
-        setForm(p=>({...p,hotPhotos:[...(p.hotPhotos||[]),ev.target.result]}));
+        setForm(p=>{const next={...p,hotPhotos:[...(p.hotPhotos||[]),ev.target.result]};saveNow(next);return next;});
         setSaved(false);
       };
       reader.readAsDataURL(file);
@@ -1614,7 +1665,7 @@ function DisinfectionTab({userId}){
     e.target.value="";
   };
   const removeHotPhoto=(idx)=>{
-    setForm(p=>({...p,hotPhotos:(p.hotPhotos||[]).filter((_,i)=>i!==idx)}));
+    setForm(p=>{const next={...p,hotPhotos:(p.hotPhotos||[]).filter((_,i)=>i!==idx)};saveNow(next);return next;});
     setSaved(false);
   };
   const doSave=()=>{
@@ -1627,7 +1678,11 @@ function DisinfectionTab({userId}){
       <DsFR label="온탕소독일" inline><DsDateRange value={form.hotDate} onChange={v=>set("hotDate",v)}/></DsFR>
       <DsFR label="온탕소독 물온도(℃)" inline>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <input type="number" min="0" max="100" value={form.hotTemp} onChange={e=>set("hotTemp",e.target.value)} className="ds-input" style={{width:80}}/>
+          <select value={form.hotTemp||"60"} onChange={e=>set("hotTemp",e.target.value)} className="ds-input" style={{width:56,padding:"4px 0px",textAlign:"center"}}>
+            <option value="60">60</option>
+            <option value="61">61</option>
+            <option value="62">62</option>
+          </select>
           <span style={{fontSize:14}}>℃</span>
         </div>
       </DsFR>
@@ -1635,81 +1690,111 @@ function DisinfectionTab({userId}){
         <DsCheckGroup options={["준수함","미준수"]} value={form.hotCompliance} onChange={v=>set("hotCompliance",v)}/>
       </DsFR>
       {/* 온탕소독 사진 */}
-      <div className="ds-field-row">
-        <label>📷 관련 사진</label>
-        {(form.hotPhotos||[]).length>0&&(
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
-            {(form.hotPhotos||[]).map((src,i)=>(
-              <div key={i} style={{position:"relative",aspectRatio:"1",borderRadius:10,overflow:"hidden",border:"1.5px solid #9ca3af"}}>
-                <img src={src} alt={`사진${i+1}`} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                <button onClick={()=>removeHotPhoto(i)}
-                  style={{position:"absolute",top:4,right:4,width:22,height:22,borderRadius:"50%",background:"rgba(220,38,38,.85)",border:"none",color:"white",fontSize:13,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>×</button>
-              </div>
-            ))}
-          </div>
-        )}
-        <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",boxSizing:"border-box",padding:"11px",border:"2px dashed #9ca3af",borderRadius:10,background:"#f9fafb",color:"#374151",fontSize:13,fontWeight:700,cursor:"pointer"}}>
-          <span style={{fontSize:18}}>📷</span> 사진 추가
-          <input type="file" accept="image/*" multiple onChange={addHotPhotos} style={{display:"none"}}/>
-        </label>
+      <div className="ds-row">
+        <span className="ds-label">📷 관련 사진</span>
+        <div className="ds-content">
+          {(form.hotPhotos||[]).length>0&&(
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
+              {(form.hotPhotos||[]).map((src,i)=>(
+                <div key={i} style={{position:"relative",aspectRatio:"1",borderRadius:10,overflow:"hidden",border:"1.5px solid #9ca3af"}}>
+                  <img src={src} alt={`사진${i+1}`} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  <button onClick={()=>removeHotPhoto(i)}
+                    style={{position:"absolute",top:4,right:4,width:22,height:22,borderRadius:"50%",background:"rgba(220,38,38,.85)",border:"none",color:"white",fontSize:13,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",boxSizing:"border-box",padding:"11px",border:"2px dashed #9ca3af",borderRadius:10,background:"#f9fafb",color:"#374151",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+            <span style={{fontSize:18}}>📷</span> 사진 추가
+            <input type="file" accept="image/*" multiple onChange={addHotPhotos} style={{display:"none"}}/>
+          </label>
+        </div>
       </div>
       <p style={{fontSize:13,fontWeight:900,color:"#166534",background:"#dcfce7",margin:"14px 0 10px",padding:"8px 12px",borderRadius:8,borderLeft:"4px solid #16a34a",display:"block"}}>※ 소독</p>
       <DsFR label="침종일" inline><DsDateRange value={form.soakDate} onChange={v=>set("soakDate",v)}/></DsFR>
-      <DsFR label="종자원 소독약제 외 다른 약제 사용 여부" inline>
-        <DsCheckGroup options={["사용함","사용안함"]} value={form.extraDrugUse} onChange={v=>set("extraDrugUse",v)}/>
-      </DsFR>
-      <div className="ds-field-row">
-        <label>추가소독 여부</label>
-        <div style={{marginLeft:8,display:"flex",flexDirection:"column",gap:8}}>
+      <div className="ds-row" style={{alignItems:"flex-start"}}>
+        <span className="ds-label" style={{paddingTop:6}}>소독약제</span>
+        <div className="ds-content" style={{display:"flex",flexDirection:"column",gap:8}}>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontSize:14,fontWeight:600,width:50}}>살충제 :</span>
-            <input value={form.insecticide} onChange={e=>set("insecticide",e.target.value)} className="ds-input" style={{flex:1}} placeholder="살충제명"/>
+            <span style={{fontSize:13,fontWeight:600,color:"#374151",width:46,flexShrink:0}}>살균제</span>
+            <div style={{flex:1}}>
+              {(["키맨","미래빛듀오","스포탁","사용안함",""].includes(form.fungicide||""))
+                ?<select value={["키맨","미래빛듀오","스포탁"].includes(form.fungicide)?form.fungicide:""} onChange={e=>set("fungicide",e.target.value)} className="ds-input" style={{width:"100%"}}>
+                    <option value="">선택하세요</option>
+                    <option value="키맨">키맨</option>
+                    <option value="미래빛듀오">미래빛듀오</option>
+                    <option value="스포탁">스포탁</option>
+                    <option value="기타">기타</option>
+                  </select>
+                :<input value={form.fungicide} onChange={e=>set("fungicide",e.target.value)} className="ds-input" style={{width:"100%"}} placeholder="직접 입력" autoFocus/>
+              }
+            </div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:8}}>
-            <span style={{fontSize:14,fontWeight:600,width:50}}>살균제 :</span>
-            <input value={form.fungicide} onChange={e=>set("fungicide",e.target.value)} className="ds-input" style={{flex:1}} placeholder="살균제명"/>
+            <span style={{fontSize:13,fontWeight:600,color:"#374151",width:46,flexShrink:0}}>살충제</span>
+            <div style={{flex:1}}>
+              {["사용안함","스미치온"].includes(form.insecticide)||form.insecticide===""
+                ?<select value={form.insecticide} onChange={e=>set("insecticide",e.target.value)} className="ds-input" style={{width:"100%"}}>
+                    <option value="">선택하세요</option>
+                    <option value="사용안함">사용안함</option>
+                    <option value="스미치온">스미치온</option>
+                    <option value="기타">기타</option>
+                  </select>
+                :<input value={form.insecticide} onChange={e=>set("insecticide",e.target.value)} className="ds-input" style={{width:"100%"}} placeholder="직접 입력" autoFocus/>
+              }
+            </div>
           </div>
         </div>
       </div>
       <DsFR label="약제소독 물온도(℃)" inline>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <input type="number" min="0" max="100" value={form.drugTemp} onChange={e=>set("drugTemp",e.target.value)} className="ds-input" style={{width:80}}/>
+          <select value={form.drugTemp||"30"} onChange={e=>set("drugTemp",e.target.value)} className="ds-input" style={{width:56,padding:"4px 0px",textAlign:"center"}}>
+            <option value="29">29</option>
+            <option value="30">30</option>
+            <option value="31">31</option>
+            <option value="32">32</option>
+          </select>
           <span style={{fontSize:14}}>℃</span>
         </div>
       </DsFR>
-      <div className="ds-field-row">
-        <label>기타 특이사항</label>
-        <textarea value={form.otherNote} onChange={e=>set("otherNote",e.target.value)} maxLength={100} rows={4}
-          style={{width:"100%",border:"2px solid #9ca3af",borderRadius:12,padding:"10px 12px",fontSize:14,fontFamily:"inherit",outline:"none",resize:"vertical",boxSizing:"border-box"}}
-          placeholder="100자 이내"/>
-        <p style={{fontSize:11,color:"#9ca3af",textAlign:"right",margin:"2px 0 0"}}>{(form.otherNote||"").length}/100</p>
+      <div className="ds-row" style={{alignItems:"flex-start"}}>
+        <span className="ds-label">기타 특이사항</span>
+        <div className="ds-content">
+          <textarea value={form.otherNote} onChange={e=>set("otherNote",e.target.value)} maxLength={100} rows={3}
+            style={{width:"100%",border:"2px solid #9ca3af",borderRadius:10,padding:"8px 10px",fontSize:14,fontFamily:"inherit",outline:"none",resize:"vertical",boxSizing:"border-box"}}
+            placeholder="100자 이내"/>
+          <p style={{fontSize:11,color:"#9ca3af",textAlign:"right",margin:"2px 0 0"}}>{(form.otherNote||"").length}/100</p>
+        </div>
       </div>
       {/* 관련 사진 */}
-      <div className="ds-field-row">
-        <label>📷 관련 사진</label>
-        {(form.photos||[]).length>0&&(
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
-            {(form.photos||[]).map((src,i)=>(
-              <div key={i} style={{position:"relative",aspectRatio:"1",borderRadius:10,overflow:"hidden",border:"1.5px solid #9ca3af"}}>
-                <img src={src} alt={`사진${i+1}`} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                <button onClick={()=>removePhoto(i)}
-                  style={{position:"absolute",top:4,right:4,width:22,height:22,borderRadius:"50%",background:"rgba(220,38,38,.85)",border:"none",color:"white",fontSize:13,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>×</button>
-              </div>
-            ))}
-          </div>
-        )}
-        <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",boxSizing:"border-box",padding:"11px",border:"2px dashed #9ca3af",borderRadius:10,background:"#f9fafb",color:"#374151",fontSize:13,fontWeight:700,cursor:"pointer"}}>
-          <span style={{fontSize:18}}>📷</span> 사진 추가
-          <input type="file" accept="image/*" multiple onChange={addPhotos} style={{display:"none"}}/>
-        </label>
+      <div className="ds-row">
+        <span className="ds-label">📷 관련 사진</span>
+        <div className="ds-content">
+          {(form.photos||[]).length>0&&(
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
+              {(form.photos||[]).map((src,i)=>(
+                <div key={i} style={{position:"relative",aspectRatio:"1",borderRadius:10,overflow:"hidden",border:"1.5px solid #9ca3af"}}>
+                  <img src={src} alt={`사진${i+1}`} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  <button onClick={()=>removePhoto(i)}
+                    style={{position:"absolute",top:4,right:4,width:22,height:22,borderRadius:"50%",background:"rgba(220,38,38,.85)",border:"none",color:"white",fontSize:13,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",boxSizing:"border-box",padding:"11px",border:"2px dashed #9ca3af",borderRadius:10,background:"#f9fafb",color:"#374151",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+            <span style={{fontSize:18}}>📷</span> 사진 추가
+            <input type="file" accept="image/*" multiple onChange={addPhotos} style={{display:"none"}}/>
+          </label>
+        </div>
       </div>
     </div>
   );
 }
 
 /* 육묘 탭 */
-function SeedlingTab({userId}){
+function SeedlingTab({userId,onReset}){
   const SK_SL="seedfarm_sl_v1";
+  const SK_DIS="seedfarm_dis_v1";
   const load=()=>{try{const d=JSON.parse(localStorage.getItem(SK_SL)||"{}");return d[userId]||{};}catch{return{};}};
   const[form,setForm]=useState({sowDate:{start:"",end:""},bedPeriod:{start:"",end:""},height:"",emerge:"",trays:"",rootMat:"",fusa:"",fusaSub:"",fusaCount:"",sep:"",note:"",photos:[],...load()});
   const[saved,setSaved]=useState(false);
@@ -1718,6 +1803,15 @@ function SeedlingTab({userId}){
   const doSave=()=>{
     try{const d=JSON.parse(localStorage.getItem(SK_SL)||"{}");d[userId]=form;localStorage.setItem(SK_SL,JSON.stringify(d));}catch{}
     setSaved(true);setTimeout(()=>setSaved(false),2000);
+  };
+  const doReset=()=>{
+    if(!confirm("이 농가의 소독·육묘 내용을 모두 초기화하시겠습니까?"))return;
+    const blankSL={sowDate:{start:"",end:""},bedPeriod:{start:"",end:""},height:"",emerge:"",trays:"",rootMat:"",fusa:"",fusaSub:"",fusaCount:"",sep:"",note:"",photos:[]};
+    const blankDIS={hotDate:{start:"",end:""},hotTemp:"60",hotCompliance:"",cleanState:"",soakDate:{start:"",end:""},extraDrugUse:"",insecticide:"사용안함",fungicide:"",drugTemp:"30",otherNote:"",hotPhotos:[],photos:[]};
+    try{const d=JSON.parse(localStorage.getItem(SK_SL)||"{}");d[userId]=blankSL;localStorage.setItem(SK_SL,JSON.stringify(d));}catch{}
+    try{const d=JSON.parse(localStorage.getItem(SK_DIS)||"{}");d[userId]=blankDIS;localStorage.setItem(SK_DIS,JSON.stringify(d));}catch{}
+    if(onReset) onReset();
+    else setForm(blankSL);
   };
   const addPhotos=(e)=>{
     const files=Array.from(e.target.files);
@@ -1741,69 +1835,72 @@ function SeedlingTab({userId}){
       <DsFR label="못자리 기간" inline><DsDateRange value={form.bedPeriod} onChange={v=>set("bedPeriod",v)}/></DsFR>
       <DsFR label="20kg 파종 시 모판 수" inline>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <input type="number" min="1" max="200" value={form.trays} onChange={e=>set("trays",e.target.value)} className="ds-input" style={{width:70}}/>
+          <input type="number" min="1" max="200" value={form.trays} onChange={e=>set("trays",e.target.value)} className="ds-input" style={{width:56,padding:"4px 0px",textAlign:"center"}}/>
           <span style={{fontSize:13,color:"#374151"}}>판</span>
-        </div>
-      </DsFR>
-      <DsFR label="모판당 파종량" inline>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontSize:22,fontWeight:800,color:"#15803d"}}>{sowAmt||"—"}</span>
-          <span style={{fontSize:14}}>(g)</span>
+          {sowAmt&&<span style={{fontSize:13,color:"#15803d",fontWeight:700}}>({sowAmt}g/판)</span>}
         </div>
       </DsFR>
       <DsFR label="뿌리매트 형성 정도" inline>
         <DsCheckGroup options={["양호","보통","불량"]} value={form.rootMat} onChange={v=>set("rootMat",v)}/>
       </DsFR>
-      <div className="ds-field-row-inline" style={{alignItems:"flex-start"}}>
-        <label className="ds-field-label-inline" style={{paddingTop:3,fontSize:13,width:180}}>키다리병 발생 및 제거가능 여부</label>
-        <div className="ds-field-content-inline">
+      <DsFR label="키다리병 발생 및 제거가능 여부" inline>
+        <div>
           <DsCheckGroup options={["발생","미발생"]} value={form.fusa} onChange={v=>set("fusa",v)}/>
           {form.fusa==="발생"&&(
-            <div style={{marginTop:8,paddingLeft:4}}>
+            <div style={{marginTop:8}}>
               <DsCheckGroup options={["제거가능","제거불가능"]} value={form.fusaSub} onChange={v=>set("fusaSub",v)}/>
               <div style={{display:"flex",alignItems:"center",gap:6,marginTop:10,flexWrap:"wrap"}}>
                 <span style={{fontSize:13,fontWeight:600,color:"#374151",whiteSpace:"nowrap"}}>전체 발병주수 : 약</span>
                 <input type="number" min="0" value={form.fusaCount} onChange={e=>set("fusaCount",e.target.value)}
-                  className="ds-input" style={{width:80}}/>
+                  className="ds-input" style={{width:80,padding:"4px 0px",textAlign:"center"}}/>
                 <span style={{fontSize:13,color:"#374151"}}>개</span>
               </div>
             </div>
           )}
         </div>
-      </div>
+      </DsFR>
       <DsFR label="채종포용 구분작업 여부" inline>
         <DsCheckGroup options={["구분작업 실시","구분작업 미실시"]} value={form.sep} onChange={v=>set("sep",v)}/>
       </DsFR>
-      <div className="ds-field-row">
-        <label>기타 특이사항(지도사항)</label>
-        <textarea value={form.note} onChange={e=>set("note",e.target.value)} maxLength={100} rows={4}
-          style={{width:"100%",border:"2px solid #9ca3af",borderRadius:12,padding:"10px 12px",fontSize:14,fontFamily:"inherit",outline:"none",resize:"vertical",boxSizing:"border-box"}}
-          placeholder="100자 이내"/>
-        <p style={{fontSize:11,color:"#9ca3af",textAlign:"right",margin:"2px 0 0"}}>{(form.note||"").length}/100</p>
+      <div className="ds-row" style={{alignItems:"flex-start"}}>
+        <span className="ds-label">기타 특이사항(지도사항)</span>
+        <div className="ds-content">
+          <textarea value={form.note} onChange={e=>set("note",e.target.value)} maxLength={100} rows={3}
+            style={{width:"100%",border:"2px solid #9ca3af",borderRadius:10,padding:"8px 10px",fontSize:14,fontFamily:"inherit",outline:"none",resize:"vertical",boxSizing:"border-box"}}
+            placeholder="100자 이내"/>
+          <p style={{fontSize:11,color:"#9ca3af",textAlign:"right",margin:"2px 0 0"}}>{(form.note||"").length}/100</p>
+        </div>
       </div>
-      {/* 관련 사진 */}
-      <div className="ds-field-row">
-        <label>📷 관련 사진</label>
-        {(form.photos||[]).length>0&&(
-          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
-            {(form.photos||[]).map((src,i)=>(
-              <div key={i} style={{position:"relative",aspectRatio:"1",borderRadius:10,overflow:"hidden",border:"1.5px solid #9ca3af"}}>
-                <img src={src} alt={`사진${i+1}`} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                <button onClick={()=>removePhoto(i)}
-                  style={{position:"absolute",top:4,right:4,width:22,height:22,borderRadius:"50%",background:"rgba(220,38,38,.85)",border:"none",color:"white",fontSize:13,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>×</button>
-              </div>
-            ))}
-          </div>
-        )}
-        <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",boxSizing:"border-box",padding:"11px",border:"2px dashed #9ca3af",borderRadius:10,background:"#f9fafb",color:"#374151",fontSize:13,fontWeight:700,cursor:"pointer"}}>
-          <span style={{fontSize:18}}>📷</span> 사진 추가
-          <input type="file" accept="image/*" multiple onChange={addPhotos} style={{display:"none"}}/>
-        </label>
+      <div className="ds-row">
+        <span className="ds-label">📷 관련 사진</span>
+        <div className="ds-content">
+          {(form.photos||[]).length>0&&(
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:10}}>
+              {(form.photos||[]).map((src,i)=>(
+                <div key={i} style={{position:"relative",aspectRatio:"1",borderRadius:10,overflow:"hidden",border:"1.5px solid #9ca3af"}}>
+                  <img src={src} alt={`사진${i+1}`} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  <button onClick={()=>removePhoto(i)}
+                    style={{position:"absolute",top:4,right:4,width:22,height:22,borderRadius:"50%",background:"rgba(220,38,38,.85)",border:"none",color:"white",fontSize:13,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1}}>×</button>
+                </div>
+              ))}
+            </div>
+          )}
+          <label style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,width:"100%",boxSizing:"border-box",padding:"11px",border:"2px dashed #9ca3af",borderRadius:10,background:"#f9fafb",color:"#374151",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+            <span style={{fontSize:18}}>📷</span> 사진 추가
+            <input type="file" accept="image/*" multiple onChange={addPhotos} style={{display:"none"}}/>
+          </label>
+        </div>
       </div>
-      <button onClick={doSave}
-        style={{width:"100%",background:"#16a34a",color:"white",border:"none",borderRadius:12,padding:"14px",fontSize:15,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 12px rgba(22,163,74,.3)"}}>
-        {saved?"✅ 저장됨":"💾 저장"}
-      </button>
+      <div style={{display:"flex",gap:10}}>
+        <button onClick={doSave}
+          style={{flex:2,background:"#16a34a",color:"white",border:"none",borderRadius:12,padding:"14px",fontSize:15,fontWeight:700,cursor:"pointer",boxShadow:"0 4px 12px rgba(22,163,74,.3)"}}>
+          {saved?"✅ 저장됨":"💾 저장"}
+        </button>
+        <button onClick={doReset}
+          style={{flex:1,background:"white",color:"#6b7280",border:"1.5px solid #d1d5db",borderRadius:12,padding:"14px",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+          초기화
+        </button>
+      </div>
     </div>
   );
 }
@@ -1813,10 +1910,52 @@ function DisSeedScreen({app,onBack}){
   const u=app.currentUser;
   const curY=new Date().getFullYear();
   const[selYear,setSelYear]=useState(Math.max(curY,2026));
+  const FARM_SK=`seedfarm_farms_${u?.id}`;
 
-  const changeYear=(y)=>{setSelYear(y);};
+  // 농가 목록 로드 (연도별)
+  const loadFarms=(y)=>{
+    try{
+      const d=JSON.parse(localStorage.getItem(FARM_SK)||"{}");
+      return d[y]||["농가1","농가2","농가3","농가4","농가5"];
+    }catch{return["농가1","농가2","농가3","농가4","농가5"];}
+  };
+  const saveFarms=(y,list)=>{
+    try{
+      const d=JSON.parse(localStorage.getItem(FARM_SK)||"{}");
+      d[y]=list;
+      localStorage.setItem(FARM_SK,JSON.stringify(d));
+    }catch{}
+  };
 
-  const tabKey=`${u?.id||"unknown"}_${selYear}`;
+  const[farms,setFarms]=useState(()=>loadFarms(Math.max(curY,2026)));
+  const[selFarm,setSelFarm]=useState(0); // 선택된 농가 인덱스
+
+  const changeYear=(y)=>{
+    setSelYear(y);
+    const f=loadFarms(y);
+    setFarms(f);
+    setSelFarm(0);
+  };
+
+  const addFarm=()=>{
+    const next=[...farms,`농가${farms.length+1}`];
+    setFarms(next);
+    saveFarms(selYear,next);
+    setSelFarm(next.length-1);
+  };
+
+  const removeFarm=(idx)=>{
+    if(!confirm(`"${farms[idx]}"을(를) 삭제하시겠습니까?`))return;
+    const next=farms.filter((_,i)=>i!==idx);
+    const renamed=next.length===1?["농가1"]:next;
+    setFarms(renamed);
+    saveFarms(selYear,renamed);
+    setSelFarm(0);
+  };
+
+  const[resetKey,setResetKey]=useState(0);
+  const tabKey=`${u?.id||"unknown"}_${selYear}_farm${selFarm}_r${resetKey}`;
+
   return(
     <div style={{minHeight:"100vh",background:"#f9fafb",paddingBottom:100}}>
       <div style={{background:"#16a34a",padding:"16px",display:"flex",alignItems:"center"}}>
@@ -1845,10 +1984,33 @@ function DisSeedScreen({app,onBack}){
           </div>
         </div>
 
+        {/* 농가 선택 */}
+        <div style={{background:"white",borderRadius:14,border:"1px solid #e5e7eb",padding:"12px 14px",marginBottom:12,boxShadow:"0 1px 4px rgba(0,0,0,.06)"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+            <span style={{fontSize:13,fontWeight:900,color:"#374151"}}>🏠 농가 선택</span>
+            <button onClick={addFarm}
+              style={{background:"#16a34a",color:"white",border:"none",borderRadius:8,padding:"5px 12px",fontSize:12,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+              + 농가추가
+            </button>
+          </div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+            {farms.map((f,i)=>(
+              <div key={i} style={{display:"flex",alignItems:"center",gap:2}}>
+                <button onClick={()=>setSelFarm(i)}
+                  style={{padding:"7px 14px",borderRadius:20,border:"2px solid",borderColor:selFarm===i?"#16a34a":"#d1d5db",background:selFarm===i?"#16a34a":"white",color:selFarm===i?"white":"#374151",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
+                  {f}
+                </button>
+                {i>0&&<button onClick={()=>removeFarm(i)}
+                  style={{width:18,height:18,borderRadius:"50%",background:"#ef4444",border:"none",color:"white",fontSize:11,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1,marginLeft:-6,marginTop:-12,flexShrink:0}}>×</button>}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* 침종(소독) 카드 */}
         <DisinfectionTab key={`dis_${tabKey}`} userId={tabKey}/>
         {/* 육묘 카드 */}
-        <SeedlingTab key={`seed_${tabKey}`} userId={tabKey}/>
+        <SeedlingTab key={`seed_${tabKey}`} userId={tabKey} onReset={()=>setResetKey(k=>k+1)}/>
       </div>
     </div>
   );
@@ -2152,12 +2314,42 @@ function RecordScreen({app,setApp,initDisaster}){
   const[sel,setSel]=useState(initDisaster?"disaster":null);
   const[selMonth,setSelMonth]=useState(today.getMonth()+1);
   const[selYear,setSelYear]=useState(Math.max(today.getFullYear(),2026));
-  if(sel==="production")return<MonthForm month={selMonth} year={selYear}
-    app={app} setApp={setApp} onBack={()=>setSel(null)}
-    selMonth={selMonth} setSelMonth={setSelMonth}
-    selYear={selYear} setSelYear={setSelYear}/>;
-  if(sel==="disaster")return<DisasterScreen app={app} setApp={setApp} onBack={()=>setSel(null)}/>;
+
+  // production 뒤로가기 클로저 ref
+  const productionBackRef=useRef(null);
+
+  // sel 변경 시 history 관리
+  const goSel=(key)=>{
+    history.pushState({recordSel:key},"","");
+    setSel(key);
+  };
+
+  useEffect(()=>{
+    if(!sel) return;
+    const onPop=()=>{
+      // productionBackRef에 등록된 함수 있으면 실행 (← 버튼과 동일)
+      if(productionBackRef.current){
+        productionBackRef.current();
+        productionBackRef.current=null;
+      } else {
+        setSel(null);
+        setSelMonth(null);
+      }
+      history.pushState({recordSel:null},"","");
+    };
+    window.addEventListener("popstate",onPop,true);
+    return()=>window.removeEventListener("popstate",onPop,true);
+  },[sel]);
+  if(sel==="production"){
+    const handleBack=()=>{setSel(null);};
+    productionBackRef.current=handleBack;
+    return<MonthForm month={today.getMonth()+1} year={Math.max(today.getFullYear(),2026)}
+      app={app} setApp={setApp} onBack={handleBack}
+      selMonth={today.getMonth()+1} setSelMonth={setSelMonth}
+      selYear={Math.max(today.getFullYear(),2026)} setSelYear={setSelYear}/>;
+  }
   if(sel==="disseed")return<DisSeedScreen app={app} onBack={()=>setSel(null)}/>;
+  if(sel==="disaster")return<DisasterScreen app={app} setApp={setApp} onBack={()=>setSel(null)}/>;
   const menuItems=[
     {key:"production",icon:"📋",color:"#dcfce7",label:"생산관리지도부",           desc:"월별 활동 내역 작성 및 발송"},
     {key:"sowing",    icon:"🌱",color:"#dbeafe",label:"파종현황",                 desc:"파종(이앙) 실적 입력 및 저장"},
@@ -2174,7 +2366,7 @@ function RecordScreen({app,setApp,initDisaster}){
         <button key={item.key} onClick={()=>{
           if(item.key==="sowing") openShModal("sowing",app.currentUser);
           else if(item.key==="harvest") openShModal("harvest",app.currentUser);
-          else setSel(item.key);
+          else goSel(item.key);
         }}
           style={{width:"100%",display:"flex",alignItems:"center",gap:16,background:"white",padding:"18px 20px",borderBottom:"1px solid #f3f4f6",borderLeft:"none",borderRight:"none",borderTop:"none",cursor:"pointer",textAlign:"left"}}>
           <div style={{width:52,height:52,background:item.color,borderRadius:16,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><span style={{fontSize:26}}>{item.icon}</span></div>
@@ -2437,9 +2629,9 @@ function AdminDisasterScreen({app,onBack}){
         <h1 style={{color:"white",fontWeight:900,fontSize:18,margin:0}}>🚨 재해 및 병해충 발생 상황</h1>
       </div>
       <div style={{padding:"16px"}}>
-        {/* 생산연도 */}
+        {/* 연도 */}
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
-          <label style={{fontSize:13,fontWeight:700,color:"#374151"}}>📅 생산연도</label>
+          <label style={{fontSize:13,fontWeight:700,color:"#374151"}}>📅 연도</label>
           <select value={selYear} onChange={e=>{setSelYear(Number(e.target.value));setSel(null);}} style={yearSt}>
             {Array.from({length:5},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}년</option>)}
           </select>
@@ -2658,7 +2850,7 @@ function AdminHarvestScreen({app,onBack}){
               {/* 단지별 표 */}
               <div style={{background:"white",borderRadius:14,overflow:"hidden",boxShadow:"0 1px 6px rgba(0,0,0,.06)"}}>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1.1fr 0.7fr 1.2fr",background:"#16a34a",color:"white",fontWeight:900,fontSize:11,textAlign:"center"}}>
-                  {["품종명","단지명","수확면적/총면적(ha)","수확률","수확(예정)일"].map((h,i,arr)=>(
+                  {["품종명","단지명","수확면적/총면적(ha)","수확률","수확 예정일"].map((h,i,arr)=>(
                     <div key={h} style={{padding:"10px 4px",borderRight:i<arr.length-1?"1px solid #15803d":"none",lineHeight:1.3}}>{h}</div>
                   ))}
                 </div>
@@ -2834,6 +3026,8 @@ function App(){
   const[tab,setTab]=useState("home");
   const[noticeOpen,setNoticeOpen]=useState(false);
   const[disasterOpen,setDisasterOpen]=useState(false);
+  const[canGoBack,setCanGoBack]=useState(false);
+
   // 로그인 상태 유지 시 currentUser 자동 설정
   useState(()=>{
     const stayId=localStorage.getItem("stay_login");
@@ -2843,26 +3037,105 @@ function App(){
       if(u&&!saved.currentUser) setApp(p=>({...p,currentUser:u}));
     }
   });
+
+  // ── 뒤로가기 처리 ──
+  // 앱 내비게이션 스택: {screen, tab, noticeOpen, disasterOpen}
+  const navStack=useRef([]);
+  const noticeModalCloser=useRef(null); // NoticeScreen이 등록하는 모달 닫기 함수
+
+  const pushNav=useCallback((state)=>{
+    navStack.current.push(state);
+    history.pushState({idx:navStack.current.length},"","");
+  },[]);
+
+  // tab 변경 래퍼
+  const goTab=(t)=>{
+    pushNav({screen:"app",tab,noticeOpen,disasterOpen});
+    setTab(t);
+    if(t!=="record") setDisasterOpen(false);
+  };
+
+  // popstate: 뒤로가기 발생 시
+  useEffect(()=>{
+    history.replaceState({idx:0},"","");
+    const onPop=(e)=>{
+      // 공지 모달이 열려있으면 모달만 닫기
+      if(noticeModalCloser.current){
+        noticeModalCloser.current();
+        noticeModalCloser.current=null;
+        history.pushState({idx:navStack.current.length},"","");
+        return;
+      }
+      const prev=navStack.current.pop();
+      if(prev){
+        if(prev.screen==="login"||prev.screen==="signup") setScreen(prev.screen);
+        else{
+          setScreen("app");
+          setTab(prev.tab||"home");
+          setNoticeOpen(!!prev.noticeOpen);
+          setDisasterOpen(!!prev.disasterOpen);
+        }
+        if(navStack.current.length>0) history.pushState({idx:navStack.current.length},"","");
+        else history.replaceState({idx:0},"","");
+      } else {
+        history.pushState({idx:0},"","");
+      }
+    };
+    window.addEventListener("popstate",onPop);
+    return()=>window.removeEventListener("popstate",onPop);
+  },[]);
+
+  // screen 전환 시 스택에 이전 상태 push
+  const changeScreen=(s)=>{
+    pushNav({screen,tab,noticeOpen,disasterOpen});
+    setScreen(s);
+  };
+
   useEffect(()=>{if(app.currentUser)sv(app);},[app]);
-  const onLogin=()=>{setScreen("app");setTab("home");};
-  const onLogout=()=>{localStorage.removeItem("stay_login");setApp(p=>{const n={...p,currentUser:null};sv(n);return n;});setScreen("login");setNoticeOpen(false);setDisasterOpen(false);};
-  if(screen==="login") return<LoginScreen app={app} setApp={setApp} onLogin={onLogin} onSignup={()=>setScreen("signup")}/>;
-  if(screen==="signup")return<SignupScreen app={app} setApp={setApp} onBack={()=>setScreen("login")}/>;
+  useEffect(()=>{const id=setInterval(()=>setCanGoBack(navStack.current.length>0),200);return()=>clearInterval(id);},[]);
+  const onLogin=()=>{
+    pushNav({screen:"login",tab:"home",noticeOpen:false,disasterOpen:false});
+    setScreen("app");setTab("home");
+  };
+  const onLogout=()=>{
+    localStorage.removeItem("stay_login");
+    setApp(p=>{const n={...p,currentUser:null};sv(n);return n;});
+    navStack.current=[];
+    history.replaceState({idx:0},"","");
+    setScreen("login");setNoticeOpen(false);setDisasterOpen(false);
+  };
+
+  if(screen==="login") return<LoginScreen app={app} setApp={setApp} onLogin={onLogin} onSignup={()=>changeScreen("signup")}/>;
+  if(screen==="signup")return<SignupScreen app={app} setApp={setApp} onBack={()=>changeScreen("login")}/>;
   const isAdmin=app.currentUser?.role==="admin";
+
+  // 뒤로가기 버튼 핸들러
+  const handleBackBtn=()=>{if(navStack.current.length===0)return;history.back();};
+  const backBtn=(
+    <button onClick={handleBackBtn}
+      style={{position:"fixed",bottom:90,right:16,width:44,height:44,borderRadius:"50%",background:canGoBack?"#16a34a":"#d1d5db",color:"white",border:"none",fontSize:22,fontWeight:900,cursor:canGoBack?"pointer":"default",boxShadow:canGoBack?"0 4px 12px rgba(22,163,74,.4)":"none",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,lineHeight:1,transition:"background .2s"}}>←</button>
+  );
+
   if(noticeOpen)return(
     <div style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",background:"white",position:"relative"}}>
-      <NoticeScreen app={app} setApp={setApp} onBack={()=>setNoticeOpen(false)}/>
-      <NavBar active={tab} setActive={t=>{setTab(t);setNoticeOpen(false);}} isAdmin={isAdmin}/>
+      <NoticeScreen app={app} setApp={setApp} noticeModalCloser={noticeModalCloser} onBack={()=>{pushNav({screen:"app",tab,noticeOpen:true,disasterOpen});setNoticeOpen(false);}}/>
+      <NavBar active={tab} setActive={t=>{goTab(t);setNoticeOpen(false);}} isAdmin={isAdmin}/>
+      {backBtn}
     </div>
   );
-  const goDisaster=()=>{setTab("record");setDisasterOpen(true);};
+  const goDisaster=()=>{
+    pushNav({screen:"app",tab,noticeOpen,disasterOpen:false});
+    setTab("record");setDisasterOpen(true);
+  };
+
   return(
     <div style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",background:"white",position:"relative"}}>
-      {tab==="home"     &&<HomeScreen     app={app} setApp={setApp} onNoticeMore={()=>setNoticeOpen(true)} onDisasterLink={goDisaster}/>}
+      {tab==="home"     &&<HomeScreen     app={app} setApp={setApp} onNoticeMore={()=>{pushNav({screen:"app",tab,noticeOpen:false,disasterOpen});setNoticeOpen(true);}} onDisasterLink={goDisaster}/>}
       {tab==="record"   &&<RecordScreen   app={app} setApp={setApp} initDisaster={disasterOpen} key={disasterOpen?"d":"n"}/>}
       {tab==="my"       &&<MyScreen       app={app} setApp={setApp} onLogout={onLogout}/>}
       {tab==="admin"    &&isAdmin&&<AdminScreen app={app} setApp={setApp}/>}
-      <NavBar active={tab} setActive={t=>{setTab(t);if(t!=="record")setDisasterOpen(false);}} isAdmin={isAdmin}/>
+      <NavBar active={tab} setActive={goTab} isAdmin={isAdmin}/>
+      {backBtn}
     </div>
   );
 }
@@ -3140,6 +3413,8 @@ function shSaveSowing() {
   const year = cards[0]?.prodYear || new Date().getFullYear();
   db.sowingData[userId][year] = cards;
   shSave(db);
+  // 저장된 rate를 data-saved-rate에 반영 (이후 낮추기 불가)
+  document.querySelectorAll('#sowingCards [data-rate]').forEach(g=>{g.dataset.savedRate=g.dataset.rate;});
   shToast('파종 실적이 저장되었습니다 ✅');
 }
 function shResetSowing() {
@@ -3172,6 +3447,8 @@ function shSaveHarvest() {
   const year = cards[0]?.prodYear || new Date().getFullYear();
   db.harvestData[userId][year] = cards;
   shSave(db);
+  // 저장된 rate를 data-saved-rate에 반영 (이후 낮추기 불가)
+  document.querySelectorAll('#harvestCards [data-rate]').forEach(g=>{g.dataset.savedRate=g.dataset.rate;});
   shToast('수확 실적이 저장되었습니다 ✅');
 }
 function shResetHarvest() {
@@ -3186,36 +3463,66 @@ function formatPeriod(d1, d2) {
 }
 
 function updateSowTotalPeriod() {
-  const rows = document.querySelectorAll('.sow-farm-row');
-  const allDates = [];
-  rows.forEach(row => {
-    const d1 = row.querySelector('.sow-farm-date1')?.value;
-    const d2 = row.querySelector('.sow-farm-date2')?.value;
-    if(d1) allDates.push(new Date(d1));
-    if(d2) allDates.push(new Date(d2));
+  document.querySelectorAll('.sow-card').forEach(card=>{
+    const rows = card.querySelectorAll('.sow-farm-row');
+    const allDates = [];
+    rows.forEach(row => {
+      const d1 = row.querySelector('.sow-farm-date1')?.value;
+      const d2 = row.querySelector('.sow-farm-date2')?.value;
+      if(d1) allDates.push(new Date(d1));
+      if(d2) allDates.push(new Date(d2));
+    });
+    if(allDates.length < 1) return;
+    const min = new Date(Math.min(...allDates)), max = new Date(Math.max(...allDates));
+
+    // 단지 파종(이앙) 실시일 자동 입력
+    const pad2 = n => String(n).padStart(2,'0');
+    const m1=min.getMonth()+1, d1=min.getDate();
+    const actTxt1=card.querySelector('.sow-act-d1-text');
+    const actHidM1=card.querySelector('.sow-act-m1');
+    const actHidD1=card.querySelector('.sow-act-d1');
+    if(actTxt1) actTxt1.value=`${pad2(m1)}.${pad2(d1)}`;
+    if(actHidM1) actHidM1.value=m1;
+    if(actHidD1) actHidD1.value=d1;
+    const m2=max.getMonth()+1, d2=max.getDate();
+    const actTxt2=card.querySelector('.sow-act-d2-text');
+    const actHidM2=card.querySelector('.sow-act-m2');
+    const actHidD2=card.querySelector('.sow-act-d2');
+    if(actTxt2) actTxt2.value=`${pad2(m2)}.${pad2(d2)}`;
+    if(actHidM2) actHidM2.value=m2;
+    if(actHidD2) actHidD2.value=d2;
   });
-  const el = document.getElementById('sowTotalPeriodDisp');
-  if(!el) return;
-  if(allDates.length < 2) { el.textContent = ''; return; }
-  const min = new Date(Math.min(...allDates)), max = new Date(Math.max(...allDates));
-  const fmt = d => `${d.getMonth()+1}.${d.getDate()}`;
-  el.textContent = `${fmt(min)} ~ ${fmt(max)}`;
 }
 function updateHavTotalPeriod() {
-  const rows = document.querySelectorAll('.hav-farm-row');
-  const allDates = [];
-  rows.forEach(row => {
-    const d1 = row.querySelector('.hav-farm-date1')?.value;
-    const d2 = row.querySelector('.hav-farm-date2')?.value;
-    if(d1) allDates.push(new Date(d1));
-    if(d2) allDates.push(new Date(d2));
+  document.querySelectorAll('.hav-card').forEach(card=>{
+    const rows = card.querySelectorAll('.hav-farm-row');
+    const allDates = [];
+    rows.forEach(row => {
+      const d1 = row.querySelector('.hav-farm-date1')?.value;
+      const d2 = row.querySelector('.hav-farm-date2')?.value;
+      if(d1) allDates.push(new Date(d1));
+      if(d2) allDates.push(new Date(d2));
+    });
+    if(allDates.length < 1) return;
+    const min = new Date(Math.min(...allDates)), max = new Date(Math.max(...allDates));
+
+    // 단지 수확 실시일 자동 입력
+    const pad2 = n => String(n).padStart(2,'0');
+    const m1=min.getMonth()+1, d1=min.getDate();
+    const actTxt1=card.querySelector('.hav-act-d1-text');
+    const actHidM1=card.querySelector('.hav-act-m1');
+    const actHidD1=card.querySelector('.hav-act-d1');
+    if(actTxt1) actTxt1.value=`${pad2(m1)}.${pad2(d1)}`;
+    if(actHidM1) actHidM1.value=m1;
+    if(actHidD1) actHidD1.value=d1;
+    const m2=max.getMonth()+1, d2=max.getDate();
+    const actTxt2=card.querySelector('.hav-act-d2-text');
+    const actHidM2=card.querySelector('.hav-act-m2');
+    const actHidD2=card.querySelector('.hav-act-d2');
+    if(actTxt2) actTxt2.value=`${pad2(m2)}.${pad2(d2)}`;
+    if(actHidM2) actHidM2.value=m2;
+    if(actHidD2) actHidD2.value=d2;
   });
-  const el = document.getElementById('havTotalPeriodDisp');
-  if(!el) return;
-  if(allDates.length < 2) { el.textContent = ''; return; }
-  const min = new Date(Math.min(...allDates)), max = new Date(Math.max(...allDates));
-  const fmt = d => `${d.getMonth()+1}.${d.getDate()}`;
-  el.textContent = `${fmt(min)} ~ ${fmt(max)}`;
 }
 function updateSowFarmPeriod(input) {
   const row = input.closest('.sow-farm-row');
@@ -3233,7 +3540,7 @@ function buildRateGauge(containerId, rate, color, acreage) {
   const pct = Math.min(100,Math.max(0,Number(rate)||0));
   const area = parseFloat(acreage)||0;
   const doneArea = area ? (area*pct/100).toFixed(2) : null;
-  return `<div id="${containerId}" data-rate="${pct}" data-area="${area}" data-color="${color}">
+  return `<div id="${containerId}" data-rate="${pct}" data-saved-rate="${pct}" data-area="${area}" data-color="${color}">
     <div data-banner style="display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,${color},${color}cc);border-radius:12px;padding:12px 16px;margin-bottom:10px;color:white;">
       <div><div style="font-size:11px;opacity:.8;font-weight:600;margin-bottom:2px;">파종(이앙)률</div><div data-pct-display style="font-size:28px;font-weight:900;line-height:1;">${pct}<span style="font-size:14px;font-weight:700;">%</span></div></div>
       <div style="text-align:right;"><div style="font-size:11px;opacity:.8;font-weight:600;margin-bottom:2px;">파종 면적</div>
@@ -3254,6 +3561,8 @@ function buildRateGauge(containerId, rate, color, acreage) {
 }
 function _applySowGauge(id,val){
   const c=document.getElementById(id); if(!c)return;
+  const saved=parseInt(c.dataset.savedRate)||0;
+  val=Math.max(val,saved); // 저장값보다 작아질 수 없음
   const area=parseFloat(c.dataset.area)||0; c.dataset.rate=val;
   const pctEl=c.querySelector('[data-pct-display]'); if(pctEl) pctEl.innerHTML=`${val}<span style="font-size:14px;font-weight:700;">%</span>`;
   const aEl=c.querySelector('[data-area-display]'); if(aEl) aEl.innerHTML=area?`${(area*val/100).toFixed(2)} <span style="font-size:11px;font-weight:700;">/ ${area} ha</span>`:'<span style="font-size:12px;opacity:.7;">면적 미입력</span>';
@@ -3274,7 +3583,7 @@ function onSowAreaChange(input){const c=input.closest('.card');const a=parseFloa
 function buildHarvestRateGauge(containerId, rate, acreage) {
   const color='#e65100'; const pct=Math.min(100,Math.max(0,Number(rate)||0));
   const area=parseFloat(acreage)||0; const doneArea=area?(area*pct/100).toFixed(2):null;
-  return `<div id="${containerId}" data-rate="${pct}" data-area="${area}" data-color="${color}">
+  return `<div id="${containerId}" data-rate="${pct}" data-saved-rate="${pct}" data-area="${area}" data-color="${color}">
     <div data-banner style="display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,${color},#bf360c);border-radius:12px;padding:12px 16px;margin-bottom:10px;color:white;">
       <div><div style="font-size:11px;opacity:.8;font-weight:600;margin-bottom:2px;">수확률</div><div data-pct-display style="font-size:28px;font-weight:900;line-height:1;">${pct}<span style="font-size:14px;font-weight:700;">%</span></div></div>
       <div style="text-align:right;"><div style="font-size:11px;opacity:.8;font-weight:600;margin-bottom:2px;">수확 면적</div>
@@ -3294,6 +3603,8 @@ function buildHarvestRateGauge(containerId, rate, acreage) {
 }
 function _applyHavGauge(id,val){
   const c=document.getElementById(id); if(!c)return;
+  const saved=parseInt(c.dataset.savedRate)||0;
+  val=Math.max(val,saved); // 저장값보다 작아질 수 없음
   const area=parseFloat(c.dataset.area)||0; c.dataset.rate=val;
   const pctEl=c.querySelector('[data-pct-display]'); if(pctEl) pctEl.innerHTML=`${val}<span style="font-size:14px;font-weight:700;">%</span>`;
   const aEl=c.querySelector('[data-area-display]'); if(aEl) aEl.innerHTML=area?`${(area*val/100).toFixed(2)} <span style="font-size:11px;font-weight:700;">/ ${area} ha</span>`:'<span style="font-size:12px;opacity:.7;">면적 미입력</span>';
@@ -3319,7 +3630,7 @@ function _sowFarmRowHTML(f,idx){
     <input type="date" class="sow-farm-date1" value="${f.date1||''}" onchange="updateSowFarmPeriod(this);updateSowTotalPeriod()" style="flex:1;min-width:0;border:1.5px solid #90caf9;border-radius:7px;padding:6px 4px;font-size:11px;font-family:inherit;background:white;box-sizing:border-box;">
     <span style="flex-shrink:0;font-size:12px;color:#888;font-weight:700;">~</span>
     <input type="date" class="sow-farm-date2" value="${f.date2||''}" onchange="updateSowFarmPeriod(this);updateSowTotalPeriod()" style="flex:1;min-width:0;border:1.5px solid #90caf9;border-radius:7px;padding:6px 4px;font-size:11px;font-family:inherit;background:white;box-sizing:border-box;">
-    <div class="sow-farm-period-display" style="flex-shrink:0;font-size:10px;font-weight:700;color:#1565c0;min-width:52px;text-align:center;">${period}</div>
+    <div class="sow-farm-period-display" style="display:none;">${period}</div>
     <button onclick="removeSowFarmRow(this)" style="flex-shrink:0;background:none;border:none;color:#e57373;font-size:15px;cursor:pointer;padding:0;line-height:1;">✕</button>
   </div>`;
 }
@@ -3342,7 +3653,7 @@ function _havFarmRowHTML(f,idx){
     <input type="date" class="hav-farm-date1" value="${f.date1||''}" onchange="updateHavFarmPeriod(this);updateHavTotalPeriod()" style="flex:1;min-width:0;border:1.5px solid #ffb74d;border-radius:7px;padding:6px 4px;font-size:11px;font-family:inherit;background:white;box-sizing:border-box;">
     <span style="flex-shrink:0;font-size:12px;color:#888;font-weight:700;">~</span>
     <input type="date" class="hav-farm-date2" value="${f.date2||''}" onchange="updateHavFarmPeriod(this);updateHavTotalPeriod()" style="flex:1;min-width:0;border:1.5px solid #ffb74d;border-radius:7px;padding:6px 4px;font-size:11px;font-family:inherit;background:white;box-sizing:border-box;">
-    <div class="hav-farm-period-display" style="flex-shrink:0;font-size:10px;font-weight:700;color:#e65100;min-width:52px;text-align:center;">${period}</div>
+    <div class="hav-farm-period-display" style="display:none;">${period}</div>
     <button onclick="removeHavFarmRow(this)" style="flex-shrink:0;background:none;border:none;color:#e57373;font-size:15px;cursor:pointer;padding:0;line-height:1;">✕</button>
   </div>`;
 }
@@ -3364,6 +3675,10 @@ function _makeSowingCardHTML(d, user, idx){
   const defaultPlanD1 = d.planD1||'';
   const defaultPlanM2 = d.planM2||'';
   const defaultPlanD2 = d.planD2||'';
+  const defaultActM1  = d.actM1||'';
+  const defaultActD1  = d.actD1||'';
+  const defaultActM2  = d.actM2||'';
+  const defaultActD2  = d.actD2||'';
   const rate=Number(d.rate)||0, area=defaultArea;
   const farms=(d.farms&&d.farms.length)?d.farms:[{},{},{}];
   const allDates=[]; farms.forEach(f=>{if(f.date1)allDates.push(new Date(f.date1));if(f.date2)allDates.push(new Date(f.date2));});
@@ -3395,21 +3710,76 @@ function _makeSowingCardHTML(d, user, idx){
       <div><label style="font-size:10px;color:#666;font-weight:700;display:block;margin-bottom:3px;">🏠 농가수</label><input type="number" class="sow-farm-count" placeholder="0" value="${defaultFarmCount}" min="0" style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:8px;font-size:13px;font-family:inherit;"></div>
     </div>
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-      <label style="font-size:11px;color:#666;font-weight:700;white-space:nowrap;">🌱 단지 파종(이앙)예정(실시)일</label>
-      <div style="display:flex;align-items:center;gap:3px;">
-        <select class="sow-plan-m1" style="${selSt}"><option value="">월</option>${monthOpts(defaultPlanM1)}</select>
-        <span style="font-size:12px;color:#666;">.</span>
-        <select class="sow-plan-d1" style="${selSt}"><option value="">일</option>${dayOpts(defaultPlanD1)}</select>
-        <span style="font-size:12px;color:#666;margin:0 4px;">~</span>
-        <select class="sow-plan-m2" style="${selSt}"><option value="">월</option>${monthOpts(defaultPlanM2)}</select>
-        <span style="font-size:12px;color:#666;">.</span>
-        <select class="sow-plan-d2" style="${selSt}"><option value="">일</option>${dayOpts(defaultPlanD2)}</select>
+      <label style="font-size:11px;color:#666;font-weight:700;white-space:nowrap;">🌱 단지 파종(이앙) 예정일</label>
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+          <input type="text" class="sow-plan-d1-text" placeholder="월.일" readonly
+            value="${(defaultPlanM1&&defaultPlanD1)?String(defaultPlanM1).padStart(2,'0')+'.'+String(defaultPlanD1).padStart(2,'0'):''}"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
+          <input type="date" class="sow-plan-date1"
+            value="${(defaultPlanM1&&defaultPlanD1)?'2026-'+String(defaultPlanM1).padStart(2,'0')+'-'+String(defaultPlanD1).padStart(2,'0'):''}"
+            onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.sow-card');const txt=card.querySelector('.sow-plan-d1-text');if(txt)txt.value=p[1]+'.'+p[2];const m1=card.querySelector('.sow-plan-m1');const d1=card.querySelector('.sow-plan-d1');if(m1)m1.value=parseInt(p[1]);if(d1)d1.value=parseInt(p[2]);})(this)"
+            style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
+          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
+            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
+          <input type="hidden" class="sow-plan-m1" value="${defaultPlanM1}">
+          <input type="hidden" class="sow-plan-d1" value="${defaultPlanD1}">
+        </div>
+        <span style="font-size:12px;color:#666;margin:0 2px;">~</span>
+        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+          <input type="text" class="sow-plan-d2-text" placeholder="월.일" readonly
+            value="${(defaultPlanM2&&defaultPlanD2)?String(defaultPlanM2).padStart(2,'0')+'.'+String(defaultPlanD2).padStart(2,'0'):''}"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
+          <input type="date" class="sow-plan-date2"
+            value="${(defaultPlanM2&&defaultPlanD2)?'2026-'+String(defaultPlanM2).padStart(2,'0')+'-'+String(defaultPlanD2).padStart(2,'0'):''}"
+            onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.sow-card');const txt=card.querySelector('.sow-plan-d2-text');if(txt)txt.value=p[1]+'.'+p[2];const m2=card.querySelector('.sow-plan-m2');const d2=card.querySelector('.sow-plan-d2');if(m2)m2.value=parseInt(p[1]);if(d2)d2.value=parseInt(p[2]);})(this)"
+            style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
+          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
+            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
+          <input type="hidden" class="sow-plan-m2" value="${defaultPlanM2}">
+          <input type="hidden" class="sow-plan-d2" value="${defaultPlanD2}">
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+      <label style="font-size:11px;color:#666;font-weight:700;white-space:nowrap;">🌱 단지 파종(이앙) 실시일</label>
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+          <input type="text" class="sow-act-d1-text" placeholder="월.일" readonly
+            value="${(defaultActM1&&defaultActD1)?String(defaultActM1).padStart(2,'0')+'.'+String(defaultActD1).padStart(2,'0'):''}"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
+          <input type="date" class="sow-act-date1"
+            value="${(defaultActM1&&defaultActD1)?'2026-'+String(defaultActM1).padStart(2,'0')+'-'+String(defaultActD1).padStart(2,'0'):''}"
+            onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.sow-card');const txt=card.querySelector('.sow-act-d1-text');if(txt)txt.value=p[1]+'.'+p[2];const m1=card.querySelector('.sow-act-m1');const d1=card.querySelector('.sow-act-d1');if(m1)m1.value=parseInt(p[1]);if(d1)d1.value=parseInt(p[2]);})(this)"
+            style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
+          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
+            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
+          <input type="hidden" class="sow-act-m1" value="${defaultActM1}">
+          <input type="hidden" class="sow-act-d1" value="${defaultActD1}">
+        </div>
+        <span style="font-size:12px;color:#666;margin:0 2px;">~</span>
+        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+          <input type="text" class="sow-act-d2-text" placeholder="월.일" readonly
+            value="${(defaultActM2&&defaultActD2)?String(defaultActM2).padStart(2,'0')+'.'+String(defaultActD2).padStart(2,'0'):''}"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
+          <input type="date" class="sow-act-date2"
+            value="${(defaultActM2&&defaultActD2)?'2026-'+String(defaultActM2).padStart(2,'0')+'-'+String(defaultActD2).padStart(2,'0'):''}"
+            onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.sow-card');const txt=card.querySelector('.sow-act-d2-text');if(txt)txt.value=p[1]+'.'+p[2];const m2=card.querySelector('.sow-act-m2');const d2=card.querySelector('.sow-act-d2');if(m2)m2.value=parseInt(p[1]);if(d2)d2.value=parseInt(p[2]);})(this)"
+            style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
+          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
+            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
+          <input type="hidden" class="sow-act-m2" value="${defaultActM2}">
+          <input type="hidden" class="sow-act-d2" value="${defaultActD2}">
+        </div>
       </div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;">
       <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
         <label style="font-size:11px;color:#666;font-weight:700;white-space:nowrap;margin:0;">🏡 농가별 파종일</label>
-        <span id="${tpId}" style="font-size:11px;font-weight:900;color:#1565c0;background:#dbeafe;border-radius:6px;padding:2px 8px;white-space:nowrap;">${tp}</span>
       </div>
       <button onclick="addSowFarmRow(this)" style="flex-shrink:0;background:#1565c0;color:white;border:none;border-radius:7px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">+ 농가 추가</button>
     </div>
@@ -3505,6 +3875,10 @@ function _makeHarvestCardHTML(d, user, idx){
   const defaultPlanD1 = d.planD1||'';
   const defaultPlanM2 = d.planM2||'';
   const defaultPlanD2 = d.planD2||'';
+  const defaultActM1  = d.actM1||'';
+  const defaultActD1  = d.actD1||'';
+  const defaultActM2  = d.actM2||'';
+  const defaultActD2  = d.actD2||'';
   const rate=Number(d.rate)||0, area=defaultArea;
   const farms=(d.farms&&d.farms.length)?d.farms:[{},{},{}];
   const allDates=[]; farms.forEach(f=>{if(f.date1)allDates.push(new Date(f.date1));if(f.date2)allDates.push(new Date(f.date2));});
@@ -3533,21 +3907,76 @@ function _makeHarvestCardHTML(d, user, idx){
       <div><label style="font-size:10px;color:#666;font-weight:700;display:block;margin-bottom:3px;">🏠 농가수</label><input type="number" class="hav-farm-count" placeholder="0" value="${defaultFarmCount}" min="0" style="width:100%;box-sizing:border-box;border:1.5px solid #ddd;border-radius:8px;padding:8px;font-size:13px;font-family:inherit;"></div>
     </div>
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
-      <label style="font-size:11px;color:#666;font-weight:700;white-space:nowrap;">🌾 단지 수확(예정)일</label>
-      <div style="display:flex;align-items:center;gap:3px;">
-        <select class="hav-plan-m1" style="${selSt}"><option value="">월</option>${monthOpts(defaultPlanM1)}</select>
-        <span style="font-size:12px;color:#666;">.</span>
-        <select class="hav-plan-d1" style="${selSt}"><option value="">일</option>${dayOpts(defaultPlanD1)}</select>
-        <span style="font-size:12px;color:#666;margin:0 4px;">~</span>
-        <select class="hav-plan-m2" style="${selSt}"><option value="">월</option>${monthOpts(defaultPlanM2)}</select>
-        <span style="font-size:12px;color:#666;">.</span>
-        <select class="hav-plan-d2" style="${selSt}"><option value="">일</option>${dayOpts(defaultPlanD2)}</select>
+      <label style="font-size:11px;color:#666;font-weight:700;white-space:nowrap;">🌾 단지 수확 예정일</label>
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+          <input type="text" class="hav-plan-d1-text" placeholder="월.일" readonly
+            value="${(defaultPlanM1&&defaultPlanD1)?String(defaultPlanM1).padStart(2,'0')+'.'+String(defaultPlanD1).padStart(2,'0'):''}"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
+          <input type="date" class="hav-plan-date1"
+            value="${(defaultPlanM1&&defaultPlanD1)?'2026-'+String(defaultPlanM1).padStart(2,'0')+'-'+String(defaultPlanD1).padStart(2,'0'):''}"
+            onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.hav-card');const txt=card.querySelector('.hav-plan-d1-text');if(txt)txt.value=p[1]+'.'+p[2];const m1=card.querySelector('.hav-plan-m1');const d1=card.querySelector('.hav-plan-d1');if(m1)m1.value=parseInt(p[1]);if(d1)d1.value=parseInt(p[2]);})(this)"
+            style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
+          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
+            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
+          <input type="hidden" class="hav-plan-m1" value="${defaultPlanM1}">
+          <input type="hidden" class="hav-plan-d1" value="${defaultPlanD1}">
+        </div>
+        <span style="font-size:12px;color:#666;margin:0 2px;">~</span>
+        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+          <input type="text" class="hav-plan-d2-text" placeholder="월.일" readonly
+            value="${(defaultPlanM2&&defaultPlanD2)?String(defaultPlanM2).padStart(2,'0')+'.'+String(defaultPlanD2).padStart(2,'0'):''}"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
+          <input type="date" class="hav-plan-date2"
+            value="${(defaultPlanM2&&defaultPlanD2)?'2026-'+String(defaultPlanM2).padStart(2,'0')+'-'+String(defaultPlanD2).padStart(2,'0'):''}"
+            onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.hav-card');const txt=card.querySelector('.hav-plan-d2-text');if(txt)txt.value=p[1]+'.'+p[2];const m2=card.querySelector('.hav-plan-m2');const d2=card.querySelector('.hav-plan-d2');if(m2)m2.value=parseInt(p[1]);if(d2)d2.value=parseInt(p[2]);})(this)"
+            style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
+          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
+            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
+          <input type="hidden" class="hav-plan-m2" value="${defaultPlanM2}">
+          <input type="hidden" class="hav-plan-d2" value="${defaultPlanD2}">
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+      <label style="font-size:11px;color:#666;font-weight:700;white-space:nowrap;">🌾 단지 수확 실시일</label>
+      <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+          <input type="text" class="hav-act-d1-text" placeholder="월.일" readonly
+            value="${(defaultActM1&&defaultActD1)?String(defaultActM1).padStart(2,'0')+'.'+String(defaultActD1).padStart(2,'0'):''}"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
+          <input type="date" class="hav-act-date1"
+            value="${(defaultActM1&&defaultActD1)?'2026-'+String(defaultActM1).padStart(2,'0')+'-'+String(defaultActD1).padStart(2,'0'):''}"
+            onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.hav-card');const txt=card.querySelector('.hav-act-d1-text');if(txt)txt.value=p[1]+'.'+p[2];const m1=card.querySelector('.hav-act-m1');const d1=card.querySelector('.hav-act-d1');if(m1)m1.value=parseInt(p[1]);if(d1)d1.value=parseInt(p[2]);})(this)"
+            style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
+          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
+            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
+          <input type="hidden" class="hav-act-m1" value="${defaultActM1}">
+          <input type="hidden" class="hav-act-d1" value="${defaultActD1}">
+        </div>
+        <span style="font-size:12px;color:#666;margin:0 2px;">~</span>
+        <div style="display:flex;align-items:center;gap:2px;position:relative;">
+          <input type="text" class="hav-act-d2-text" placeholder="월.일" readonly
+            value="${(defaultActM2&&defaultActD2)?String(defaultActM2).padStart(2,'0')+'.'+String(defaultActD2).padStart(2,'0'):''}"
+            style="width:52px;border:1.5px solid #ddd;border-radius:7px;padding:5px 4px;font-size:12px;font-family:inherit;text-align:center;box-sizing:border-box;background:white;cursor:pointer;"
+            onclick="this.nextElementSibling.showPicker&&this.nextElementSibling.showPicker()">
+          <input type="date" class="hav-act-date2"
+            value="${(defaultActM2&&defaultActD2)?'2026-'+String(defaultActM2).padStart(2,'0')+'-'+String(defaultActD2).padStart(2,'0'):''}"
+            onchange="(function(el){const v=el.value;if(!v)return;const p=v.split('-');const card=el.closest('.hav-card');const txt=card.querySelector('.hav-act-d2-text');if(txt)txt.value=p[1]+'.'+p[2];const m2=card.querySelector('.hav-act-m2');const d2=card.querySelector('.hav-act-d2');if(m2)m2.value=parseInt(p[1]);if(d2)d2.value=parseInt(p[2]);})(this)"
+            style="position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2;">
+          <button type="button" onclick="(function(btn){const inp=btn.previousElementSibling;inp.showPicker?inp.showPicker():inp.click();})(this)"
+            style="flex-shrink:0;width:24px;height:28px;border:1.5px solid #ddd;border-radius:7px;background:white;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;padding:0;position:relative;z-index:3;">📅</button>
+          <input type="hidden" class="hav-act-m2" value="${defaultActM2}">
+          <input type="hidden" class="hav-act-d2" value="${defaultActD2}">
+        </div>
       </div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;">
       <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
         <label style="font-size:11px;color:#666;font-weight:700;white-space:nowrap;margin:0;">🏡 농가별 수확일</label>
-        <span id="${tpId}" style="font-size:11px;font-weight:900;color:#e65100;background:#ffe0b2;border-radius:6px;padding:2px 8px;white-space:nowrap;">${tp}</span>
       </div>
       <button onclick="addHavFarmRow(this)" style="flex-shrink:0;background:#e65100;color:white;border:none;border-radius:7px;padding:5px 11px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">+ 농가 추가</button>
     </div>
@@ -3643,6 +4072,10 @@ function getSowingCards(){
       planD1:   card.querySelector('.sow-plan-d1')?.value||'',
       planM2:   card.querySelector('.sow-plan-m2')?.value||'',
       planD2:   card.querySelector('.sow-plan-d2')?.value||'',
+      actM1:    card.querySelector('.sow-act-m1')?.value||'',
+      actD1:    card.querySelector('.sow-act-d1')?.value||'',
+      actM2:    card.querySelector('.sow-act-m2')?.value||'',
+      actD2:    card.querySelector('.sow-act-d2')?.value||'',
       farms,
       rate:     g?g.dataset.rate:'0',
       note:     card.querySelector('.sow-note')?.value.trim()||''
@@ -3655,7 +4088,7 @@ function getHarvestCards(){
   return Array.from(cards).map(card=>{
     const g=card.querySelector('[data-rate]');
     const farms=Array.from(card.querySelectorAll('.hav-farm-row')).map(r=>({name:r.querySelector('.hav-farm-name')?.value.trim()||'',date1:r.querySelector('.hav-farm-date1')?.value||'',date2:r.querySelector('.hav-farm-date2')?.value||''}));
-    return{prodYear:card.querySelector('.hav-year')?.value||'',unit:card.querySelector('.hav-unit')?.value.trim()||'',variety:card.querySelector('.hav-variety')?.value.trim()||'',area:card.querySelector('.hav-area')?.value||'',farmCount:card.querySelector('.hav-farm-count')?.value||'',planM1:card.querySelector('.hav-plan-m1')?.value||'',planD1:card.querySelector('.hav-plan-d1')?.value||'',planM2:card.querySelector('.hav-plan-m2')?.value||'',planD2:card.querySelector('.hav-plan-d2')?.value||'',farms,rate:g?g.dataset.rate:'0',note:card.querySelector('.hav-note')?.value.trim()||''};
+    return{prodYear:card.querySelector('.hav-year')?.value||'',unit:card.querySelector('.hav-unit')?.value.trim()||'',variety:card.querySelector('.hav-variety')?.value.trim()||'',area:card.querySelector('.hav-area')?.value||'',farmCount:card.querySelector('.hav-farm-count')?.value||'',planM1:card.querySelector('.hav-plan-m1')?.value||'',planD1:card.querySelector('.hav-plan-d1')?.value||'',planM2:card.querySelector('.hav-plan-m2')?.value||'',planD2:card.querySelector('.hav-plan-d2')?.value||'',actM1:card.querySelector('.hav-act-m1')?.value||'',actD1:card.querySelector('.hav-act-d1')?.value||'',actM2:card.querySelector('.hav-act-m2')?.value||'',actD2:card.querySelector('.hav-act-d2')?.value||'',farms,rate:g?g.dataset.rate:'0',note:card.querySelector('.hav-note')?.value.trim()||''};
   });
 }
 </script>
