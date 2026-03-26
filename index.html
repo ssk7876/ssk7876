@@ -2338,8 +2338,8 @@ function RecordScreen({app,setApp,initDisaster,recordSelRef}){
       </div>
       {menuItems.map(item=>(
         <button key={item.key} onClick={()=>{
-          if(item.key==="sowing") openShModal("sowing",app.currentUser);
-          else if(item.key==="harvest") openShModal("harvest",app.currentUser);
+          if(item.key==="sowing"){ history.pushState({shModal:"sowing"},"",""); openShModal("sowing",app.currentUser);}
+          else if(item.key==="harvest"){ history.pushState({shModal:"harvest"},"",""); openShModal("harvest",app.currentUser);}
           else goSel(item.key);
         }}
           style={{width:"100%",display:"flex",alignItems:"center",gap:16,background:"white",padding:"18px 20px",borderBottom:"1px solid #f3f4f6",borderLeft:"none",borderRight:"none",borderTop:"none",cursor:"pointer",textAlign:"left"}}>
@@ -3034,11 +3034,13 @@ function App(){
   useEffect(()=>{
     history.replaceState({idx:0},"","");
     const onPop=(e)=>{
-      // 0. 파종/수확 모달이 열려있으면 닫기
+      // 0. 파종/수확 모달이 열려있으면 닫기만 하고 탭은 유지
       const shModal=document.getElementById('shModal');
       if(shModal&&shModal.style.display!=='none'){
         if(typeof closeShModal==='function') closeShModal();
-        history.pushState({idx:navStack.current.length||0},"","");
+        // navStack은 건드리지 않고 history entry만 복원
+        if(navStack.current.length>0) history.pushState({idx:navStack.current.length},"","");
+        else history.replaceState({idx:0},"","");
         return;
       }
       // 1. 공지 모달 닫기
@@ -3140,7 +3142,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <div id="shModal" style="display:none;" class="sh-modal-overlay">
   <div class="sh-modal-inner">
     <div class="sh-modal-header">
-      <button class="sh-back" onclick="closeShModal()">←</button>
+      <button class="sh-back" onclick="history.back()">←</button>
       <h2 id="shModalTitle">파종현황</h2>
     </div>
     <div class="sh-content">
@@ -3193,7 +3195,6 @@ function openShModal(type, user) {
   _shUser = user;
   const modal = document.getElementById('shModal');
   modal.style.display = 'flex';
-  history.pushState({shModal:true},"","");
 
   const db = shLoad();
   const key = user?.id || 'unknown';
