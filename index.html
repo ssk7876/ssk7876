@@ -62,11 +62,11 @@ html,body,#root{height:100%;margin:0;padding:0;background:#f3f4f6;}
 .ds-field-row{margin-bottom:14px;}
 .ds-field-row>label{font-size:13px;font-weight:700;color:#374151;display:block;margin-bottom:6px;}
 .ds-field-row-inline{display:flex;align-items:center;gap:10px;margin-bottom:14px;min-height:38px;}
-.ds-field-label-inline{font-size:13px;font-weight:700;color:#166534;flex:0 0 auto;width:140px;line-height:1.4;}
+.ds-field-label-inline{font-size:13px;font-weight:700;color:#166534;flex:0 0 auto;width:110px;line-height:1.4;}
 .ds-field-content-inline{flex:1;min-width:0;}
 /* 소독육묘 통일 레이아웃 */
 .ds-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;min-height:36px;}
-.ds-label{font-size:13px;font-weight:700;color:#166534;flex:0 0 140px;line-height:1.4;padding-top:8px;}
+.ds-label{font-size:13px;font-weight:700;color:#166534;flex:0 0 110px;line-height:1.4;padding-top:8px;}
 .ds-content{flex:1;min-width:0;}
 .ds-check-group{display:flex;gap:14px;flex-wrap:wrap;margin-top:4px;}
 .ds-check-label{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;font-size:14px;}
@@ -1672,7 +1672,7 @@ function DisinfectionTab({userId}){
           <span style={{fontSize:14}}>℃</span>
         </div>
       </DsFR>
-      <DsFR label="온탕소독 시간(10분) 및 냉수처리(10분) 준수여부" inline>
+      <DsFR label="온탕(10분) 냉수(10분) 시간 준수여부" inline>
         <DsCheckGroup options={["준수함","미준수"]} value={form.hotCompliance} onChange={v=>set("hotCompliance",v)}/>
       </DsFR>
       {/* 온탕소독 사진 */}
@@ -2175,9 +2175,9 @@ function DisasterForm({app,onBack,editItem,onSave,year}){
   };
   return(
     <div style={{minHeight:"100vh",background:"#f9fafb",paddingBottom:100}}>
-      <div style={{background:"#dc2626",padding:"16px",display:"flex",alignItems:"center"}}>
-        <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:22,cursor:"pointer",marginRight:8,lineHeight:1}}>←</button>
+      <div style={{background:"#dc2626",padding:"16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <h1 style={{color:"white",fontWeight:900,fontSize:18,margin:0}}>🚨 재해 및 병해충 발생 상황 {editItem?"수정":"작성"}</h1>
+        <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:24,cursor:"pointer",lineHeight:1,padding:"0 4px",fontWeight:700}}>✕</button>
       </div>
       <div style={{padding:"16px"}}>
         {forms.map((_,fi)=>renderCard(fi))}
@@ -2233,9 +2233,9 @@ function DisasterScreen({app,setApp,onBack}){
 
   return(
     <div style={{minHeight:"100vh",background:"#f9fafb",paddingBottom:100}}>
-      <div style={{background:"#dc2626",padding:"16px",display:"flex",alignItems:"center"}}>
-        <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:22,cursor:"pointer",marginRight:8,lineHeight:1}}>←</button>
+      <div style={{background:"#dc2626",padding:"16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <h1 style={{color:"white",fontWeight:900,fontSize:18,margin:0}}>🚨 재해 및 병해충 발생 상황</h1>
+        <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:24,cursor:"pointer",lineHeight:1,padding:"0 4px",fontWeight:700}}>✕</button>
       </div>
       {/* 연도 select */}
       <div style={{padding:"12px 16px 0",display:"flex",alignItems:"center",gap:10}}>
@@ -2295,47 +2295,34 @@ function DisasterScreen({app,setApp,onBack}){
 }
 
 /* ════════════════════ RECORD SCREEN ════════════════════ */
-function RecordScreen({app,setApp,initDisaster}){
+function RecordScreen({app,setApp,initDisaster,recordSelRef}){
   const today=new Date();
   const[sel,setSel]=useState(initDisaster?"disaster":null);
   const[selMonth,setSelMonth]=useState(today.getMonth()+1);
   const[selYear,setSelYear]=useState(Math.max(today.getFullYear(),2026));
 
-  // production 뒤로가기 클로저 ref
   const productionBackRef=useRef(null);
 
-  // sel 변경 시 history 관리
-  const goSel=(key)=>{
-    history.pushState({recordSel:key},"","");
-    setSel(key);
-  };
-
+  // sel 변경 시 recordSelRef 업데이트 (App의 popstate가 감지)
   useEffect(()=>{
-    if(!sel) return;
-    const onPop=()=>{
-      // productionBackRef에 등록된 함수 있으면 실행 (← 버튼과 동일)
-      if(productionBackRef.current){
-        productionBackRef.current();
-        productionBackRef.current=null;
-      } else {
-        setSel(null);
-        setSelMonth(null);
-      }
-      history.pushState({recordSel:null},"","");
-    };
-    window.addEventListener("popstate",onPop,true);
-    return()=>window.removeEventListener("popstate",onPop,true);
+    if(recordSelRef){
+      recordSelRef.current = sel ? ()=>{ setSel(null); setSelMonth(null); } : null;
+    }
+    // sel 진입 시 history entry 추가 (안드로이드 뒤로가기용)
+    if(sel) history.pushState({recordSel:sel},"","");
   },[sel]);
+  // sel 변경
+  const goSel=(key)=>setSel(key);
+
   if(sel==="production"){
-    const handleBack=()=>{setSel(null);};
-    productionBackRef.current=handleBack;
+    productionBackRef.current=()=>{ setSel(null); setSelMonth(null); };
     return<MonthForm month={today.getMonth()+1} year={Math.max(today.getFullYear(),2026)}
-      app={app} setApp={setApp} onBack={handleBack}
+      app={app} setApp={setApp} onBack={()=>history.back()}
       selMonth={today.getMonth()+1} setSelMonth={setSelMonth}
       selYear={Math.max(today.getFullYear(),2026)} setSelYear={setSelYear}/>;
   }
-  if(sel==="disseed")return<DisSeedScreen app={app} onBack={()=>setSel(null)}/>;
-  if(sel==="disaster")return<DisasterScreen app={app} setApp={setApp} onBack={()=>setSel(null)}/>;
+  if(sel==="disseed")return<DisSeedScreen app={app} onBack={()=>history.back()}/>;
+  if(sel==="disaster")return<DisasterScreen app={app} setApp={setApp} onBack={()=>history.back()}/>;
   const isBye=app.currentUser?.crop==="벼";
   const menuItems=[
     {key:"disaster",  icon:"🚨",color:"#fee2e2",label:"재해 및 병해충 발생 상황",  desc:"재해·병해충 발생 상황 보고"},
@@ -3028,7 +3015,8 @@ function App(){
   // ── 뒤로가기 처리 ──
   // 앱 내비게이션 스택: {screen, tab, noticeOpen, disasterOpen}
   const navStack=useRef([]);
-  const noticeModalCloser=useRef(null); // NoticeScreen이 등록하는 모달 닫기 함수
+  const noticeModalCloser=useRef(null);
+  const recordSelRef=useRef(null); // RecordScreen의 현재 sel 상태를 App이 알 수 있도록
 
   const pushNav=useCallback((state)=>{
     navStack.current.push(state);
@@ -3037,22 +3025,36 @@ function App(){
 
   // tab 변경 래퍼
   const goTab=(t)=>{
-    pushNav({screen:"app",tab,noticeOpen,disasterOpen});
+    pushNav({screen:"app",tab,noticeOpen,disasterOpen,recordSel:null});
     setTab(t);
     if(t!=="record") setDisasterOpen(false);
   };
 
-  // popstate: 뒤로가기 발생 시
+  // popstate: 뒤로가기 발생 시 (안드로이드 포함)
   useEffect(()=>{
     history.replaceState({idx:0},"","");
     const onPop=(e)=>{
-      // 공지 모달이 열려있으면 모달만 닫기
+      // 0. 파종/수확 모달이 열려있으면 닫기
+      const shModal=document.getElementById('shModal');
+      if(shModal&&shModal.style.display!=='none'){
+        if(typeof closeShModal==='function') closeShModal();
+        history.pushState({idx:navStack.current.length||0},"","");
+        return;
+      }
+      // 1. 공지 모달 닫기
       if(noticeModalCloser.current){
         noticeModalCloser.current();
         noticeModalCloser.current=null;
         history.pushState({idx:navStack.current.length},"","");
         return;
       }
+      // 2. RecordScreen 내 서브화면이 열려있으면 먼저 닫기
+      if(recordSelRef.current){
+        recordSelRef.current(); // setSel(null) 호출
+        history.pushState({idx:navStack.current.length||1},"","");
+        return;
+      }
+      // 3. navStack에서 이전 상태 복원
       const prev=navStack.current.pop();
       if(prev){
         if(prev.screen==="login"||prev.screen==="signup") setScreen(prev.screen);
@@ -3122,7 +3124,7 @@ function App(){
   return(
     <div style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",background:"white",position:"relative"}}>
       {tab==="home"     &&<HomeScreen     app={app} setApp={setApp} onNoticeMore={()=>{pushNav({screen:"app",tab,noticeOpen:false,disasterOpen});setNoticeOpen(true);}} onDisasterLink={goDisaster}/>}
-      {tab==="record"   &&<RecordScreen   app={app} setApp={setApp} initDisaster={disasterOpen} key={disasterOpen?"d":"n"}/>}
+      {tab==="record"   &&<RecordScreen   app={app} setApp={setApp} initDisaster={disasterOpen} key={disasterOpen?"d":"n"} recordSelRef={recordSelRef}/>}
       {tab==="my"       &&<MyScreen       app={app} setApp={setApp} onLogout={onLogout}/>}
       {tab==="admin"    &&isAdmin&&<AdminScreen app={app} setApp={setApp}/>}
       <NavBar active={tab} setActive={goTab} isAdmin={isAdmin}/>
@@ -3191,7 +3193,7 @@ function openShModal(type, user) {
   _shUser = user;
   const modal = document.getElementById('shModal');
   modal.style.display = 'flex';
-  
+  history.pushState({shModal:true},"","");
 
   const db = shLoad();
   const key = user?.id || 'unknown';
@@ -3249,6 +3251,14 @@ function closeShModal() {
 
 // ESC 키로 닫기
 document.addEventListener('keydown', e => { if(e.key === 'Escape') closeShModal(); });
+// 안드로이드 뒤로가기로 shModal 닫기
+window.addEventListener('popstate', e => {
+  const modal = document.getElementById('shModal');
+  if(modal && modal.style.display !== 'none') {
+    modal.style.display = 'none';
+    _shType = null; _shUser = null;
+  }
+});
 
 // ════════ 파종 작물별 모아보기 ════════
 const SOW_CROP_GROUPS = {"벼":["벼"],"콩":["콩"],"맥류":["보리","밀","트리티케일"]};
