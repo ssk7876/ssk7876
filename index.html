@@ -226,7 +226,7 @@ function SignupScreen({app,setApp,onBack}){
   const[cropCount,setCropCount]=useState(1);
   const[extras,setExtras]=useState([emptyExtra(),emptyExtra()]);
   const[idOk,setIdOk]=useState(false);const[idMsg,setIdMsg]=useState("");
-  const[pwErr,setPwErr]=useState("");const[err,setErr]=useState("");const[done,setDone]=useState(false);
+  const[pwErr,setPwErr]=useState("");const[pwConfirm,setPwConfirm]=useState("");const[pwConfirmErr,setPwConfirmErr]=useState("");const[err,setErr]=useState("");const[done,setDone]=useState(false);
   const[sigModal,setSigModal]=useState(false);
   const upd=(k,v)=>{setF(p=>({...p,[k]:v}));if(k==="id"){setIdOk(false);setIdMsg("");}if(k==="pw")setPwErr(/^(?=.*[a-zA-Z])(?=.*\d).{10,}$/.test(v)?"":"10자 이상의 영문과 숫자 조합이어야 합니다.");};
   const updExtra=(i,k,v)=>setExtras(p=>{const n=[...p];n[i]={...n[i],[k]:v};return n;});
@@ -234,6 +234,7 @@ function SignupScreen({app,setApp,onBack}){
   const submit=()=>{
     if(!idOk)return setErr("중복 ID 확인을 해주세요.");
     if(!/^(?=.*[a-zA-Z])(?=.*\d).{10,}$/.test(f.pw))return setErr("비밀번호 형식을 확인해주세요.");
+    if(f.pw!==pwConfirm)return setErr("비밀번호가 일치하지 않습니다.");
     if(!f.region)return setErr("지역명을 입력해주세요.");
     if(!f.danjiName)return setErr("단지명을 입력해주세요.");
     if(!f.chairName)return setErr("단지회장명을 입력해주세요.");
@@ -282,6 +283,12 @@ function SignupScreen({app,setApp,onBack}){
         <SLI label="비밀번호">{inp("pw","비밀번호","password")}
           <p style={{fontSize:11,color:"#9ca3af",marginTop:4}}>10자 이상의 영문과 숫자 조합</p>
           {pwErr&&<p style={{fontSize:12,color:"#ef4444",marginTop:2}}>{pwErr}</p>}
+        </SLI>
+        <SLI label="비밀번호 재확인">
+          <input type="password" value={pwConfirm} onChange={e=>{setPwConfirm(e.target.value);setPwConfirmErr(e.target.value&&f.pw&&e.target.value!==f.pw?"비밀번호가 일치하지 않습니다.":"");}} placeholder="비밀번호 재입력" style={inputStyle}
+            onFocus={e=>e.target.style.borderColor="#16a34a"} onBlur={e=>e.target.style.borderColor="#d1d5db"}/>
+          {pwConfirm&&f.pw&&pwConfirm===f.pw&&<p style={{fontSize:12,color:"#16a34a",marginTop:4,fontWeight:700}}>✓ 비밀번호가 일치합니다.</p>}
+          {pwConfirmErr&&<p style={{fontSize:12,color:"#ef4444",marginTop:4}}>{pwConfirmErr}</p>}
         </SLI>
         {[["danjiName","단지명"],["region","지역명"],["chairName","단지회장명"]].map(([k,l])=><SLI key={k} label={l}>{inp(k,l)}</SLI>)}
         {/* 작물 수 */}
@@ -515,45 +522,255 @@ function NoticeScreen({app,setApp,onBack,noticeModalCloser}){
 }
 
 /* ════════════════════ HOME ════════════════════ */
+/* ════════════════════ HOME CALENDAR ════════════════════ */
+function HomeCalendar({app,setApp,isAdmin}){
+  const today=new Date();
+  const[curY,setCurY]=useState(today.getFullYear());
+  const[curM,setCurM]=useState(today.getMonth()); // 0-indexed
+  const[selDay,setSelDay]=useState(null);
+  const[showAddModal,setShowAddModal]=useState(false);
+  const[editItem,setEditItem]=useState(null);
+
+  const schedules=app.schedules||[];
+  const todayStr=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+
+  // 달력 날짜 계산
+  const firstDay=new Date(curY,curM,1).getDay(); // 0=일
+  const daysInMonth=new Date(curY,curM+1,0).getDate();
+  const weeks=[];
+  let day=1-firstDay;
+  while(day<=daysInMonth){
+    const week=[];
+    for(let d=0;d<7;d++,day++) week.push(day>=1&&day<=daysInMonth?day:null);
+    weeks.push(week);
+  }
+
+  const getDateStr=(d)=>`${curY}-${String(curM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const getSchedsForDay=(d)=>schedules.filter(s=>s.date===getDateStr(d));
+
+  const prevM=()=>{if(curM===0){setCurY(y=>y-1);setCurM(11);}else setCurM(m=>m-1);setSelDay(null);};
+  const nextM=()=>{if(curM===11){setCurY(y=>y+1);setCurM(0);}else setCurM(m=>m+1);setSelDay(null);};
+
+  const saveSchedule=(item)=>{
+    let next;
+    if(item.id&&schedules.some(s=>s.id===item.id)){
+      next={...app,schedules:schedules.map(s=>s.id===item.id?item:s)};
+    } else {
+      next={...app,schedules:[...schedules,{...item,id:Date.now()}]};
+    }
+    setApp(next);sv(next);
+    setShowAddModal(false);setEditItem(null);
+  };
+  const deleteSchedule=(id)=>{
+    const next={...app,schedules:schedules.filter(s=>s.id!==id)};
+    setApp(next);sv(next);
+    setSelDay(null);
+  };
+
+  const selDayStr=selDay?getDateStr(selDay):null;
+  const selDayScheds=selDay?getSchedsForDay(selDay):[];
+  const DOW=['일','월','화','수','목','금','토'];
+  const MONTHS=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+
+  return(
+    <div style={{background:"white",borderRadius:20,boxShadow:"0 1px 8px rgba(0,0,0,.08)",border:"1px solid #f0fdf4",marginBottom:16,overflow:"hidden"}}>
+      {/* 달력 헤더 */}
+      <div style={{background:"linear-gradient(135deg,#15803d,#16a34a)",padding:"12px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <button onClick={prevM} style={{background:"rgba(255,255,255,.2)",border:"none",color:"white",borderRadius:8,width:32,height:32,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>‹</button>
+        <div style={{textAlign:"center"}}>
+          <div style={{color:"white",fontWeight:900,fontSize:17}}>{curY}년 {MONTHS[curM]}</div>
+          {isAdmin&&<div style={{color:"rgba(255,255,255,.8)",fontSize:11,marginTop:2}}>날짜를 탭하여 일정 추가</div>}
+        </div>
+        <button onClick={nextM} style={{background:"rgba(255,255,255,.2)",border:"none",color:"white",borderRadius:8,width:32,height:32,fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>›</button>
+      </div>
+      {/* 요일 헤더 */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",background:"#f0fdf4"}}>
+        {DOW.map((d,i)=>(
+          <div key={d} style={{textAlign:"center",padding:"6px 0",fontSize:11,fontWeight:900,color:i===0?"#ef4444":i===6?"#2563eb":"#374151"}}>{d}</div>
+        ))}
+      </div>
+      {/* 날짜 그리드 */}
+      <div style={{padding:"4px 4px 8px"}}>
+        {weeks.map((week,wi)=>(
+          <div key={wi} style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:"2px",marginBottom:2}}>
+            {week.map((d,di)=>{
+              if(!d) return <div key={di}/>;
+              const ds=getDateStr(d);
+              const scheds=getSchedsForDay(d);
+              const isToday=ds===todayStr;
+              const isSel=selDay===d;
+              const hasSched=scheds.length>0;
+              return(
+                <div key={di} onClick={()=>{setSelDay(isSel?null:d);if(isAdmin&&!isSel){}}}
+                  style={{minHeight:44,borderRadius:10,padding:"4px 2px",cursor:"pointer",textAlign:"center",
+                    background:isSel?"#16a34a":isToday?"#dcfce7":"white",
+                    border:isSel?"2px solid #15803d":isToday?"2px solid #16a34a":"2px solid transparent",
+                    transition:"all .12s"}}>
+                  <div style={{fontSize:13,fontWeight:isToday||isSel?900:500,color:di===0?"#ef4444":di===6?"#2563eb":isSel?"white":isToday?"#15803d":"#1f2937",lineHeight:1.4}}>{d}</div>
+                  {hasSched&&(
+                    <div style={{display:"flex",flexDirection:"column",gap:1,marginTop:1}}>
+                      {scheds.slice(0,2).map((s,si)=>(
+                        <div key={si} style={{background:isSel?"rgba(255,255,255,.3)":"#16a34a",borderRadius:3,padding:"1px 2px",fontSize:"8px",color:"white",fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.title}</div>
+                      ))}
+                      {scheds.length>2&&<div style={{fontSize:"8px",color:isSel?"rgba(255,255,255,.7)":"#9ca3af",fontWeight:700}}>+{scheds.length-2}</div>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      {/* 선택된 날 일정 */}
+      {selDay&&(
+        <div style={{borderTop:"1px solid #f0fdf4",padding:"12px 14px"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
+            <span style={{fontWeight:900,fontSize:14,color:"#15803d"}}>📅 {curM+1}월 {selDay}일 일정</span>
+            {isAdmin&&<button onClick={()=>{setEditItem({date:selDayStr,title:"",location:""});setShowAddModal(true);}}
+              style={{background:"#16a34a",color:"white",border:"none",borderRadius:8,padding:"5px 12px",fontSize:12,fontWeight:700,cursor:"pointer"}}>+ 추가</button>}
+          </div>
+          {selDayScheds.length===0
+            ?<p style={{color:"#9ca3af",fontSize:13,margin:0,textAlign:"center",padding:"8px 0"}}>이 날 일정이 없습니다.</p>
+            :selDayScheds.map(s=>(
+              <div key={s.id} style={{background:"#f0fdf4",borderRadius:10,padding:"10px 12px",marginBottom:6,display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:700,fontSize:14,color:"#14532d",marginBottom:2}}>{s.title}</div>
+                  {s.location&&<div style={{fontSize:12,color:"#6b7280"}}>📍 {s.location}</div>}
+                </div>
+                {isAdmin&&(
+                  <div style={{display:"flex",gap:4,flexShrink:0}}>
+                    <button onClick={()=>{setEditItem(s);setShowAddModal(true);}}
+                      style={{background:"#e0f2fe",color:"#0369a1",border:"none",borderRadius:6,padding:"4px 8px",fontSize:11,fontWeight:700,cursor:"pointer"}}>수정</button>
+                    <button onClick={()=>{if(confirm("일정을 삭제하시겠습니까?"))deleteSchedule(s.id);}}
+                      style={{background:"#fee2e2",color:"#dc2626",border:"none",borderRadius:6,padding:"4px 8px",fontSize:11,fontWeight:700,cursor:"pointer"}}>삭제</button>
+                  </div>
+                )}
+              </div>
+            ))
+          }
+        </div>
+      )}
+      {/* 일정 추가/수정 모달 */}
+      {showAddModal&&<SchedAddModal item={editItem} onSave={saveSchedule} onClose={()=>{setShowAddModal(false);setEditItem(null);}}/>}
+    </div>
+  );
+}
+
+function SchedAddModal({item,onSave,onClose}){
+  const[title,setTitle]=useState(item?.title||"");
+  const[location,setLocation]=useState(item?.location||"");
+  const[date,setDate]=useState(item?.date||"");
+  const[err,setErr]=useState("");
+  const submit=()=>{
+    if(!title.trim())return setErr("일정 제목을 입력해주세요.");
+    if(!date)return setErr("날짜를 선택해주세요.");
+    onSave({id:item?.id,title:title.trim(),location:location.trim(),date});
+  };
+  return(
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 20px"}} onClick={onClose}>
+      <div style={{background:"white",borderRadius:20,padding:22,width:"100%",maxWidth:360,boxShadow:"0 20px 40px rgba(0,0,0,.2)"}} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
+          <h3 style={{fontWeight:900,fontSize:17,margin:0,color:"#15803d"}}>{item?.id?"✏️ 일정 수정":"➕ 일정 추가"}</h3>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,color:"#9ca3af",cursor:"pointer",lineHeight:1}}>×</button>
+        </div>
+        {[["날짜",<input type="date" value={date} onChange={e=>setDate(e.target.value)} style={{width:"100%",border:"2px solid #d1d5db",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",boxSizing:"border-box"}} onFocus={e=>e.target.style.borderColor="#16a34a"} onBlur={e=>e.target.style.borderColor="#d1d5db"}/>],
+           ["제목",<input value={title} onChange={e=>setTitle(e.target.value)} placeholder="일정 제목 입력" style={{width:"100%",border:"2px solid #d1d5db",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",boxSizing:"border-box"}} onFocus={e=>e.target.style.borderColor="#16a34a"} onBlur={e=>e.target.style.borderColor="#d1d5db"}/>],
+           ["장소",<input value={location} onChange={e=>setLocation(e.target.value)} placeholder="장소 입력 (선택)" style={{width:"100%",border:"2px solid #d1d5db",borderRadius:10,padding:"10px 12px",fontSize:14,outline:"none",boxSizing:"border-box"}} onFocus={e=>e.target.style.borderColor="#16a34a"} onBlur={e=>e.target.style.borderColor="#d1d5db"}/>],
+        ].map(([lbl,inp])=>(
+          <div key={lbl} style={{marginBottom:12}}>
+            <label style={{display:"block",fontSize:13,fontWeight:700,color:"#374151",marginBottom:5}}>{lbl}</label>
+            {inp}
+          </div>
+        ))}
+        {err&&<p style={{color:"#ef4444",fontSize:13,margin:"0 0 8px",textAlign:"center"}}>{err}</p>}
+        <div style={{display:"flex",gap:10,marginTop:4}}>
+          <button onClick={onClose} style={{flex:1,background:"#f3f4f6",color:"#374151",border:"none",borderRadius:12,padding:13,fontWeight:700,cursor:"pointer"}}>취소</button>
+          <button onClick={submit} style={{flex:2,background:"#16a34a",color:"white",border:"none",borderRadius:12,padding:13,fontWeight:900,cursor:"pointer",boxShadow:"0 4px 12px rgba(22,163,74,.3)"}}>저장</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HomeScreen({app,setApp,onNoticeMore,onDisasterLink}){
   const u=app.currentUser;
+  const isAdmin=u?.role==="admin";
   const userGroup=(()=>{const c=u?.crop||"";if(c==="벼")return"벼";if(c==="콩")return"콩";if(["보리","밀","트리티케일"].includes(c))return"맥류";return null;})();
-  const notices=(app.notices||[]).filter(n=>{if(!n.targets||n.targets.includes("전체"))return true;if(!userGroup)return true;return n.targets.includes(userGroup);}).slice(0,3);
+  const allNotices=(app.notices||[]).filter(n=>{if(!n.targets||n.targets.includes("전체"))return true;if(!userGroup)return true;return n.targets.includes(userGroup);});
+  const urgentNotices=allNotices.filter(n=>n.urgent).slice(0,3);
+  const normalNotices=allNotices.filter(n=>!n.urgent).slice(0,3);
+  const[noticeTab,setNoticeTab]=useState("urgent");
+  const displayNotices=noticeTab==="urgent"?urgentNotices:normalNotices;
+
+  const tabBtn=(active,onClick,label)=>(
+    <button onClick={onClick} style={{flex:1,padding:"8px 0",border:"none",borderRadius:10,fontWeight:900,fontSize:13,cursor:"pointer",transition:"all .15s",
+      background:active?"#16a34a":"white",color:active?"white":"#6b7280",
+      boxShadow:active?"0 2px 8px rgba(22,163,74,.25)":"none"}}>
+      {label}
+    </button>
+  );
+
   return(
     <div style={{minHeight:"100vh",background:"#f9fafb",paddingBottom:90}}>
-      <div style={{background:"#16a34a",padding:"16px"}}>
-        <h1 style={{fontSize:20,fontWeight:900,color:"white",margin:0}}>🌾 채종단지 생산관리</h1>
+      <div style={{background:"linear-gradient(135deg,#15803d,#16a34a)",padding:"20px 16px 24px"}}>
+        <h1 style={{fontSize:20,fontWeight:900,color:"white",margin:"0 0 4px"}}>🌾 채종단지 생산관리</h1>
+        <p style={{fontSize:12,color:"rgba(255,255,255,.75)",margin:0}}>국립종자원 전북지원</p>
       </div>
+
       <div style={{padding:"16px 16px 0"}}>
-      {/* 재해 및 병해충 발생 시 수시 보고 */}
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-        <h2 style={{fontSize:15,fontWeight:900,color:"#1f2937",margin:0}}>🚨 재해 및 병해충 발생 시 수시 보고</h2>
-        <button onClick={onDisasterLink} style={{background:"none",border:"none",color:"#16a34a",fontSize:13,fontWeight:900,cursor:"pointer",padding:"4px 0"}}>→ 바로가기</button>
-      </div>
-      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-        <h2 style={{fontSize:15,fontWeight:900,color:"#1f2937",margin:0}}>📢 공지사항</h2>
-        <button onClick={onNoticeMore} style={{background:"none",border:"none",color:"#16a34a",fontSize:13,fontWeight:900,cursor:"pointer",padding:"4px 0"}}>+ 더보기</button>
-      </div>
-      {notices.map(n=>(
-        <div key={n.id} style={{...card,padding:16,marginBottom:10}}>
-          <div style={{display:"flex",alignItems:"flex-start",gap:6,marginBottom:4,flexWrap:"wrap"}}>
-            {n.urgent&&<span style={{background:"#ef4444",color:"white",fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:700,flexShrink:0}}>긴급</span>}
-            {n.targets&&!n.targets.includes("전체")&&n.targets.map(t=>(
-              <span key={t} style={{background:"#dcfce7",color:"#16a34a",fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:700,flexShrink:0}}>{t}</span>
-            ))}
-            <span style={{fontWeight:700,color:"#111827",fontSize:14,lineHeight:1.3,flex:1}}>{n.title}</span>
+        {/* 재해 버튼 */}
+        <button onClick={onDisasterLink} style={{
+          width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",
+          background:"linear-gradient(135deg,#dc2626,#b91c1c)",
+          border:"none",borderRadius:16,padding:"18px 20px",marginBottom:16,
+          boxShadow:"0 4px 16px rgba(220,38,38,.4)",cursor:"pointer",
+          animation:"pulse-red 2s infinite"
+        }}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <span style={{fontSize:28}}>🚨</span>
+            <div style={{textAlign:"left"}}>
+              <div style={{color:"white",fontWeight:900,fontSize:15,lineHeight:1.2}}>재해 및 병해충 발생 시</div>
+              <div style={{color:"rgba(255,255,255,.9)",fontWeight:900,fontSize:17,lineHeight:1.2}}>수시 보고</div>
+              <div style={{color:"rgba(255,255,255,.7)",fontSize:11,marginTop:3}}>발생 즉시 클릭하여 보고하세요</div>
+            </div>
           </div>
-          <p style={{fontSize:11,color:"#9ca3af",margin:"0 0 4px"}}>{n.date}</p>
-          <p style={{fontSize:13,color:"#6b7280",margin:0}}>{n.summary}</p>
+          <div style={{background:"rgba(255,255,255,.25)",borderRadius:10,padding:"8px 14px",color:"white",fontWeight:900,fontSize:14}}>바로가기 →</div>
+        </button>
+        <style>{`@keyframes pulse-red{0%,100%{box-shadow:0 4px 16px rgba(220,38,38,.4);}50%{box-shadow:0 4px 28px rgba(220,38,38,.7);}}`}</style>
+
+        {/* 공지사항 2탭 */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+          <h2 style={{fontSize:15,fontWeight:900,color:"#1f2937",margin:0}}>📢 공지사항</h2>
+          <button onClick={onNoticeMore} style={{background:"none",border:"none",color:"#16a34a",fontSize:13,fontWeight:900,cursor:"pointer",padding:"4px 0"}}>+ 더보기</button>
         </div>
-      ))}
-      <h2 style={{fontSize:15,fontWeight:900,color:"#1f2937",marginTop:8,marginBottom:12}}>📅 주요 일정</h2>
-      {app.schedules.map(s=>(
-        <div key={s.id} style={{...card,borderLeft:"4px solid #16a34a",padding:16,marginBottom:10}}>
-          <p style={{fontWeight:700,color:"#111827",margin:"0 0 4px",fontSize:15}}>{s.title}</p>
-          <p style={{fontSize:12,color:"#9ca3af",margin:0}}>📍 {s.location} · {s.date}</p>
+        <div style={{display:"flex",gap:6,background:"#f3f4f6",borderRadius:12,padding:4,marginBottom:12}}>
+          {tabBtn(noticeTab==="urgent",()=>setNoticeTab("urgent"),"🚨 긴급공지")}
+          {tabBtn(noticeTab==="normal",()=>setNoticeTab("normal"),"📋 일반공지")}
         </div>
-      ))}
+        {displayNotices.length===0
+          ?<div style={{...card,padding:20,marginBottom:12,textAlign:"center"}}>
+            <p style={{color:"#9ca3af",fontSize:13,margin:0}}>{noticeTab==="urgent"?"긴급 공지가 없습니다.":"일반 공지가 없습니다."}</p>
+           </div>
+          :displayNotices.map(n=>(
+          <div key={n.id} style={{...card,padding:16,marginBottom:10,borderLeft:n.urgent?"4px solid #ef4444":"4px solid #16a34a"}}>
+            <div style={{display:"flex",alignItems:"flex-start",gap:6,marginBottom:4,flexWrap:"wrap"}}>
+              {n.urgent&&<span style={{background:"#ef4444",color:"white",fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:700,flexShrink:0}}>긴급</span>}
+              {n.targets&&!n.targets.includes("전체")&&n.targets.map(t=>(
+                <span key={t} style={{background:"#dcfce7",color:"#16a34a",fontSize:11,padding:"2px 8px",borderRadius:20,fontWeight:700,flexShrink:0}}>{t}</span>
+              ))}
+              <span style={{fontWeight:700,color:"#111827",fontSize:14,lineHeight:1.3,flex:1}}>{n.title}</span>
+            </div>
+            <p style={{fontSize:11,color:"#9ca3af",margin:"0 0 4px"}}>{n.date}</p>
+            <p style={{fontSize:13,color:"#6b7280",margin:0}}>{n.summary}</p>
+          </div>
+        ))}
+
+        {/* 달력 일정표 */}
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,marginTop:4}}>
+          <h2 style={{fontSize:15,fontWeight:900,color:"#1f2937",margin:0}}>📅 주요 일정</h2>
+          {isAdmin&&<span style={{fontSize:11,color:"#9ca3af",fontWeight:600}}>날짜 탭 → 일정 추가/수정</span>}
+        </div>
+        <HomeCalendar app={app} setApp={setApp} isAdmin={isAdmin}/>
       </div>
     </div>
   );
@@ -916,14 +1133,13 @@ function ActivityCell({value,onChange}){
       </button>
       {open&&(
         <>
-          <div style={{position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,.3)"}} onClick={()=>setOpen(false)}/>
-          {/* 화면 정중앙 고정 팝업 */}
-          <div style={{position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",zIndex:50,background:"white",border:"2px solid #16a34a",borderRadius:16,maxHeight:"60vh",overflowY:"auto",width:280,boxShadow:"0 8px 32px rgba(0,0,0,.28)"}}>
-            <div style={{padding:"12px 14px 6px",fontWeight:900,fontSize:13,color:"#16a34a",borderBottom:"1px solid #e5e7eb",marginBottom:4}}>활동내용 선택</div>
+          <div style={{position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,.35)"}} onClick={()=>setOpen(false)}/>
+          <div style={{position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%)",zIndex:50,background:"white",border:"2px solid #16a34a",borderRadius:16,maxHeight:"60vh",overflowY:"auto",width:290,boxShadow:"0 8px 32px rgba(0,0,0,.28)"}}>
+            <div style={{padding:"12px 16px 8px",fontWeight:900,fontSize:13,color:"#16a34a",borderBottom:"1px solid #e5e7eb",position:"sticky",top:0,background:"white"}}>활동내용 선택</div>
             {ACTS.map(opt=>(
               <button key={opt} onClick={()=>{if(opt==="기타"){setCustom(true);onChange("");}else onChange(opt);setOpen(false);}}
-                style={{width:"100%",textAlign:"left",padding:"11px 16px",fontSize:13,background:"none",border:"none",borderBottom:"1px solid #f3f4f6",cursor:"pointer"}}
-                onMouseOver={e=>e.target.style.background="#f0fdf4"} onMouseOut={e=>e.target.style.background="none"}>
+                style={{width:"100%",textAlign:"left",padding:"12px 16px",fontSize:13,background:"none",border:"none",borderBottom:"1px solid #f3f4f6",cursor:"pointer",fontFamily:"inherit"}}
+                onMouseOver={e=>e.currentTarget.style.background="#f0fdf4"} onMouseOut={e=>e.currentTarget.style.background="none"}>
                 {opt}
               </button>
             ))}
@@ -1720,13 +1936,28 @@ function DisinfectionTab({userId}){
       </div>
       <DsFR label="약제소독 물온도(℃)" inline>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <select value={form.drugTemp||"30"} onChange={e=>set("drugTemp",e.target.value)} className="ds-input" style={{width:56,padding:"4px 0px",textAlign:"center"}}>
-            <option value="29">29</option>
-            <option value="30">30</option>
-            <option value="31">31</option>
-            <option value="32">32</option>
-          </select>
+          {!form._drugTempCustom
+            ?<select
+                value={["29","30","31","32"].includes(form.drugTemp||"30")?form.drugTemp||"30":"30"}
+                onChange={e=>{
+                  if(e.target.value==="기타"){setForm(p=>({...p,drugTemp:"",_drugTempCustom:true}));}
+                  else set("drugTemp",e.target.value);
+                }}
+                className="ds-input" style={{width:72,padding:"4px 0px",textAlign:"center"}}>
+                <option value="29">29</option>
+                <option value="30">30</option>
+                <option value="31">31</option>
+                <option value="32">32</option>
+                <option value="기타">기타</option>
+              </select>
+            :<input autoFocus type="number" value={form.drugTemp||""} onChange={e=>set("drugTemp",e.target.value)}
+                placeholder="온도 입력" className="ds-input" style={{width:80,textAlign:"center"}}/>
+          }
           <span style={{fontSize:14}}>℃</span>
+          {form._drugTempCustom&&
+            <button onClick={()=>setForm(p=>({...p,drugTemp:"30",_drugTempCustom:false}))}
+              style={{background:"none",border:"none",color:"#9ca3af",fontSize:12,cursor:"pointer",padding:0,fontFamily:"inherit",whiteSpace:"nowrap"}}>↩ 목록</button>
+          }
         </div>
       </DsFR>
       <div className="ds-row" style={{alignItems:"flex-start"}}>
@@ -1927,6 +2158,7 @@ function DisSeedScreen({app,onBack}){
 
   const[resetKey,setResetKey]=useState(0);
   const[editingFarm,setEditingFarm]=useState(null);
+  const[editingValue,setEditingValue]=useState("");
   const tabKey=`${u?.id||"unknown"}_${selYear}_farm${selFarm}_r${resetKey}`;
 
   const renameFarm=(i,name)=>{
@@ -1936,6 +2168,7 @@ function DisSeedScreen({app,onBack}){
     saveFarms(selYear,next);
     setSelFarm(i);
     setEditingFarm(null);
+    setEditingValue("");
   };
 
   return(
@@ -1977,23 +2210,35 @@ function DisSeedScreen({app,onBack}){
           </div>
           <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
             {farms.map((f,i)=>{
+              const isEditing=editingFarm===i;
+              const isSel=selFarm===i;
               return(
               <div key={i} style={{display:"flex",alignItems:"center",gap:2}}>
-                {editingFarm===i
-                  ? <input
-                      autoFocus
-                      defaultValue={f}
-                      onBlur={e=>renameFarm(i,e.target.value.trim())}
-                      onKeyDown={e=>{if(e.key==="Enter")renameFarm(i,e.target.value.trim());if(e.key==="Escape")setEditingFarm(null);}}
-                      style={{padding:"6px 10px",borderRadius:20,border:"2px solid #16a34a",fontSize:13,fontWeight:700,fontFamily:"inherit",outline:"none",width:80,textAlign:"center"}}
-                    />
-                  : <button
-                      onClick={()=>{setEditingFarm(i);}}
-                      style={{padding:"7px 14px",borderRadius:20,border:"2px solid",borderColor:selFarm===i?"#16a34a":"#d1d5db",background:selFarm===i?"#16a34a":"white",color:selFarm===i?"white":"#374151",fontSize:13,fontWeight:700,cursor:"pointer",fontFamily:"inherit",transition:"all .15s"}}>
-                      {f}
-                    </button>
-                }
-                {i>0&&editingFarm!==i&&<button onClick={()=>removeFarm(i)}
+                <input
+                  ref={el=>{if(el&&isEditing)el.focus();}}
+                  value={isEditing?editingValue:f}
+                  placeholder={isEditing?f:""}
+                  onChange={e=>{if(isEditing)setEditingValue(e.target.value);}}
+                  onFocus={()=>{setEditingFarm(i);setEditingValue("");}}
+                  onBlur={()=>renameFarm(i,editingValue.trim()||f)}
+                  onKeyDown={e=>{
+                    if(e.key==="Enter")e.target.blur();
+                    if(e.key==="Escape"){setEditingFarm(null);setEditingValue("");}
+                  }}
+                  style={{
+                    padding:"7px 14px",borderRadius:20,fontSize:13,fontWeight:700,
+                    fontFamily:"inherit",textAlign:"center",boxSizing:"border-box",
+                    width:Math.max(60,f.length*13+24)+"px",
+                    border:"2px solid",
+                    borderColor:isEditing?"#16a34a":isSel?"#16a34a":"#d1d5db",
+                    background:isEditing?"white":isSel?"#16a34a":"white",
+                    color:isEditing?"#111827":isSel?"white":"#374151",
+                    outline:"none",cursor:"text",
+                    caretColor:isEditing?"#16a34a":"transparent",
+                    transition:"all .15s"
+                  }}
+                />
+                {i>0&&!isEditing&&<button onClick={()=>removeFarm(i)}
                   style={{width:18,height:18,borderRadius:"50%",background:"#ef4444",border:"none",color:"white",fontSize:11,fontWeight:900,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",padding:0,lineHeight:1,marginLeft:-6,marginTop:-12,flexShrink:0}}>×</button>}
               </div>
               );
@@ -2346,8 +2591,16 @@ function RecordScreen({app,setApp,initDisaster,recordSelRef}){
       </div>
       {menuItems.map(item=>(
         <button key={item.key} onClick={()=>{
-          if(item.key==="sowing"){ history.pushState({shModal:"sowing"},"",""); openShModal("sowing",app.currentUser);}
-          else if(item.key==="harvest"){ history.pushState({shModal:"harvest"},"",""); openShModal("harvest",app.currentUser);}
+          if(item.key==="sowing"){
+            if(typeof window._pushNavRecord==='function') window._pushNavRecord();
+            history.pushState({shModal:"sowing"},"","");
+            openShModal("sowing",app.currentUser);
+          }
+          else if(item.key==="harvest"){
+            if(typeof window._pushNavRecord==='function') window._pushNavRecord();
+            history.pushState({shModal:"harvest"},"","");
+            openShModal("harvest",app.currentUser);
+          }
           else goSel(item.key);
         }}
           style={{width:"100%",display:"flex",alignItems:"center",gap:16,background:"white",padding:"18px 20px",borderBottom:"1px solid #f3f4f6",borderLeft:"none",borderRight:"none",borderTop:"none",cursor:"pointer",textAlign:"left"}}>
@@ -3042,11 +3295,20 @@ function App(){
   useEffect(()=>{
     history.replaceState({idx:0},"","");
     const onPop=(e)=>{
-      // 0. 파종/수확 모달이 열려있으면 닫기만 하고 탭은 유지
+      // 0. 파종/수확 모달이 열려있으면 닫고 record 탭으로 복원
       const shModal=document.getElementById('shModal');
       if(shModal&&shModal.style.display!=='none'){
         if(typeof closeShModal==='function') closeShModal();
-        // navStack은 건드리지 않고 history entry만 복원
+        // navStack에서 record 탭 상태 복원
+        const prev=navStack.current.pop();
+        if(prev){
+          setScreen("app");
+          setTab(prev.tab||"record");
+          setNoticeOpen(!!prev.noticeOpen);
+          setDisasterOpen(!!prev.disasterOpen);
+        } else {
+          setTab("record");
+        }
         if(navStack.current.length>0) history.pushState({idx:navStack.current.length},"","");
         else history.replaceState({idx:0},"","");
         return;
@@ -3082,6 +3344,14 @@ function App(){
     };
     window.addEventListener("popstate",onPop);
     return()=>window.removeEventListener("popstate",onPop);
+  },[]);
+
+  // shModal(파종/수확) 열기 전 record 탭 상태를 navStack에 저장하는 헬퍼
+  useEffect(()=>{
+    window._pushNavRecord=()=>{
+      navStack.current.push({screen:"app",tab:"record",noticeOpen:false,disasterOpen:false});
+    };
+    return()=>{delete window._pushNavRecord;};
   },[]);
 
   // screen 전환 시 스택에 이전 상태 push
@@ -3150,7 +3420,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <div id="shModal" style="display:none;" class="sh-modal-overlay">
   <div class="sh-modal-inner">
     <div class="sh-modal-header">
-      <button class="sh-back" onclick="history.back()">←</button>
+      <button class="sh-back" onclick="closeShModal();if(typeof window._pushNavRecord!=='function'){history.back();}else{history.back();}">←</button>
       <h2 id="shModalTitle">파종현황</h2>
     </div>
     <div class="sh-content">
@@ -3575,27 +3845,26 @@ function buildRateGauge(containerId, rate, color, acreage) {
         <div data-handle style="position:absolute;top:50%;left:${pct}%;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:white;border:3px solid #2e7d32;box-shadow:0 2px 8px rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center;cursor:grab;transition:left .08s;touch-action:none;"><span style="font-size:12px;">🌱</span></div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
       <label style="font-size:11px;font-weight:700;color:#374151;white-space:nowrap;">직접 입력:</label>
-      <input type="number" min="0" max="100" value="${pct}"
-        oninput="(function(el){const v=Math.min(100,Math.max(0,parseInt(el.value)||0));_applySowGauge('${containerId}',v);})(this)"
-        style="width:64px;border:1.5px solid #1565c0;border-radius:7px;padding:5px 6px;font-size:13px;font-family:inherit;text-align:center;outline:none;">
+      <input type="number" min="0" max="100" value="${pct}" data-num-input
+        oninput="(function(el){var v=Math.min(100,Math.max(0,parseInt(el.value)||0));_applySowGauge('${containerId}',v);})(this)"
+        style="width:64px;border:1.5px solid ${color};border-radius:7px;padding:5px 6px;font-size:13px;font-family:inherit;text-align:center;outline:none;box-sizing:border-box;">
       <span style="font-size:13px;font-weight:700;color:#374151;">%</span>
     </div>
-    <div style="font-size:11px;font-weight:700;color:#1b5e20;text-align:center;margin-top:6px;">🌱 핸들을 드래그하거나 바를 탭해서 파종률을 설정하세요</div>
+    <div style="font-size:11px;font-weight:700;color:#1b5e20;text-align:center;margin-top:6px;">🌱 핸들을 드래그하거나 숫자를 직접 입력하세요</div>
   </div>`;
 }
 function _applySowGauge(id,val){
   const c=document.getElementById(id); if(!c)return;
   const saved=parseInt(c.dataset.savedRate)||0;
-  val=Math.max(val,saved); // 저장값보다 작아질 수 없음
+  val=Math.max(val,saved);
   const area=parseFloat(c.dataset.area)||0; c.dataset.rate=val;
   const pctEl=c.querySelector('[data-pct-display]'); if(pctEl) pctEl.innerHTML=`${val}<span style="font-size:14px;font-weight:700;">%</span>`;
   const aEl=c.querySelector('[data-area-display]'); if(aEl) aEl.innerHTML=area?`${(area*val/100).toFixed(2)} <span style="font-size:11px;font-weight:700;">/ ${area} ha</span>`:'<span style="font-size:12px;opacity:.7;">면적 미입력</span>';
   const p=c.querySelector('[data-progress]'),h=c.querySelector('[data-handle]');
   if(p) p.style.width=val+'%'; if(h) h.style.left=val+'%';
-  // 직접 입력 숫자 필드 동기화
-  const numInput=c.querySelector('input[type=number]'); if(numInput&&numInput!==document.activeElement) numInput.value=val;
+  const ni=c.querySelector('[data-num-input]'); if(ni&&document.activeElement!==ni) ni.value=val;
 }
 let _sowDrag=null;
 function sowDragStart(e,id){
@@ -3627,27 +3896,26 @@ function buildHarvestRateGauge(containerId, rate, acreage) {
         <div data-handle style="position:absolute;top:50%;left:${pct}%;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;background:white;border:3px solid #e65100;box-shadow:0 2px 8px rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center;cursor:grab;transition:left .08s;touch-action:none;"><span style="font-size:12px;">🌾</span></div>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;margin-top:8px;">
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;">
       <label style="font-size:11px;font-weight:700;color:#374151;white-space:nowrap;">직접 입력:</label>
-      <input type="number" min="0" max="100" value="${pct}"
-        oninput="(function(el){const v=Math.min(100,Math.max(0,parseInt(el.value)||0));_applyHavGauge('${containerId}',v);})(this)"
-        style="width:64px;border:1.5px solid #e65100;border-radius:7px;padding:5px 6px;font-size:13px;font-family:inherit;text-align:center;outline:none;">
+      <input type="number" min="0" max="100" value="${pct}" data-num-input
+        oninput="(function(el){var v=Math.min(100,Math.max(0,parseInt(el.value)||0));_applyHavGauge('${containerId}',v);})(this)"
+        style="width:64px;border:1.5px solid #e65100;border-radius:7px;padding:5px 6px;font-size:13px;font-family:inherit;text-align:center;outline:none;box-sizing:border-box;">
       <span style="font-size:13px;font-weight:700;color:#374151;">%</span>
     </div>
-    <div style="font-size:11px;font-weight:700;color:#bf360c;text-align:center;margin-top:6px;">🌾 핸들을 드래그하거나 바를 탭해서 수확률을 설정하세요</div>
+    <div style="font-size:11px;font-weight:700;color:#bf360c;text-align:center;margin-top:6px;">🌾 핸들을 드래그하거나 숫자를 직접 입력하세요</div>
   </div>`;
 }
 function _applyHavGauge(id,val){
   const c=document.getElementById(id); if(!c)return;
   const saved=parseInt(c.dataset.savedRate)||0;
-  val=Math.max(val,saved); // 저장값보다 작아질 수 없음
+  val=Math.max(val,saved);
   const area=parseFloat(c.dataset.area)||0; c.dataset.rate=val;
   const pctEl=c.querySelector('[data-pct-display]'); if(pctEl) pctEl.innerHTML=`${val}<span style="font-size:14px;font-weight:700;">%</span>`;
   const aEl=c.querySelector('[data-area-display]'); if(aEl) aEl.innerHTML=area?`${(area*val/100).toFixed(2)} <span style="font-size:11px;font-weight:700;">/ ${area} ha</span>`:'<span style="font-size:12px;opacity:.7;">면적 미입력</span>';
   const p=c.querySelector('[data-progress]'),h=c.querySelector('[data-handle]');
   if(p) p.style.width=val+'%'; if(h) h.style.left=val+'%';
-  // 직접 입력 숫자 필드 동기화
-  const numInput=c.querySelector('input[type=number]'); if(numInput&&numInput!==document.activeElement) numInput.value=val;
+  const ni=c.querySelector('[data-num-input]'); if(ni&&document.activeElement!==ni) ni.value=val;
 }
 let _havDrag=null;
 function havDragStart(e,id){
