@@ -306,29 +306,37 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
   const[remId,setRemId]=useState(()=>!!localStorage.getItem("saved_id"));
   const[stayLogin,setStayLogin]=useState(()=>!!localStorage.getItem("stay_login"));
 
+  const mergeInitUsers=(users)=>{
+    // INIT의 기본 계정(admin 등)이 없으면 병합
+    const merged=[...(users||[])];
+    INIT.users.forEach(iu=>{if(!merged.find(u=>u.id===iu.id))merged.unshift(iu);});
+    return merged;
+  };
   const doLogin=()=>{
     // Supabase에서 최신 데이터 가져온 후 로그인 처리
     ldFromSupabase().then(freshData=>{
       const freshApp=freshData||ld()||{users:app.users};
-      const u=(freshApp.users||app.users).find(u=>u.id===id&&u.pw===pw);
+      const mergedUsers=mergeInitUsers(freshApp.users||app.users);
+      const u=mergedUsers.find(u=>u.id===id&&u.pw===pw);
       if(u){
         if(remId) localStorage.setItem("saved_id",id);
         else localStorage.removeItem("saved_id");
         if(stayLogin) localStorage.setItem("stay_login",id);
         else localStorage.removeItem("stay_login");
-        setApp(p=>({...p,...freshApp,currentUser:u}));
+        setApp(p=>({...p,...freshApp,users:mergedUsers,currentUser:u}));
         onLogin();
       } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
     }).catch(()=>{
       // 네트워크 오류 시 로컬 fallback
       const freshApp=ld()||{users:app.users};
-      const u=(freshApp.users||app.users).find(u=>u.id===id&&u.pw===pw);
+      const mergedUsers=mergeInitUsers(freshApp.users||app.users);
+      const u=mergedUsers.find(u=>u.id===id&&u.pw===pw);
       if(u){
         if(remId) localStorage.setItem("saved_id",id);
         else localStorage.removeItem("saved_id");
         if(stayLogin) localStorage.setItem("stay_login",id);
         else localStorage.removeItem("stay_login");
-        setApp(p=>({...p,...freshApp,currentUser:u}));
+        setApp(p=>({...p,...freshApp,users:mergedUsers,currentUser:u}));
         onLogin();
       } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
     });
@@ -390,11 +398,13 @@ function SignupScreen({app,setApp,onBack}){
   const[idOk,setIdOk]=useState(false);const[idMsg,setIdMsg]=useState("");
   const[pwErr,setPwErr]=useState("");const[pwConfirm,setPwConfirm]=useState("");const[pwConfirmErr,setPwConfirmErr]=useState("");const[err,setErr]=useState("");const[done,setDone]=useState(false);
   const[sigModal,setSigModal]=useState(false);
-  const upd=(k,v)=>{setF(p=>({...p,[k]:v}));if(k==="id"){setIdOk(false);setIdMsg("");}if(k==="pw")setPwErr(/^(?=.*[a-zA-Z])(?=.*\d).{10,}$/.test(v)?"":"10자 이상의 영문과 숫자 조합이어야 합니다.");};
+  const ID_REGEX=/^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z0-9]{2,}$/;
+  const upd=(k,v)=>{setF(p=>({...p,[k]:v}));if(k==="id"){setIdOk(false);setIdMsg(v&&!ID_REGEX.test(v)?"영문과 숫자를 모두 포함하여 2자 이상으로 입력해주세요.":"");}if(k==="pw")setPwErr(/^(?=.*[a-zA-Z])(?=.*\d).{10,}$/.test(v)?"":"10자 이상의 영문과 숫자 조합이어야 합니다.");};
   const updExtra=(i,k,v)=>setExtras(p=>{const n=[...p];n[i]={...n[i],[k]:v};return n;});
-  const checkId=()=>{if(!f.id)return setIdMsg("아이디를 입력하세요.");if(app.users.some(u=>u.id===f.id)){setIdMsg("이미 사용중인 아이디입니다.");setIdOk(false);}else{setIdMsg("사용 가능한 아이디입니다.");setIdOk(true);}};
+  const checkId=()=>{if(!f.id)return setIdMsg("아이디를 입력하세요.");if(!ID_REGEX.test(f.id))return setIdMsg("영문과 숫자를 모두 포함하여 2자 이상으로 입력해주세요.");if(app.users.some(u=>u.id===f.id)){setIdMsg("이미 사용중인 아이디입니다.");setIdOk(false);}else{setIdMsg("사용 가능한 아이디입니다.");setIdOk(true);}};
   const submit=()=>{
     if(!idOk)return setErr("중복 ID 확인을 해주세요.");
+    if(!ID_REGEX.test(f.id))return setErr("아이디는 영문과 숫자를 포함하여 2자 이상이어야 합니다.");
     if(!/^(?=.*[a-zA-Z])(?=.*\d).{10,}$/.test(f.pw))return setErr("비밀번호 형식을 확인해주세요.");
     if(f.pw!==pwConfirm)return setErr("비밀번호가 일치하지 않습니다.");
     if(!f.region)return setErr("지역명을 입력해주세요.");
@@ -440,6 +450,7 @@ function SignupScreen({app,setApp,onBack}){
               onFocus={e=>e.target.style.borderColor="#16a34a"} onBlur={e=>e.target.style.borderColor="#d1d5db"}/>
             <button onClick={checkId} style={{background:"#16a34a",color:"white",border:"none",borderRadius:12,padding:"12px 14px",fontSize:13,fontWeight:700,cursor:"pointer",whiteSpace:"nowrap"}}>중복ID 확인</button>
           </div>
+          <p style={{fontSize:11,color:"#9ca3af",marginTop:4}}>영문과 숫자를 포함하여 2자 이상 (예: abc1, hong2)</p>
           {idMsg&&<p style={{fontSize:13,color:idOk?"#16a34a":"#ef4444",marginTop:4}}>{idMsg}</p>}
         </SLI>
         <SLI label="비밀번호">{inp("pw","비밀번호","password")}
@@ -763,18 +774,18 @@ function HomeCalendar({app,setApp,isAdmin}){
               const isSel=selDay===d;
               const hasSched=scheds.length>0;
               return(
-                <div key={di} onClick={()=>{setSelDay(isSel?null:d);if(isAdmin&&!isSel){}}}
+                <div key={di} onClick={()=>setSelDay(isSel?null:d)}
                   style={{minHeight:44,borderRadius:10,padding:"4px 2px",cursor:"pointer",textAlign:"center",
                     background:isSel?"#16a34a":isToday?"#dcfce7":"white",
                     border:isSel?"2px solid #15803d":isToday?"2px solid #16a34a":"2px solid transparent",
-                    transition:"all .12s"}}>
-                  <div style={{fontSize:13,fontWeight:isToday||isSel?900:500,color:di===0?"#ef4444":di===6?"#2563eb":isSel?"white":isToday?"#15803d":"#1f2937",lineHeight:1.4}}>{d}</div>
+                    transition:"all .12s",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start"}}>
+                  <div style={{fontSize:13,fontWeight:isToday||isSel?900:500,color:di===0?"#ef4444":di===6?"#2563eb":isSel?"white":isToday?"#15803d":"#1f2937",lineHeight:1.6}}>{d}</div>
                   {hasSched&&(
-                    <div style={{display:"flex",flexDirection:"column",gap:1,marginTop:1}}>
-                      {scheds.slice(0,2).map((s,si)=>(
-                        <div key={si} style={{background:isSel?"rgba(255,255,255,.3)":"#16a34a",borderRadius:3,padding:"1px 2px",fontSize:"8px",color:"white",fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.title}</div>
+                    <div style={{display:"flex",flexDirection:"row",gap:2,marginTop:1,justifyContent:"center",flexWrap:"wrap"}}>
+                      {scheds.slice(0,3).map((_,si)=>(
+                        <div key={si} style={{width:6,height:6,borderRadius:"50%",background:isSel?"rgba(255,255,255,.9)":"#f97316",flexShrink:0}}/>
                       ))}
-                      {scheds.length>2&&<div style={{fontSize:"8px",color:isSel?"rgba(255,255,255,.7)":"#9ca3af",fontWeight:700}}>+{scheds.length-2}</div>}
+                      {scheds.length>3&&<div key="more" style={{width:6,height:6,borderRadius:"50%",background:isSel?"rgba(255,255,255,.5)":"#fdba74",flexShrink:0}}/>}
                     </div>
                   )}
                 </div>
@@ -795,9 +806,12 @@ function HomeCalendar({app,setApp,isAdmin}){
             ?<p style={{color:"#9ca3af",fontSize:13,margin:0,textAlign:"center",padding:"8px 0"}}>이 날 일정이 없습니다.</p>
             :selDayScheds.map(s=>(
               <div key={s.id} style={{background:"#f0fdf4",borderRadius:10,padding:"10px 12px",marginBottom:6,display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontWeight:700,fontSize:14,color:"#14532d",marginBottom:2}}>{s.title}</div>
-                  {s.location&&<div style={{fontSize:12,color:"#6b7280"}}>📍 {s.location}</div>}
+                <div style={{display:"flex",alignItems:"flex-start",gap:8,flex:1,minWidth:0}}>
+                  <div style={{width:8,height:8,borderRadius:"50%",background:"#f97316",flexShrink:0,marginTop:5}}/>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:700,fontSize:14,color:"#14532d",marginBottom:2}}>{s.title}</div>
+                    {s.location&&<div style={{fontSize:12,color:"#6b7280"}}>📍 {s.location}</div>}
+                  </div>
                 </div>
                 {isAdmin&&(
                   <div style={{display:"flex",gap:4,flexShrink:0}}>
@@ -885,8 +899,8 @@ function HomeScreen({app,setApp,onNoticeMore,onDisasterLink}){
           width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",
           background:"linear-gradient(135deg,#dc2626,#b91c1c)",
           border:"none",borderRadius:16,padding:"18px 20px",marginBottom:16,
-          boxShadow:"0 4px 16px rgba(220,38,38,.4)",cursor:"pointer",
-          animation:"pulse-red 2s infinite"
+          cursor:"pointer",
+
         }}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <span style={{fontSize:28}}>🚨</span>
@@ -898,7 +912,6 @@ function HomeScreen({app,setApp,onNoticeMore,onDisasterLink}){
           </div>
           <div style={{background:"rgba(255,255,255,.25)",borderRadius:10,padding:"8px 14px",color:"white",fontWeight:900,fontSize:14}}>바로가기 →</div>
         </button>
-        <style>{`@keyframes pulse-red{0%,100%{box-shadow:0 4px 16px rgba(220,38,38,.4);}50%{box-shadow:0 4px 28px rgba(220,38,38,.7);}}`}</style>
 
         {/* 공지사항 2탭 */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
@@ -1317,7 +1330,7 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
   const u=app.currentUser;
   const rk=`${u.id}_${year}_${month}`;
   const stored=app.records[rk];
-  const TOTAL=12;const emptyRow=()=>({date:"",time:"3시간",activity:""});
+  const TOTAL=12;const emptyRow=()=>({date:"",time:"",activity:""});
   const[rows,setRows]=useState(stored?.rows||Array.from({length:TOTAL},emptyRow));
   const[delModal,setDel]=useState(false);const[preview,setPrev]=useState(false);
   const[toast,setToast]=useState(false);
@@ -1328,13 +1341,11 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
   const changeMonth=(m)=>{if(setSelMonth)setSelMonth(m);};
 
   // year/month prop 변경 시 rows/sent 동기화
-  const prevRk=React.useRef(rk);
-  if(prevRk.current!==rk){
-    prevRk.current=rk;
+  useEffect(()=>{
     const s=app.records[rk];
     setRows(s?.rows||Array.from({length:TOTAL},emptyRow));
     setSent(s?.sent||false);
-  }
+  },[rk]);
   const filled=rows.filter(r=>r.date).length;
   const updRow=(i,k,v)=>setRows(p=>{const n=[...p];n[i]={...n[i],[k]:v};return n;});
   const doSave=()=>{
@@ -1500,9 +1511,9 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
 
   return(
     <div style={{minHeight:"100vh",background:"#f9fafb"}}>
-      <div style={{background:"#16a34a",padding:"16px",display:"flex",alignItems:"center"}}>
-        <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:22,cursor:"pointer",marginRight:8,lineHeight:1}}>←</button>
+      <div style={{background:"#16a34a",padding:"16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <h1 style={{color:"white",fontWeight:900,fontSize:17,margin:0}}>📋 생산관리지도부</h1>
+        <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:24,cursor:"pointer",lineHeight:1,padding:"0 4px",fontWeight:700}}>✕</button>
       </div>
       <div style={{padding:"16px 12px 130px"}}>
         {/* 연도·월 선택 */}
@@ -1554,8 +1565,9 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
               <div style={{padding:"6px 4px",borderRight:"1px solid #f3f4f6",fontSize:"0.72rem"}}>
                 {sent
                   ?<span style={{fontSize:"0.82rem",color:"#374151",padding:"3px 4px",display:"block",textAlign:"center"}}>{row.time||""}</span>
-                  :<select value={row.time||"3시간"} onChange={e=>updRow(i,"time",e.target.value)}
+                  :<select value={row.time||""} onChange={e=>updRow(i,"time",e.target.value)}
                       style={{width:"100%",border:"1px solid #d1d5db",borderRadius:6,padding:"4px 2px",fontSize:"0.72rem",fontFamily:"inherit",background:"white",textAlign:"center"}}>
+                      <option value=""></option>
                       <option value="1시간">1시간</option>
                       <option value="2시간">2시간</option>
                       <option value="3시간">3시간</option>
@@ -2339,9 +2351,9 @@ function DisSeedScreen({app,onBack}){
 
   return(
     <div style={{minHeight:"100vh",background:"#f9fafb",paddingBottom:100}}>
-      <div style={{background:"#16a34a",padding:"16px",display:"flex",alignItems:"center"}}>
-        <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:22,cursor:"pointer",marginRight:8,lineHeight:1}}>←</button>
+      <div style={{background:"#16a34a",padding:"16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <h1 style={{color:"white",fontWeight:900,fontSize:18,margin:0}}>🌱 소독 · 육묘 관리</h1>
+        <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:24,cursor:"pointer",lineHeight:1,padding:"0 4px",fontWeight:700}}>✕</button>
       </div>
       <div style={{padding:"16px"}}>
         {/* 기본 정보 카드 */}
@@ -2737,11 +2749,11 @@ function RecordScreen({app,setApp,initDisaster,recordSelRef}){
   const goSel=(key)=>setSel(key);
 
   if(sel==="production"){
-    productionBackRef.current=()=>{ setSel(null); setSelMonth(null); };
-    return<MonthForm month={today.getMonth()+1} year={Math.max(today.getFullYear(),2026)}
+    productionBackRef.current=()=>{ setSel(null); };
+    return<MonthForm month={selMonth} year={selYear}
       app={app} setApp={setApp} onBack={()=>history.back()}
-      selMonth={today.getMonth()+1} setSelMonth={setSelMonth}
-      selYear={Math.max(today.getFullYear(),2026)} setSelYear={setSelYear}/>;
+      selMonth={selMonth} setSelMonth={setSelMonth}
+      selYear={selYear} setSelYear={setSelYear}/>;
   }
   if(sel==="disseed")return<DisSeedScreen app={app} onBack={()=>history.back()}/>;
   if(sel==="disaster")return<DisasterScreen app={app} setApp={setApp} onBack={()=>history.back()}/>;
@@ -3619,9 +3631,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 ════════════════════════════════════════════ -->
 <div id="shModal" style="display:none;" class="sh-modal-overlay">
   <div class="sh-modal-inner">
-    <div class="sh-modal-header">
-      <button class="sh-back" onclick="closeShModal();if(typeof window._pushNavRecord!=='function'){history.back();}else{history.back();}">←</button>
+    <div class="sh-modal-header" style="justify-content:space-between;">
       <h2 id="shModalTitle">파종현황</h2>
+      <button class="sh-back" style="margin-right:0;font-size:24px;font-weight:700;" onclick="closeShModal();history.back();">✕</button>
     </div>
     <div class="sh-content">
       <div id="sowingCards" style="display:none;"></div>
