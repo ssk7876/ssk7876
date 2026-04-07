@@ -1540,7 +1540,7 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
         <div style={{display:"flex",gap:10,justifyContent:"center",alignItems:"center",marginBottom:16}}>
           <select value={year} onChange={e=>changeYear(Number(e.target.value))}
             style={{border:"2px solid #16a34a",borderRadius:10,padding:"8px 12px",fontWeight:900,fontSize:15,color:"#16a34a",background:"white",outline:"none",cursor:"pointer"}}>
-            {Array.from({length:5},(_,i)=>2026+i).map(y=>(
+            {Array.from({length:5},(_,i)=>new Date().getFullYear()-1+i).map(y=>(
               <option key={y} value={y}>{y}년</option>
             ))}
           </select>
@@ -1654,7 +1654,7 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
 function CropOverview({app,setApp,onBack}){
   const[sel,setSel]=useState(null);
   const today=new Date();
-  const[year,setYear]=useState(Math.max(today.getFullYear(),2026));
+  const[year,setYear]=useState(today.getFullYear());
   const[month,setMonth]=useState(today.getMonth()+1);
   const btnSt={background:"white",border:"2px solid #e5e7eb",borderRadius:10,width:34,height:34,fontWeight:900,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0};
   const selSt={flex:1,border:"2px solid #e5e7eb",borderRadius:12,padding:"8px 12px",fontSize:14,fontWeight:700,background:"white",outline:"none"};
@@ -1734,7 +1734,7 @@ function CropOverview({app,setApp,onBack}){
         {/* 연도·월 선택 */}
         <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:16}}>
           <select value={year} onChange={e=>setYear(Number(e.target.value))} style={selSt}>
-            {Array.from({length:5},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}년</option>)}
+            {Array.from({length:5},(_,i)=>new Date().getFullYear()-1+i).map(y=><option key={y} value={y}>{y}년</option>)}
           </select>
           <select value={month} onChange={e=>setMonth(Number(e.target.value))} style={selSt}>
             {Array.from({length:12},(_,i)=>i+1).map(m=><option key={m} value={m}>{m}월</option>)}
@@ -2755,7 +2755,7 @@ function RecordScreen({app,setApp,initDisaster,recordSelRef}){
   const today=new Date();
   const[sel,setSel]=useState(initDisaster?"disaster":null);
   const[selMonth,setSelMonth]=useState(today.getMonth()+1);
-  const[selYear,setSelYear]=useState(Math.max(today.getFullYear(),2026));
+  const[selYear,setSelYear]=useState(today.getFullYear());
 
   const productionBackRef=useRef(null);
 
