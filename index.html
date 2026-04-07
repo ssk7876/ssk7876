@@ -1378,7 +1378,26 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
     const sigImg=u.signature?`<img src="${u.signature}" alt="서명" style="height:40px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
     const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
 <style>
-${ONE_PAGE_CSS}
+  @page{size:A4 portrait;margin:1cm;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{width:210mm;height:297mm;overflow:hidden;}
+  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;}
+  .no-print{text-align:center;padding:8px 0 6px;border-bottom:1px solid #e5e7eb;margin-bottom:10px;}
+  button{padding:5px 14px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
+  @media print{.no-print{display:none!important;}html,body{overflow:hidden;}}
+  .page{width:100%;height:calc(297mm - 2cm);display:flex;flex-direction:column;overflow:hidden;}
+  h2{text-align:center;font-size:22px;font-weight:900;margin-bottom:6px;}
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
+  .info-table td{font-size:14px;padding:5px 10px;}
+  .section-title{font-weight:700;font-size:14px;margin-bottom:4px;}
+  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;}
+  .data-table col.c1{width:22%;}.data-table col.c2{width:22%;}.data-table col.c3{width:56%;}
+  .data-table th{border:1px solid #555;padding:5px 4px;text-align:center;background:#f0fdf4;font-size:13px;}
+  .data-table td{border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .footer-wrap{margin-top:6px;flex-shrink:0;}
+  .footer-text{text-align:center;font-weight:700;font-size:13px;margin:4px 0;}
+  .footer-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:3px;font-weight:700;font-size:13px;}
+  .footer-귀하{text-align:right;font-weight:900;font-size:13px;}
 </style>
 </head><body>
 <div class="no-print">
@@ -1413,7 +1432,26 @@ ${ONE_PAGE_CSS}
     const sigImg=u.signature?`<img src="${u.signature}" alt="서명" style="height:40px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
     const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
 <style>
-${ONE_PAGE_CSS}
+  @page{size:A4 portrait;margin:1cm;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{width:210mm;height:297mm;overflow:hidden;}
+  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;}
+  .no-print{text-align:center;padding:8px 0 6px;border-bottom:1px solid #e5e7eb;margin-bottom:10px;}
+  button{padding:5px 14px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
+  @media print{.no-print{display:none!important;}html,body{overflow:hidden;}}
+  .page{width:100%;height:calc(297mm - 2cm);display:flex;flex-direction:column;overflow:hidden;}
+  h2{text-align:center;font-size:22px;font-weight:900;margin-bottom:6px;}
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
+  .info-table td{font-size:14px;padding:5px 10px;}
+  .section-title{font-weight:700;font-size:14px;margin-bottom:4px;}
+  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;}
+  .data-table col.c1{width:22%;}.data-table col.c2{width:22%;}.data-table col.c3{width:56%;}
+  .data-table th{border:1px solid #555;padding:5px 4px;text-align:center;background:#f0fdf4;font-size:13px;}
+  .data-table td{border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .footer-wrap{margin-top:6px;flex-shrink:0;}
+  .footer-text{text-align:center;font-weight:700;font-size:13px;margin:4px 0;}
+  .footer-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:3px;font-weight:700;font-size:13px;}
+  .footer-귀하{text-align:right;font-weight:900;font-size:13px;}
 </style>
 </head><body>
 <div class="no-print">
@@ -1631,7 +1669,26 @@ function CropOverview({app,setApp,onBack}){
     const sigImg=member.signature?`<img src="${member.signature}" alt="서명" style="height:40px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
     const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
 <style>
-${ONE_PAGE_CSS}
+  @page{size:A4 portrait;margin:1cm;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{width:210mm;height:297mm;overflow:hidden;}
+  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;}
+  .no-print{text-align:center;padding:8px 0 6px;border-bottom:1px solid #e5e7eb;margin-bottom:10px;}
+  button{padding:5px 14px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
+  @media print{.no-print{display:none!important;}html,body{overflow:hidden;}}
+  .page{width:100%;height:calc(297mm - 2cm);display:flex;flex-direction:column;overflow:hidden;}
+  h2{text-align:center;font-size:22px;font-weight:900;margin-bottom:6px;}
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
+  .info-table td{font-size:14px;padding:5px 10px;}
+  .section-title{font-weight:700;font-size:14px;margin-bottom:4px;}
+  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;}
+  .data-table col.c1{width:22%;}.data-table col.c2{width:22%;}.data-table col.c3{width:56%;}
+  .data-table th{border:1px solid #555;padding:5px 4px;text-align:center;background:#f0fdf4;font-size:13px;}
+  .data-table td{border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .footer-wrap{margin-top:6px;flex-shrink:0;}
+  .footer-text{text-align:center;font-weight:700;font-size:13px;margin:4px 0;}
+  .footer-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:3px;font-weight:700;font-size:13px;}
+  .footer-귀하{text-align:right;font-weight:900;font-size:13px;}
 </style></head><body>
 <div class="no-print">
   <button style="background:#ef4444;color:white" onclick="window.print()">📄 PDF로 저장</button>
