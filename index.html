@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{-webkit-tap-highlight-color:transparent;box-sizing:border-box;}
 html,body,#root{height:100%;margin:0;padding:0;background:#f3f4f6;}
@@ -83,10 +84,159 @@ html,body,#root{height:100%;margin:0;padding:0;background:#f3f4f6;}
 <script type="text/babel">
 const {useState,useRef,useEffect,useCallback}=React;
 
-/* ── storage ── */
+/* ── Supabase 설정 ── */
+const SUPA_URL="https://vastpgtqjfowcxdopvpp.supabase.co";
+const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhc3RwZ3RxamZvd2N4ZG9wdnBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NDAxMzcsImV4cCI6MjA5MTExNjEzN30.Gik7i6jL_9vwIh0Vd1OLr4frlK7GcSK-7I2OA3dJc5c";
+const _supa=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+
+/* ── localStorage fallback (오프라인/속도용) ── */
 const SK="seedfarm_v8";
-const ld=()=>{try{const r=localStorage.getItem(SK);return r?JSON.parse(r):null;}catch{return null;}};
-const sv=d=>{try{localStorage.setItem(SK,JSON.stringify(d));}catch{}};
+const ldLocal=()=>{try{const r=localStorage.getItem(SK);return r?JSON.parse(r):null;}catch{return null;}};
+const svLocal=d=>{try{localStorage.setItem(SK,JSON.stringify(d));}catch{}};
+
+/* ── Supabase: 전체 데이터 불러오기 ── */
+async function ldFromSupabase(){
+  try{
+    const [uRes,nRes,sRes,rRes,disRes,slRes,sowRes,havRes,disaRes,evRes]=await Promise.all([
+      _supa.from('sf_users').select('*'),
+      _supa.from('sf_notices').select('*').order('id',{ascending:false}),
+      _supa.from('sf_schedules').select('*').order('date'),
+      _supa.from('sf_records').select('*'),
+      _supa.from('sf_disinfection').select('*'),
+      _supa.from('sf_seedling').select('*'),
+      _supa.from('sf_sowing').select('*'),
+      _supa.from('sf_harvest').select('*'),
+      _supa.from('sf_disaster').select('*'),
+      _supa.from('sf_extra_varieties').select('*'),
+    ]);
+    // records: {userId_year_month: {rows,sent}}
+    const records={};
+    (rRes.data||[]).forEach(r=>{records[r.record_key]=r.data;});
+    // disinfection: localStorage 형식 {userId: {...}}
+    const disData={};
+    (disRes.data||[]).forEach(r=>{disData[r.user_key]=r.data;});
+    // seedling
+    const slData={};
+    (slRes.data||[]).forEach(r=>{slData[r.user_key]=r.data;});
+    // sowing
+    const sowData={};
+    (sowRes.data||[]).forEach(r=>{sowData[r.user_key]=r.data;});
+    // harvest
+    const havData={};
+    (havRes.data||[]).forEach(r=>{havData[r.user_key]=r.data;});
+    // disaster
+    const disaData={};
+    (disaRes.data||[]).forEach(r=>{disaData[r.user_key]=r.data;});
+    // extra_varieties
+    const evData={};
+    (evRes.data||[]).forEach(r=>{evData[r.user_id]=r.varieties;});
+    // localStorage에도 동기화 (오프라인 지원)
+    if(disData&&Object.keys(disData).length) try{localStorage.setItem('seedfarm_dis_v1',JSON.stringify(disData));}catch{}
+    if(slData&&Object.keys(slData).length) try{localStorage.setItem('seedfarm_sl_v1',JSON.stringify(slData));}catch{}
+    if(sowData&&Object.keys(sowData).length) try{localStorage.setItem('seedfarm_sow_v1',JSON.stringify(sowData));}catch{}
+    if(havData&&Object.keys(havData).length) try{localStorage.setItem('seedfarm_hav_v1',JSON.stringify(havData));}catch{}
+    if(disaData&&Object.keys(disaData).length) try{localStorage.setItem('seedfarm_disaster_v1',JSON.stringify(disaData));}catch{}
+    if(evData&&Object.keys(evData).length){
+      Object.entries(evData).forEach(([uid,vars])=>{try{localStorage.setItem(`extra_varieties_${uid}`,JSON.stringify(vars));}catch{}});
+    }
+    const result={
+      users: uRes.data||[],
+      notices: nRes.data||[],
+      schedules: sRes.data||[],
+      records,
+      currentUser: null,
+    };
+    svLocal(result);
+    return result;
+  }catch(e){
+    console.error('Supabase load error:',e);
+    return ldLocal();
+  }
+}
+
+/* ── Supabase: 앱 상태 전체 저장 ── */
+async function svToSupabase(d){
+  svLocal(d); // 즉시 로컬 저장
+  try{
+    // users upsert
+    if(d.users&&d.users.length){
+      await _supa.from('sf_users').upsert(
+        d.users.map(u=>({
+          id:u.id, pw:u.pw, role:u.role||'user',
+          region:u.region||'', danji_name:u.danjiName||'',
+          chair_name:u.chairName||'', crop:u.crop||'',
+          variety:u.variety||'', farm_count:u.farmCount||0,
+          area:u.area||0, production:u.production||0,
+          signature:u.signature||null, crop_count:u.cropCount||1,
+          linked_id:u.linkedId||null,
+        })),
+        {onConflict:'id'}
+      );
+    }
+    // notices upsert
+    if(d.notices&&d.notices.length){
+      await _supa.from('sf_notices').upsert(
+        d.notices.map(n=>({
+          id:typeof n.id==='number'?n.id:undefined,
+          urgent:!!n.urgent, title:n.title||'',
+          date:n.date||'', summary:n.summary||'',
+          targets:n.targets||['전체'],
+        })),
+        {onConflict:'id'}
+      );
+    }
+    // schedules upsert
+    if(d.schedules&&d.schedules.length){
+      await _supa.from('sf_schedules').upsert(
+        d.schedules.map(s=>({
+          id:typeof s.id==='number'?s.id:undefined,
+          date:s.date||'', title:s.title||'', location:s.location||'',
+        })),
+        {onConflict:'id'}
+      );
+    }
+    // records upsert
+    const recEntries=Object.entries(d.records||{});
+    if(recEntries.length){
+      await _supa.from('sf_records').upsert(
+        recEntries.map(([key,val])=>({record_key:key,data:val})),
+        {onConflict:'record_key'}
+      );
+    }
+  }catch(e){console.error('Supabase save error:',e);}
+}
+
+/* ── Supabase: 특수 스토리지(소독/육묘/파종/수확/재해/extra_varieties) 저장 ── */
+async function svSpecialToSupabase(table,userKey,data){
+  try{
+    await _supa.from(table).upsert({user_key:userKey,data},{onConflict:'user_key'});
+  }catch(e){console.error(`Supabase ${table} save error:`,e);}
+}
+async function svExtraVarietiesToSupabase(userId,varieties){
+  try{
+    await _supa.from('sf_extra_varieties').upsert({user_id:userId,varieties},{onConflict:'user_id'});
+  }catch(e){console.error('Supabase extra_varieties save error:',e);}
+}
+
+/* ── 호환 래퍼: 기존 ld/sv 인터페이스 유지 ── */
+const ld=()=>ldLocal();
+const sv=d=>{svLocal(d);svToSupabase(d).catch(()=>{});};
+
+/* ── Supabase 초기화 상태 ── */
+let _supaLoaded=false;
+let _supaLoadPromise=null;
+function ensureSupaLoaded(){
+  if(_supaLoaded) return Promise.resolve();
+  if(_supaLoadPromise) return _supaLoadPromise;
+  _supaLoadPromise=ldFromSupabase().then(data=>{
+    if(data){
+      _supaLoaded=true;
+      // 전역 앱 상태 갱신은 React App에서 처리
+      window._supaInitData=data;
+    }
+  }).catch(()=>{});
+  return _supaLoadPromise;
+}
 
 /* ── default state ── */
 const INIT={
@@ -157,19 +307,31 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
   const[stayLogin,setStayLogin]=useState(()=>!!localStorage.getItem("stay_login"));
 
   const doLogin=()=>{
-    // 최신 저장 데이터에서 사용자 찾기 (로그아웃 후 재로그인 시 최신 정보 보장)
-    const freshApp=ld()||{users:app.users};
-    const u=(freshApp.users||app.users).find(u=>u.id===id&&u.pw===pw);
-    if(u){
-      // 아이디 기억
-      if(remId) localStorage.setItem("saved_id",id);
-      else localStorage.removeItem("saved_id");
-      // 로그인 상태 유지
-      if(stayLogin) localStorage.setItem("stay_login",id);
-      else localStorage.removeItem("stay_login");
-      setApp(p=>({...p,...freshApp,currentUser:u}));
-      onLogin();
-    } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
+    // Supabase에서 최신 데이터 가져온 후 로그인 처리
+    ldFromSupabase().then(freshData=>{
+      const freshApp=freshData||ld()||{users:app.users};
+      const u=(freshApp.users||app.users).find(u=>u.id===id&&u.pw===pw);
+      if(u){
+        if(remId) localStorage.setItem("saved_id",id);
+        else localStorage.removeItem("saved_id");
+        if(stayLogin) localStorage.setItem("stay_login",id);
+        else localStorage.removeItem("stay_login");
+        setApp(p=>({...p,...freshApp,currentUser:u}));
+        onLogin();
+      } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
+    }).catch(()=>{
+      // 네트워크 오류 시 로컬 fallback
+      const freshApp=ld()||{users:app.users};
+      const u=(freshApp.users||app.users).find(u=>u.id===id&&u.pw===pw);
+      if(u){
+        if(remId) localStorage.setItem("saved_id",id);
+        else localStorage.removeItem("saved_id");
+        if(stayLogin) localStorage.setItem("stay_login",id);
+        else localStorage.removeItem("stay_login");
+        setApp(p=>({...p,...freshApp,currentUser:u}));
+        onLogin();
+      } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
+    });
   };
 
   const chkSt={display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontSize:13,fontWeight:600,color:"#374151"};
@@ -903,7 +1065,7 @@ function MyScreen({app,setApp,onLogout}){
   });
   const updExtra=(i,k,v)=>setExtraVarieties(p=>{const n=[...p];n[i]={...n[i],[k]:v};return n;});
   const removeExtra=(i)=>setExtraVarieties(p=>p.filter((_,idx)=>idx!==i));
-  const saveExtraVarieties=()=>{try{localStorage.setItem(`extra_varieties_${u.id}`,JSON.stringify(extraVarieties));}catch{}};
+  const saveExtraVarieties=()=>{try{localStorage.setItem(`extra_varieties_${u.id}`,JSON.stringify(extraVarieties));}catch{};svExtraVarietiesToSupabase(u.id,extraVarieties).catch(()=>{});};
 
   return(
     <div style={{minHeight:"100vh",background:"#f9fafb",paddingBottom:120}}>
@@ -1821,7 +1983,7 @@ function DisinfectionTab({userId}){
     setSaved(false);
   };
 
-  const saveNow=(next)=>{try{const d=JSON.parse(localStorage.getItem(SK_DIS)||"{}");d[userId]=next;localStorage.setItem(SK_DIS,JSON.stringify(d));}catch{}};
+  const saveNow=(next)=>{try{const d=JSON.parse(localStorage.getItem(SK_DIS)||"{}");d[userId]=next;localStorage.setItem(SK_DIS,JSON.stringify(d));}catch{};svSpecialToSupabase('sf_disinfection',userId,next).catch(()=>{});};
   const addPhotos=(e)=>{
     const files=Array.from(e.target.files);
     files.forEach(file=>{
@@ -1856,6 +2018,7 @@ function DisinfectionTab({userId}){
   };
   const doSave=()=>{
     try{const d=JSON.parse(localStorage.getItem(SK_DIS)||"{}");d[userId]=form;localStorage.setItem(SK_DIS,JSON.stringify(d));}catch{}
+    svSpecialToSupabase('sf_disinfection',userId,form).catch(()=>{});
     setSaved(true);setTimeout(()=>setSaved(false),2000);
   };
   return(
@@ -2005,6 +2168,7 @@ function SeedlingTab({userId,onReset}){
   const sowAmt=form.trays?Math.round(20000/parseInt(form.trays)):"";
   const doSave=()=>{
     try{const d=JSON.parse(localStorage.getItem(SK_SL)||"{}");d[userId]=form;localStorage.setItem(SK_SL,JSON.stringify(d));}catch{}
+    svSpecialToSupabase('sf_seedling',userId,form).catch(()=>{});
     setSaved(true);setTimeout(()=>setSaved(false),2000);
   };
   const doReset=()=>{
@@ -2013,6 +2177,8 @@ function SeedlingTab({userId,onReset}){
     const blankDIS={hotDate:{start:"",end:""},hotTemp:"60",hotCompliance:"",cleanState:"",soakDate:{start:"",end:""},extraDrugUse:"",insecticide:"사용안함",fungicide:"",drugTemp:"30",otherNote:"",hotPhotos:[],photos:[]};
     try{const d=JSON.parse(localStorage.getItem(SK_SL)||"{}");d[userId]=blankSL;localStorage.setItem(SK_SL,JSON.stringify(d));}catch{}
     try{const d=JSON.parse(localStorage.getItem(SK_DIS)||"{}");d[userId]=blankDIS;localStorage.setItem(SK_DIS,JSON.stringify(d));}catch{}
+    svSpecialToSupabase('sf_seedling',userId,blankSL).catch(()=>{});
+    svSpecialToSupabase('sf_disinfection',userId,blankDIS).catch(()=>{});
     if(onReset) onReset();
     else setForm(blankSL);
   };
@@ -2290,6 +2456,7 @@ function DisasterForm({app,onBack,editItem,onSave,year}){
       }
       db[storageKey]=list;
       localStorage.setItem(SK,JSON.stringify(db));
+      svSpecialToSupabase('sf_disaster',storageKey,list).catch(()=>{});
     }catch{}
     setSaved(true);
     setTimeout(()=>{setSaved(false);onSave();},1000);
@@ -2468,8 +2635,10 @@ function DisasterScreen({app,setApp,onBack}){
     try{
       const db=JSON.parse(localStorage.getItem(SK)||"{}");
       const list=Array.isArray(db[storageKey])?db[storageKey]:db[storageKey]?[db[storageKey]]:[];
-      db[storageKey]=list.filter(r=>r._id!==id);
+      const newList=list.filter(r=>r._id!==id);
+      db[storageKey]=newList;
       localStorage.setItem(SK,JSON.stringify(db));
+      svSpecialToSupabase('sf_disaster',storageKey,newList).catch(()=>{});
       setTick(t=>t+1);
     }catch{}
   };
@@ -3249,6 +3418,7 @@ function AdminScreen({app,setApp}){
 /* ════════════════════ ROOT ════════════════════ */
 function App(){
   const[app,setApp]=useState(()=>ld()||INIT);
+  const[supaLoading,setSupaLoading]=useState(true);
   const[screen,setScreen]=useState(()=>{
     const stayId=localStorage.getItem("stay_login");
     if(stayId){
@@ -3262,6 +3432,27 @@ function App(){
   const[noticeOpen,setNoticeOpen]=useState(false);
   const[disasterOpen,setDisasterOpen]=useState(false);
   const[canGoBack,setCanGoBack]=useState(false);
+
+  // ── Supabase 최초 로딩 ──
+  useEffect(()=>{
+    ldFromSupabase().then(data=>{
+      if(data){
+        // currentUser 복원 (stay_login)
+        const stayId=localStorage.getItem("stay_login");
+        let cu=null;
+        if(stayId) cu=(data.users||[]).find(u=>u.id===stayId)||null;
+        setApp(p=>{
+          // 기존 currentUser 유지 (이미 로그인된 경우)
+          const existCu=p.currentUser||cu;
+          // currentUser 정보도 최신 user 데이터로 갱신
+          const freshCu=existCu?(data.users||[]).find(u=>u.id===existCu.id)||existCu:null;
+          return {...data,currentUser:freshCu};
+        });
+        if(stayId&&cu) setScreen("app");
+      }
+      setSupaLoading(false);
+    }).catch(()=>setSupaLoading(false));
+  },[]);
 
   // 로그인 상태 유지 시 currentUser 자동 설정
   useState(()=>{
@@ -3379,6 +3570,15 @@ function App(){
     setScreen("login");setNoticeOpen(false);setDisasterOpen(false);
   };
 
+  if(supaLoading)return(
+    <div style={{minHeight:"100vh",background:"white",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:16}}>
+      <div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:80,height:80,background:"#16a34a",borderRadius:16,boxShadow:"0 4px 12px rgba(22,163,74,.3)"}}><span style={{fontSize:36}}>🌾</span></div>
+      <h1 style={{fontSize:22,fontWeight:900,color:"#14532d",margin:0}}>채종단지 생산관리</h1>
+      <p style={{fontSize:13,color:"#9ca3af",margin:0}}>서버 데이터 불러오는 중...</p>
+      <div style={{width:48,height:48,border:"4px solid #d1fae5",borderTop:"4px solid #16a34a",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
+      <style>{`@keyframes spin{to{transform:rotate(360deg);}}`}</style>
+    </div>
+  );
   if(screen==="login") return<LoginScreen app={app} setApp={setApp} onLogin={onLogin} onSignup={()=>changeScreen("signup")}/>;
   if(screen==="signup")return<SignupScreen app={app} setApp={setApp} onBack={()=>changeScreen("login")}/>;
   const isAdmin=app.currentUser?.role==="admin";
@@ -3457,6 +3657,17 @@ function shLoad() {
 }
 function shSave(data) {
   try { localStorage.setItem(SH_KEY, JSON.stringify(data)); } catch{}
+  // Supabase에도 파종/수확 데이터 동기화
+  if(data.sowingData){
+    Object.entries(data.sowingData).forEach(([uid,val])=>{
+      svSpecialToSupabase('sf_sowing',uid,val).catch(()=>{});
+    });
+  }
+  if(data.harvestData){
+    Object.entries(data.harvestData).forEach(([uid,val])=>{
+      svSpecialToSupabase('sf_harvest',uid,val).catch(()=>{});
+    });
+  }
 }
 function shToast(msg) {
   const t = document.getElementById('shToast');
