@@ -304,6 +304,47 @@ const INIT={
     {id:3,date:"2025-06-15",title:"포장관리 점검",     location:"전북 고창군"},
   ],
 };
+const ONE_PAGE_CSS=`
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;}
+  body{background:#e5e7eb;padding:16px;}
+  .no-print{display:flex;gap:8px;margin-bottom:12px;}
+  .no-print button{padding:8px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+  .page{width:190mm;margin:0 auto;background:white;padding:10mm 12mm;box-sizing:border-box;}
+  h2{text-align:center;font-size:17px;font-weight:900;margin-bottom:10px;}
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:10px;}
+  .info-table td{border:1px solid #555;padding:5px 10px;font-size:13px;}
+  .section-title{font-weight:900;font-size:13px;margin-bottom:6px;}
+  .data-table{width:100%;border-collapse:collapse;margin-bottom:12px;table-layout:fixed;}
+  .data-table .c1{width:25%;}.data-table .c2{width:22%;}.data-table .c3{width:53%;}
+  .data-table th,.data-table td{border:1px solid #555;padding:4px 6px;font-size:12px;text-align:center;}
+  .data-table td:last-child{text-align:left;}
+  .footer-wrap{margin-top:10px;}
+  .footer-text{font-size:12px;margin-bottom:6px;}
+  .footer-sig{display:flex;justify-content:flex-end;align-items:center;gap:12px;font-size:13px;font-weight:700;margin-bottom:6px;}
+  .footer-귀하{font-size:12px;text-align:right;}
+  @media print{
+    body{background:white;padding:0;}
+    .no-print{display:none!important;}
+    .page{width:100%;margin:0;padding:8mm 10mm;}
+  }
+`;
+
+/* ── HTML을 새 탭으로 여는 헬퍼 (팝업 차단 우회) ── */
+function openHtmlInNewTab(html){
+  try{
+    const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.target='_blank';a.rel='noopener';
+    document.body.appendChild(a);a.click();
+    document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),10000);
+  }catch(e){
+    const win=window.open('','_blank','width=820,height=960');
+    if(win){win.document.write(html);win.document.close();}
+    else alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.');
+  }
+}
 const ACTS=["단지 회원 교육 및 유의사항 안내","원종 배부","포장관리(이형주, 잡초 제거 등)","관개수 관리 지도","병해충 방제 지도","비료 관리 지도","콤바인/건조기 점검","수확/탈곡 지도","공동 수확/건조 작업","수매 준비 작업","기상재해 피해 점검","포장검사 실시","생육상태 점검","기타"];
 
 /* ── icons ── */
@@ -1448,9 +1489,7 @@ ${ONE_PAGE_CSS}
   </div>
 </div>
 </body></html>`;
-    const win=window.open("","_blank","width=820,height=960");
-    if(win){win.document.write(html);win.document.close();}
-    else alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.");
+    openHtmlInNewTab(html);
   };
 
   /* 인쇄 전용 창 — 파일 형식 선택 없이 바로 인쇄 */
@@ -1484,9 +1523,7 @@ ${ONE_PAGE_CSS}
 </div>
 <script>window.onload=()=>window.print();<\/script>
 </body></html>`;
-    const win=window.open("","_blank","width=820,height=960");
-    if(win){win.document.write(html);win.document.close();}
-    else alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.");
+    openHtmlInNewTab(html);
   };
 
   if(preview)return(
@@ -1670,10 +1707,13 @@ function CropOverview({app,setApp,onBack}){
 
   const openDownload=(member)=>{
     const rk=`${member.id}_${year}_${month}`;
-    const rec=app.records[rk];if(!rec)return;
-    const rows=rec.rows||[];const filled=rows.filter(r=>r.date).length;
-    const infoRows=[["단지명",member.danjiName],["작물명",member.crop],["성명",member.chairName],["근무일수",`${filled}일`]]
-      .map(([k,v])=>`<tr><td style="border:1px solid #555;padding:5px 10px;font-weight:700;background:#f0fdf4;width:80px;white-space:nowrap;font-size:14px">${k}</td><td style="border:1px solid #555;padding:5px 10px;font-size:14px">${v}</td></tr>`).join("");
+    const rec=app.records[rk];
+    const rows=(rec&&rec.rows)||[];const filled=rows.filter(r=>r.date).length;
+    const dName=member.danjiName||member.danji_name||'—';
+    const cName=member.chairName||member.chair_name||'—';
+    const cropName=member.crop||'—';
+    const infoRows=[["단지명",dName],["작물명",cropName],["성명",cName],["근무일수",`${filled}일`]]
+      .map(([k,v])=>`<tr><td style="border:1px solid #555;padding:5px 10px;font-weight:700;background:#f0fdf4;width:80px;white-space:nowrap;font-size:14px">${k}</td><td style="border:1px solid #555;padding:5px 10px;font-size:14px">${v||'—'}</td></tr>`).join("");
     const dataRows=rows.map(r=>`<tr><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${r.date||"&nbsp;"}</td><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.time||"&nbsp;"}</td><td style="border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;">${r.activity||"&nbsp;"}</td></tr>`).join("");
     const sigImg=member.signature?`<img src="${member.signature}" alt="서명" style="height:40px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
     const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
@@ -1695,14 +1735,12 @@ ${ONE_PAGE_CSS}
   </table>
   <div class="footer-wrap">
     <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
-    <div class="footer-sig"><span>(\${member.danjiName}) 생산관리지도원: \${member.chairName}</span>\${sigImg}</div>
+    <div class="footer-sig"><span>(\${dName}) 생산관리지도원: \${cName}</span>\${sigImg}</div>
     <p class="footer-귀하">국립종자원 전북지원장 귀하</p>
   </div>
 </div>
 </body></html>`;
-    const win=window.open("","_blank","width=820,height=960");
-    if(win){win.document.write(html);win.document.close();}
-    else alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.");
+    openHtmlInNewTab(html);
   };
 
   const doReject=(memberId)=>{
@@ -1749,7 +1787,16 @@ ${ONE_PAGE_CSS}
           const crops=CROP_GROUPS[sel];
           const members=app.users
             .filter(u=>u.role!=="admin"&&crops.includes(u.crop))
-            .map(u=>{const rec=app.records[`${u.id}_${year}_${month}`];return{...u,submitted:rec?.sent===true,hasRecord:!!rec};})
+            .map(u=>{
+              const rec=app.records[`${u.id}_${year}_${month}`];
+              return{
+                ...u,
+                danjiName:u.danjiName||u.danji_name||'—',
+                chairName:u.chairName||u.chair_name||'—',
+                submitted:rec?.sent===true,
+                hasRecord:!!rec,
+              };
+            })
             .sort((a,b)=>a.submitted-b.submitted);
           const colStyle="1.2fr 1.2fr 1fr 0.8fr 0.8fr 0.8fr";
           const hdrCell=(t,last=false)=>(<div style={{padding:"10px 4px",borderRight:last?"none":"1px solid #15803d",textAlign:"center"}}>{t}</div>);
