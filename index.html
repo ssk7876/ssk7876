@@ -3641,16 +3641,11 @@ function App(){
 
   // 뒤로가기 버튼 핸들러
   const handleBackBtn=()=>{if(navStack.current.length===0)return;history.back();};
-  const backBtn=(
-    <button onClick={handleBackBtn}
-      style={{position:"fixed",bottom:90,right:16,width:44,height:44,borderRadius:"50%",background:canGoBack?"#16a34a":"#d1d5db",color:"white",border:"none",fontSize:22,fontWeight:900,cursor:canGoBack?"pointer":"default",boxShadow:canGoBack?"0 4px 12px rgba(22,163,74,.4)":"none",display:"flex",alignItems:"center",justifyContent:"center",zIndex:100,lineHeight:1,transition:"background .2s"}}>←</button>
-  );
 
   if(noticeOpen)return(
     <div style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",background:"white",position:"relative"}}>
       <NoticeScreen app={app} setApp={setApp} noticeModalCloser={noticeModalCloser} onBack={()=>{pushNav({screen:"app",tab,noticeOpen:true,disasterOpen});setNoticeOpen(false);}}/>
       <NavBar active={tab} setActive={t=>{goTab(t);setNoticeOpen(false);}} isAdmin={isAdmin}/>
-      {backBtn}
     </div>
   );
   const goDisaster=()=>{
@@ -3665,7 +3660,6 @@ function App(){
       {tab==="my"       &&<MyScreen       app={app} setApp={setApp} onLogout={onLogout}/>}
       {tab==="admin"    &&isAdmin&&<AdminScreen app={app} setApp={setApp}/>}
       <NavBar active={tab} setActive={goTab} isAdmin={isAdmin}/>
-      {backBtn}
     </div>
   );
 }
