@@ -178,19 +178,50 @@ async function ldFromSupabase(){
     if(evData&&Object.keys(evData).length){
       Object.entries(evData).forEach(([uid,vars])=>{try{localStorage.setItem(`extra_varieties_${uid}`,JSON.stringify(vars));}catch{}});
     }
+    // localStorage 기존 데이터 로드
+    const localData=ldLocal();
+    const localUsers=localData?.users||[];
+    const localRecords=localData?.records||{};
+
+    // Supabase users를 camelCase로 변환
+    const supaUsers=(uRes.data||[]).map(u=>({
+      id:u.id, pw:u.pw, role:u.role||'user',
+      region:u.region||'', danjiName:u.danji_name||'',
+      chairName:u.chair_name||'', crop:u.crop||'',
+      variety:u.variety||'', farmCount:u.farm_count||0,
+      area:u.area||0, production:u.production||0,
+      signature:u.signature||null, cropCount:u.crop_count||1,
+      linkedId:u.linked_id||null,
+    }));
+
+    // users 병합: Supabase 우선, localStorage에만 있는 user 추가
+    const mergedUsers=[...supaUsers];
+    localUsers.forEach(lu=>{
+      const idx=mergedUsers.findIndex(u=>u.id===lu.id);
+      if(idx===-1){
+        // Supabase에 없는 user는 localStorage에서 추가
+        mergedUsers.push(lu);
+      } else {
+        // Supabase에 있어도 danjiName/chairName이 비어있으면 localStorage 값 사용
+        if(!mergedUsers[idx].danjiName&&lu.danjiName) mergedUsers[idx].danjiName=lu.danjiName;
+        if(!mergedUsers[idx].chairName&&lu.chairName) mergedUsers[idx].chairName=lu.chairName;
+        if(!mergedUsers[idx].signature&&lu.signature) mergedUsers[idx].signature=lu.signature;
+      }
+    });
+
+    // records 병합: Supabase 우선, localStorage에만 있는 record 추가
+    const mergedRecords={...localRecords};
+    Object.entries(records).forEach(([k,v])=>{mergedRecords[k]=v;});
+
+    // notices/schedules: Supabase 데이터가 있을 때만 덮어씀
+    const mergedNotices=(nRes.data&&nRes.data.length)?nRes.data:(localData?.notices||[]);
+    const mergedSchedules=(sRes.data&&sRes.data.length)?sRes.data:(localData?.schedules||[]);
+
     const result={
-      users: (uRes.data||[]).map(u=>({
-        id:u.id, pw:u.pw, role:u.role||'user',
-        region:u.region||'', danjiName:u.danji_name||'',
-        chairName:u.chair_name||'', crop:u.crop||'',
-        variety:u.variety||'', farmCount:u.farm_count||0,
-        area:u.area||0, production:u.production||0,
-        signature:u.signature||null, cropCount:u.crop_count||1,
-        linkedId:u.linked_id||null,
-      })),
-      notices: nRes.data||[],
-      schedules: sRes.data||[],
-      records,
+      users: mergedUsers,
+      notices: mergedNotices,
+      schedules: mergedSchedules,
+      records: mergedRecords,
       currentUser: null,
     };
     svLocal(result);
@@ -1474,17 +1505,17 @@ ${ONE_PAGE_CSS}
   <button style="background:#6b7280;color:white" onclick="window.close()">닫기</button>
 </div>
 <div class="page">
-  <h2>\${year}년 \${month}월 생산관리지도부</h2>
-  <table class="info-table"><tbody>\${infoRows}</tbody></table>
+  <h2>${year}년 ${month}월 생산관리지도부</h2>
+  <table class="info-table"><tbody>${infoRows}</tbody></table>
   <p class="section-title">◈ 지도상황</p>
   <table class="data-table">
     <colgroup><col class="c1"/><col class="c2"/><col class="c3"/></colgroup>
     <thead><tr><th>근무일자</th><th>활동시간</th><th>활동내용</th></tr></thead>
-    <tbody>\${dataRows}</tbody>
+    <tbody>${dataRows}</tbody>
   </table>
   <div class="footer-wrap">
     <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
-    <div class="footer-sig"><span>(\${u.danjiName}) 생산관리지도원: \${u.chairName}</span>\${sigImg}</div>
+    <div class="footer-sig"><span>(${u.danjiName}) 생산관리지도원: ${u.chairName}</span>${sigImg}</div>
     <p class="footer-귀하">국립종자원 전북지원장 귀하</p>
   </div>
 </div>
@@ -1507,17 +1538,17 @@ ${ONE_PAGE_CSS}
   <button style="background:#6b7280;color:white" onclick="window.close()">닫기</button>
 </div>
 <div class="page">
-  <h2>\${year}년 \${month}월 생산관리지도부</h2>
-  <table class="info-table"><tbody>\${infoRows}</tbody></table>
+  <h2>${year}년 ${month}월 생산관리지도부</h2>
+  <table class="info-table"><tbody>${infoRows}</tbody></table>
   <p class="section-title">◈ 지도상황</p>
   <table class="data-table">
     <colgroup><col class="c1"/><col class="c2"/><col class="c3"/></colgroup>
     <thead><tr><th>근무일자</th><th>활동시간</th><th>활동내용</th></tr></thead>
-    <tbody>\${dataRows}</tbody>
+    <tbody>${dataRows}</tbody>
   </table>
   <div class="footer-wrap">
     <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
-    <div class="footer-sig"><span>(\${u.danjiName}) 생산관리지도원: \${u.chairName}</span>\${sigImg}</div>
+    <div class="footer-sig"><span>(${u.danjiName}) 생산관리지도원: ${u.chairName}</span>${sigImg}</div>
     <p class="footer-귀하">국립종자원 전북지원장 귀하</p>
   </div>
 </div>
@@ -1725,17 +1756,17 @@ ${ONE_PAGE_CSS}
   <button style="background:#6b7280;color:white" onclick="window.close()">닫기</button>
 </div>
 <div class="page">
-  <h2>\${year}년 \${month}월 생산관리지도부</h2>
-  <table class="info-table"><tbody>\${infoRows}</tbody></table>
+  <h2>${year}년 ${month}월 생산관리지도부</h2>
+  <table class="info-table"><tbody>${infoRows}</tbody></table>
   <p class="section-title">◈ 지도상황</p>
   <table class="data-table">
     <colgroup><col class="c1"/><col class="c2"/><col class="c3"/></colgroup>
     <thead><tr><th>근무일자</th><th>활동시간</th><th>활동내용</th></tr></thead>
-    <tbody>\${dataRows}</tbody>
+    <tbody>${dataRows}</tbody>
   </table>
   <div class="footer-wrap">
     <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
-    <div class="footer-sig"><span>(\${dName}) 생산관리지도원: \${cName}</span>\${sigImg}</div>
+    <div class="footer-sig"><span>(${dName}) 생산관리지도원: ${cName}</span>${sigImg}</div>
     <p class="footer-귀하">국립종자원 전북지원장 귀하</p>
   </div>
 </div>
