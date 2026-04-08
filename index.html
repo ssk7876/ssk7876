@@ -1017,6 +1017,8 @@ const CROP_GROUPS={"벼":["벼"],"콩":["콩"],"맥류":["보리","밀","트리�
 function UserManageScreen({app,setApp,onBack}){
   const members=app.users.filter(u=>u.role!=="admin").sort((a,b)=>cropRank(a.crop)-cropRank(b.crop));
   const[saved,setSaved]=useState(false);
+  const[kickTarget,setKickTarget]=useState(null); // 퇴출 확인 대상 user
+  const[kickDone,setKickDone]=useState(null);     // 퇴출 완료 메시지
 
   const changeRole=(userId,newRole)=>{
     const users=app.users.map(u=>u.id===userId?{...u,role:newRole}:u);
@@ -1025,13 +1027,73 @@ function UserManageScreen({app,setApp,onBack}){
     try{localStorage.setItem("seedfarm_v8",JSON.stringify(next));}catch{}
   };
 
+  const doKick=async(userId)=>{
+    // 1. 앱 상태에서 제거
+    const users=app.users.filter(u=>u.id!==userId);
+    const next={...app,users};
+    setApp(next);
+    svLocal(next);
+    // 2. Supabase에서 삭제
+    try{await _supa.from('sf_users').delete().eq('id',userId);}catch(e){console.error('kick error:',e);}
+    // 3. 관련 데이터 삭제 (소독/육묘/파종/수확/재해)
+    try{
+      await Promise.all([
+        _supa.from('sf_disinfection').delete().eq('user_key',userId),
+        _supa.from('sf_seedling').delete().eq('user_key',userId),
+        _supa.from('sf_sowing').delete().eq('user_key',userId),
+        _supa.from('sf_harvest').delete().eq('user_key',userId),
+        _supa.from('sf_disaster').delete().eq('user_key',userId),
+        _supa.from('sf_extra_varieties').delete().eq('user_id',userId),
+      ]);
+    }catch(e){console.error('kick data cleanup error:',e);}
+    setKickTarget(null);
+    setKickDone(userId);
+    setTimeout(()=>setKickDone(null),2500);
+  };
+
   const doSave=()=>{
     try{localStorage.setItem("seedfarm_v8",JSON.stringify(app));}catch{}
+    sv(app);
     setSaved(true);setTimeout(()=>setSaved(false),2000);
   };
 
   return(
     <div style={{minHeight:"100vh",background:"#f9fafb"}}>
+
+      {/* ── 퇴출 확인 모달 ── */}
+      {kickTarget&&(
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.55)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 24px"}}
+          onClick={()=>setKickTarget(null)}>
+          <div style={{background:"white",borderRadius:20,padding:24,width:"100%",maxWidth:320,boxShadow:"0 12px 40px rgba(0,0,0,.25)"}}
+            onClick={e=>e.stopPropagation()}>
+            <div style={{textAlign:"center",marginBottom:16}}>
+              <div style={{fontSize:44,marginBottom:8}}>🚫</div>
+              <h3 style={{fontWeight:900,fontSize:17,color:"#111827",margin:"0 0 6px"}}>회원 퇴출</h3>
+              <p style={{fontSize:13,color:"#6b7280",margin:0,lineHeight:1.6}}>
+                <strong style={{color:"#dc2626"}}>{kickTarget.danjiName}</strong> ({kickTarget.chairName}) 회원을<br/>
+                정말 퇴출하시겠습니까?<br/>
+                <span style={{fontSize:11,color:"#9ca3af"}}>모든 데이터가 삭제되며 복구할 수 없습니다.</span>
+              </p>
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>setKickTarget(null)}
+                style={{flex:1,padding:"12px 0",borderRadius:12,border:"2px solid #e5e7eb",background:"white",color:"#374151",fontWeight:700,fontSize:14,cursor:"pointer"}}>
+                취소
+              </button>
+              <button onClick={()=>doKick(kickTarget.id)}
+                style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:"linear-gradient(135deg,#dc2626,#991b1b)",color:"white",fontWeight:900,fontSize:14,cursor:"pointer",boxShadow:"0 4px 12px rgba(220,38,38,.35)"}}>
+                퇴출 확인
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 퇴출 완료 토스트 ── */}
+      <div style={{position:"fixed",bottom:100,left:"50%",transform:"translateX(-50%)",background:"#1a2540",color:"white",padding:"10px 22px",borderRadius:24,fontSize:13,fontWeight:600,whiteSpace:"nowrap",zIndex:9999,opacity:kickDone?1:0,transition:"opacity .3s",pointerEvents:"none"}}>
+        🚫 회원이 퇴출되었습니다
+      </div>
+
       <div style={{background:"#16a34a",padding:"16px",display:"flex",alignItems:"center",position:"sticky",top:0,zIndex:20}}>
         <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:22,cursor:"pointer",marginRight:8,lineHeight:1}}>←</button>
         <h1 style={{color:"white",fontWeight:900,fontSize:18,margin:0}}>👥 사용자 관리</h1>
@@ -1041,13 +1103,14 @@ function UserManageScreen({app,setApp,onBack}){
           ?<p style={{textAlign:"center",color:"#9ca3af",marginTop:64,fontSize:14}}>가입된 사용자가 없습니다.</p>
           :(
             <div style={{background:"white",borderRadius:20,overflow:"hidden",boxShadow:"0 1px 4px rgba(0,0,0,.07)",border:"1px solid #f3f4f6"}}>
-              <div style={{display:"grid",gridTemplateColumns:"1.1fr 1fr 1.1fr 0.9fr 0.9fr",background:"#16a34a",color:"white",textAlign:"center",fontSize:11,fontWeight:900}}>
-                {["단지명","회원구분","단지회장명","작물명","품종명"].map((h,i,arr)=>(
+              {/* 헤더 */}
+              <div style={{display:"grid",gridTemplateColumns:"1.1fr 1fr 1fr 0.7fr 0.7fr 0.7fr",background:"#16a34a",color:"white",textAlign:"center",fontSize:11,fontWeight:900}}>
+                {["단지명","회원구분","단지회장명","작물명","품종명","퇴출"].map((h,i,arr)=>(
                   <div key={h} style={{padding:"10px 4px",borderRight:i<arr.length-1?"1px solid #15803d":"none"}}>{h}</div>
                 ))}
               </div>
               {members.map((u,i)=>(
-                <div key={u.id} style={{display:"grid",gridTemplateColumns:"1.1fr 1fr 1.1fr 0.9fr 0.9fr",textAlign:"center",fontSize:12,borderBottom:"1px solid #f3f4f6",background:i%2===0?"white":"#f9fafb",alignItems:"center"}}>
+                <div key={u.id} style={{display:"grid",gridTemplateColumns:"1.1fr 1fr 1fr 0.7fr 0.7fr 0.7fr",textAlign:"center",fontSize:12,borderBottom:"1px solid #f3f4f6",background:i%2===0?"white":"#f9fafb",alignItems:"center"}}>
                   <div style={{padding:"10px 4px",borderRight:"1px solid #f3f4f6",fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.danjiName}</div>
                   <div style={{padding:"6px 4px",borderRight:"1px solid #f3f4f6"}}>
                     <select value={u.role||"user"} onChange={e=>changeRole(u.id,e.target.value)}
@@ -1059,7 +1122,16 @@ function UserManageScreen({app,setApp,onBack}){
                   </div>
                   <div style={{padding:"10px 4px",borderRight:"1px solid #f3f4f6",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.chairName}</div>
                   <div style={{padding:"10px 4px",borderRight:"1px solid #f3f4f6"}}>{u.crop}</div>
-                  <div style={{padding:"10px 4px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.variety}</div>
+                  <div style={{padding:"10px 4px",borderRight:"1px solid #f3f4f6",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.variety}</div>
+                  <div style={{padding:"6px 4px",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <button onClick={()=>setKickTarget(u)}
+                      title={`${u.danjiName} 퇴출`}
+                      style={{background:"#fee2e2",border:"none",borderRadius:7,padding:"5px 8px",color:"#dc2626",fontSize:13,fontWeight:900,cursor:"pointer",lineHeight:1,transition:"all .15s"}}
+                      onMouseEnter={e=>{e.currentTarget.style.background="#dc2626";e.currentTarget.style.color="white";}}
+                      onMouseLeave={e=>{e.currentTarget.style.background="#fee2e2";e.currentTarget.style.color="#dc2626";}}>
+                      🚫
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
