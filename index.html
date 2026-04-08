@@ -8,7 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{-webkit-tap-highlight-color:transparent;box-sizing:border-box;}
 html,body,#root{height:100%;margin:0;padding:0;background:#f3f4f6;}
@@ -87,46 +87,7 @@ const {useState,useRef,useEffect,useCallback}=React;
 /* ── Supabase 설정 ── */
 const SUPA_URL="https://vastpgtqjfowcxdopvpp.supabase.co";
 const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhc3RwZ3RxamZvd2N4ZG9wdnBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NDAxMzcsImV4cCI6MjA5MTExNjEzN30.Gik7i6jL_9vwIh0Vd1OLr4frlK7GcSK-7I2OA3dJc5c";
-
-/* ── 실제 Supabase REST API 클라이언트 ── */
-const _supa=(()=>{
-  const headers={"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json","Prefer":"return=representation"};
-  const base=SUPA_URL+"/rest/v1/";
-  function from(table){
-    let _filters=[];
-    let _order=null;
-    const obj={
-      select:(cols="*")=>{
-        obj._cols=cols;
-        return{
-          order:(col,opts={})=>{
-            _order=col+(opts.ascending===false?"?order="+col+".desc":"?order="+col+".asc");
-            return obj._doSelect();
-          },
-          then:(res,rej)=>obj._doSelect().then(res,rej),
-        };
-      },
-      _doSelect:()=>{
-        let url=base+table+"?select="+(obj._cols||"*");
-        if(_order){const o=_order.split("?order=")[1];url+="&order="+o;}
-        _filters.forEach(f=>url+="&"+f);
-        return fetch(url,{headers}).then(r=>r.json()).then(data=>({data:Array.isArray(data)?data:[],error:null})).catch(e=>({data:[],error:e}));
-      },
-      upsert:(rows,opts={})=>{
-        const arr=Array.isArray(rows)?rows:[rows];
-        const conflict=opts.onConflict?("?on_conflict="+opts.onConflict):"";
-        return fetch(base+table+conflict,{method:"POST",headers:{...headers,"Prefer":"resolution=merge-duplicates,return=representation"},body:JSON.stringify(arr)})
-          .then(r=>r.ok?r.json().then(data=>({data,error:null})):r.json().then(e=>({data:null,error:e})))
-          .catch(e=>({data:null,error:e}));
-      },
-      delete:()=>({
-        eq:(col,val)=>fetch(base+table+"?"+col+"=eq."+val,{method:"DELETE",headers}).then(r=>({data:null,error:r.ok?null:r.status})).catch(e=>({data:null,error:e})),
-      }),
-    };
-    return obj;
-  }
-  return{from};
-})();
+const _supa=window.supabase.createClient(SUPA_URL,SUPA_KEY);
 
 /* ── localStorage fallback (오프라인/속도용) ── */
 const SK="seedfarm_v8";
@@ -178,50 +139,19 @@ async function ldFromSupabase(){
     if(evData&&Object.keys(evData).length){
       Object.entries(evData).forEach(([uid,vars])=>{try{localStorage.setItem(`extra_varieties_${uid}`,JSON.stringify(vars));}catch{}});
     }
-    // localStorage 기존 데이터 로드
-    const localData=ldLocal();
-    const localUsers=localData?.users||[];
-    const localRecords=localData?.records||{};
-
-    // Supabase users를 camelCase로 변환
-    const supaUsers=(uRes.data||[]).map(u=>({
-      id:u.id, pw:u.pw, role:u.role||'user',
-      region:u.region||'', danjiName:u.danji_name||'',
-      chairName:u.chair_name||'', crop:u.crop||'',
-      variety:u.variety||'', farmCount:u.farm_count||0,
-      area:u.area||0, production:u.production||0,
-      signature:u.signature||null, cropCount:u.crop_count||1,
-      linkedId:u.linked_id||null,
-    }));
-
-    // users 병합: Supabase 우선, localStorage에만 있는 user 추가
-    const mergedUsers=[...supaUsers];
-    localUsers.forEach(lu=>{
-      const idx=mergedUsers.findIndex(u=>u.id===lu.id);
-      if(idx===-1){
-        // Supabase에 없는 user는 localStorage에서 추가
-        mergedUsers.push(lu);
-      } else {
-        // Supabase에 있어도 danjiName/chairName이 비어있으면 localStorage 값 사용
-        if(!mergedUsers[idx].danjiName&&lu.danjiName) mergedUsers[idx].danjiName=lu.danjiName;
-        if(!mergedUsers[idx].chairName&&lu.chairName) mergedUsers[idx].chairName=lu.chairName;
-        if(!mergedUsers[idx].signature&&lu.signature) mergedUsers[idx].signature=lu.signature;
-      }
-    });
-
-    // records 병합: Supabase 우선, localStorage에만 있는 record 추가
-    const mergedRecords={...localRecords};
-    Object.entries(records).forEach(([k,v])=>{mergedRecords[k]=v;});
-
-    // notices/schedules: Supabase 데이터가 있을 때만 덮어씀
-    const mergedNotices=(nRes.data&&nRes.data.length)?nRes.data:(localData?.notices||[]);
-    const mergedSchedules=(sRes.data&&sRes.data.length)?sRes.data:(localData?.schedules||[]);
-
     const result={
-      users: mergedUsers,
-      notices: mergedNotices,
-      schedules: mergedSchedules,
-      records: mergedRecords,
+      users: (uRes.data||[]).map(u=>({
+        id:u.id, pw:u.pw, role:u.role||'user',
+        region:u.region||'', danjiName:u.danji_name||'',
+        chairName:u.chair_name||'', crop:u.crop||'',
+        variety:u.variety||'', farmCount:u.farm_count||0,
+        area:u.area||0, production:u.production||0,
+        signature:u.signature||null, cropCount:u.crop_count||1,
+        linkedId:u.linked_id||null,
+      })),
+      notices: nRes.data||[],
+      schedules: sRes.data||[],
+      records,
       currentUser: null,
     };
     svLocal(result);
@@ -238,7 +168,7 @@ async function svToSupabase(d){
   try{
     // users upsert
     if(d.users&&d.users.length){
-      const r=await _supa.from('sf_users').upsert(
+      await _supa.from('sf_users').upsert(
         d.users.map(u=>({
           id:u.id, pw:u.pw, role:u.role||'user',
           region:u.region||'', danji_name:u.danjiName||'',
@@ -250,8 +180,6 @@ async function svToSupabase(d){
         })),
         {onConflict:'id'}
       );
-      if(r.error) console.error('[Supabase] sf_users upsert error:',r.error);
-      else console.log('[Supabase] sf_users 저장 OK');
     }
     // notices upsert
     if(d.notices&&d.notices.length){
@@ -275,17 +203,15 @@ async function svToSupabase(d){
         {onConflict:'id'}
       );
     }
-    // records upsert — 제출 상태 포함 전체 저장
+    // records upsert
     const recEntries=Object.entries(d.records||{});
     if(recEntries.length){
-      const r=await _supa.from('sf_records').upsert(
+      await _supa.from('sf_records').upsert(
         recEntries.map(([key,val])=>({record_key:key,data:val})),
         {onConflict:'record_key'}
       );
-      if(r.error) console.error('[Supabase] sf_records upsert error:',r.error);
-      else console.log('[Supabase] sf_records 저장 OK, 건수:',recEntries.length);
     }
-  }catch(e){console.error('[Supabase] svToSupabase error:',e);}
+  }catch(e){console.error('Supabase save error:',e);}
 }
 
 /* ── Supabase: 특수 스토리지(소독/육묘/파종/수확/재해/extra_varieties) 저장 ── */
@@ -301,7 +227,22 @@ async function svExtraVarietiesToSupabase(userId,varieties){
 }
 
 /* ── 호환 래퍼: 기존 ld/sv 인터페이스 유지 ── */
-const ld=()=>ldLocal();
+const normalizeUserGlobal=(u)=>({
+  id:u.id, pw:u.pw, role:u.role||'user', region:u.region||'',
+  danjiName:u.danjiName||u.danji_name||'',
+  chairName:u.chairName||u.chair_name||'',
+  crop:u.crop||'', variety:u.variety||'',
+  farmCount:u.farmCount||u.farm_count||0,
+  area:u.area||0, production:u.production||0,
+  signature:u.signature||null,
+  cropCount:u.cropCount||u.crop_count||1,
+  linkedId:u.linkedId||u.linked_id||null,
+});
+const ld=()=>{
+  const d=ldLocal();
+  if(d&&d.users) d.users=d.users.map(normalizeUserGlobal);
+  return d;
+};
 const sv=d=>{svLocal(d);svToSupabase(d).catch(()=>{});};
 
 /* ── Supabase 초기화 상태 ── */
@@ -335,47 +276,6 @@ const INIT={
     {id:3,date:"2025-06-15",title:"포장관리 점검",     location:"전북 고창군"},
   ],
 };
-const ONE_PAGE_CSS=`
-  *{box-sizing:border-box;margin:0;padding:0;font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;}
-  body{background:#e5e7eb;padding:16px;}
-  .no-print{display:flex;gap:8px;margin-bottom:12px;}
-  .no-print button{padding:8px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
-  .page{width:190mm;margin:0 auto;background:white;padding:10mm 12mm;box-sizing:border-box;}
-  h2{text-align:center;font-size:17px;font-weight:900;margin-bottom:10px;}
-  .info-table{width:100%;border-collapse:collapse;margin-bottom:10px;}
-  .info-table td{border:1px solid #555;padding:5px 10px;font-size:13px;}
-  .section-title{font-weight:900;font-size:13px;margin-bottom:6px;}
-  .data-table{width:100%;border-collapse:collapse;margin-bottom:12px;table-layout:fixed;}
-  .data-table .c1{width:25%;}.data-table .c2{width:22%;}.data-table .c3{width:53%;}
-  .data-table th,.data-table td{border:1px solid #555;padding:4px 6px;font-size:12px;text-align:center;}
-  .data-table td:last-child{text-align:left;}
-  .footer-wrap{margin-top:10px;}
-  .footer-text{font-size:12px;margin-bottom:6px;}
-  .footer-sig{display:flex;justify-content:flex-end;align-items:center;gap:12px;font-size:13px;font-weight:700;margin-bottom:6px;}
-  .footer-귀하{font-size:12px;text-align:right;}
-  @media print{
-    body{background:white;padding:0;}
-    .no-print{display:none!important;}
-    .page{width:100%;margin:0;padding:8mm 10mm;}
-  }
-`;
-
-/* ── HTML을 새 탭으로 여는 헬퍼 (팝업 차단 우회) ── */
-function openHtmlInNewTab(html){
-  try{
-    const blob=new Blob([html],{type:'text/html;charset=utf-8'});
-    const url=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=url;a.target='_blank';a.rel='noopener';
-    document.body.appendChild(a);a.click();
-    document.body.removeChild(a);
-    setTimeout(()=>URL.revokeObjectURL(url),10000);
-  }catch(e){
-    const win=window.open('','_blank','width=820,height=960');
-    if(win){win.document.write(html);win.document.close();}
-    else alert('팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.');
-  }
-}
 const ACTS=["단지 회원 교육 및 유의사항 안내","원종 배부","포장관리(이형주, 잡초 제거 등)","관개수 관리 지도","병해충 방제 지도","비료 관리 지도","콤바인/건조기 점검","수확/탈곡 지도","공동 수확/건조 작업","수매 준비 작업","기상재해 피해 점검","포장검사 실시","생육상태 점검","기타"];
 
 /* ── icons ── */
@@ -429,11 +329,23 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
   const[remId,setRemId]=useState(()=>!!localStorage.getItem("saved_id"));
   const[stayLogin,setStayLogin]=useState(()=>!!localStorage.getItem("stay_login"));
 
+  // 스네이크케이스/카멜케이스 혼용 정규화
+  const normalizeUser=(u)=>({
+    id:u.id, pw:u.pw, role:u.role||'user', region:u.region||'',
+    danjiName:u.danjiName||u.danji_name||'',
+    chairName:u.chairName||u.chair_name||'',
+    crop:u.crop||'', variety:u.variety||'',
+    farmCount:u.farmCount||u.farm_count||0,
+    area:u.area||0, production:u.production||0,
+    signature:u.signature||null,
+    cropCount:u.cropCount||u.crop_count||1,
+    linkedId:u.linkedId||u.linked_id||null,
+  });
   // INIT 기본 계정 + Supabase + localStorage 사용자 모두 병합
   const mergeAllUsers=(supaUsers)=>{
     const localApp=ld();
-    const localUsers=localApp?.users||[];
-    const base=[...(supaUsers||[])];
+    const localUsers=(localApp?.users||[]).map(normalizeUser);
+    const base=(supaUsers||[]).map(normalizeUser);
     // localStorage에만 있는 유저 추가 (Supabase 저장 미완료 케이스)
     localUsers.forEach(lu=>{if(!base.find(u=>u.id===lu.id))base.push(lu);});
     // INIT 기본 계정 (admin 등) 추가
@@ -441,22 +353,8 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
     return base;
   };
   const doLogin=()=>{
-    // localStorage를 먼저 확인 (회원가입 직후 신규 유저 포함)
-    const localApp=ld()||{users:app.users};
-    const localMerged=mergeAllUsers(localApp.users);
-    const localUser=localMerged.find(u=>u.id===id&&u.pw===pw);
-    if(localUser){
-      if(remId) localStorage.setItem("saved_id",id);
-      else localStorage.removeItem("saved_id");
-      if(stayLogin) localStorage.setItem("stay_login",id);
-      else localStorage.removeItem("stay_login");
-      setApp(p=>({...p,...localApp,users:localMerged,currentUser:localUser}));
-      onLogin();
-      return;
-    }
-    // localStorage에 없으면 Supabase에서 재시도
     ldFromSupabase().then(freshData=>{
-      const freshApp=freshData||localApp;
+      const freshApp=freshData||ld()||{users:app.users};
       const mergedUsers=mergeAllUsers(freshApp.users);
       const u=mergedUsers.find(u=>u.id===id&&u.pw===pw);
       if(u){
@@ -468,7 +366,17 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
         onLogin();
       } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
     }).catch(()=>{
-      setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
+      const freshApp=ld()||{users:app.users};
+      const mergedUsers=mergeAllUsers(freshApp.users);
+      const u=mergedUsers.find(u=>u.id===id&&u.pw===pw);
+      if(u){
+        if(remId) localStorage.setItem("saved_id",id);
+        else localStorage.removeItem("saved_id");
+        if(stayLogin) localStorage.setItem("stay_login",id);
+        else localStorage.removeItem("stay_login");
+        setApp(p=>({...p,...freshApp,users:mergedUsers,currentUser:u}));
+        onLogin();
+      } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
     });
   };
 
@@ -531,7 +439,7 @@ function SignupScreen({app,setApp,onBack}){
   const ID_REGEX=/^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z0-9]{2,}$/;
   const upd=(k,v)=>{setF(p=>({...p,[k]:v}));if(k==="id"){setIdOk(false);setIdMsg(v&&!ID_REGEX.test(v)?"영문과 숫자를 모두 포함하여 2자 이상으로 입력해주세요.":"");}if(k==="pw")setPwErr(/^(?=.*[a-zA-Z])(?=.*\d).{10,}$/.test(v)?"":"10자 이상의 영문과 숫자 조합이어야 합니다.");};
   const updExtra=(i,k,v)=>setExtras(p=>{const n=[...p];n[i]={...n[i],[k]:v};return n;});
-  const checkId=()=>{if(!f.id)return setIdMsg("아이디를 입력하세요.");if(!ID_REGEX.test(f.id))return setIdMsg("영문과 숫자를 모두 포함하여 2자 이상으로 입력해주세요.");const localApp=ldLocal();const allUsers=[...(app.users||[]),...(localApp?.users||[])];const uniqueIds=new Set(allUsers.map(u=>u.id));if(uniqueIds.has(f.id)){setIdMsg("이미 사용중인 아이디입니다.");setIdOk(false);}else{setIdMsg("사용 가능한 아이디입니다.");setIdOk(true);}};
+  const checkId=()=>{if(!f.id)return setIdMsg("아이디를 입력하세요.");if(!ID_REGEX.test(f.id))return setIdMsg("영문과 숫자를 모두 포함하여 2자 이상으로 입력해주세요.");if(app.users.some(u=>u.id===f.id)){setIdMsg("이미 사용중인 아이디입니다.");setIdOk(false);}else{setIdMsg("사용 가능한 아이디입니다.");setIdOk(true);}};
   const submit=()=>{
     if(!idOk)return setErr("중복 ID 확인을 해주세요.");
     if(!ID_REGEX.test(f.id))return setErr("아이디는 영문과 숫자를 포함하여 2자 이상이어야 합니다.");
@@ -1497,7 +1405,26 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
     const sigImg=u.signature?`<img src="${u.signature}" alt="서명" style="height:40px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
     const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
 <style>
-${ONE_PAGE_CSS}
+  @page{size:A4 portrait;margin:1cm;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{width:210mm;height:297mm;overflow:hidden;}
+  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;}
+  .no-print{text-align:center;padding:8px 0 6px;border-bottom:1px solid #e5e7eb;margin-bottom:10px;}
+  button{padding:5px 14px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
+  @media print{.no-print{display:none!important;}html,body{overflow:hidden;}}
+  .page{width:100%;height:calc(297mm - 2cm);display:flex;flex-direction:column;overflow:hidden;}
+  h2{text-align:center;font-size:22px;font-weight:900;margin-bottom:6px;}
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
+  .info-table td{font-size:14px;padding:5px 10px;}
+  .section-title{font-weight:700;font-size:14px;margin-bottom:4px;}
+  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;}
+  .data-table col.c1{width:22%;}.data-table col.c2{width:22%;}.data-table col.c3{width:56%;}
+  .data-table th{border:1px solid #555;padding:5px 4px;text-align:center;background:#f0fdf4;font-size:13px;}
+  .data-table td{border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .footer-wrap{margin-top:6px;flex-shrink:0;}
+  .footer-text{text-align:center;font-weight:700;font-size:13px;margin:4px 0;}
+  .footer-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:3px;font-weight:700;font-size:13px;}
+  .footer-귀하{text-align:right;font-weight:900;font-size:13px;}
 </style>
 </head><body>
 <div class="no-print">
@@ -1520,7 +1447,7 @@ ${ONE_PAGE_CSS}
   </div>
 </div>
 </body></html>`;
-    openHtmlInNewTab(html);
+    const blob=new Blob([html],{type:"text/html;charset=utf-8"});const url=URL.createObjectURL(blob);const win2=window.open(url,"_blank","width=820,height=960");if(!win2)alert("팝업이 차단되었습니다.");
   };
 
   /* 인쇄 전용 창 — 파일 형식 선택 없이 바로 인쇄 */
@@ -1530,7 +1457,26 @@ ${ONE_PAGE_CSS}
     const sigImg=u.signature?`<img src="${u.signature}" alt="서명" style="height:40px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
     const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
 <style>
-${ONE_PAGE_CSS}
+  @page{size:A4 portrait;margin:1cm;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{width:210mm;height:297mm;overflow:hidden;}
+  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;}
+  .no-print{text-align:center;padding:8px 0 6px;border-bottom:1px solid #e5e7eb;margin-bottom:10px;}
+  button{padding:5px 14px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
+  @media print{.no-print{display:none!important;}html,body{overflow:hidden;}}
+  .page{width:100%;height:calc(297mm - 2cm);display:flex;flex-direction:column;overflow:hidden;}
+  h2{text-align:center;font-size:22px;font-weight:900;margin-bottom:6px;}
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
+  .info-table td{font-size:14px;padding:5px 10px;}
+  .section-title{font-weight:700;font-size:14px;margin-bottom:4px;}
+  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;}
+  .data-table col.c1{width:22%;}.data-table col.c2{width:22%;}.data-table col.c3{width:56%;}
+  .data-table th{border:1px solid #555;padding:5px 4px;text-align:center;background:#f0fdf4;font-size:13px;}
+  .data-table td{border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .footer-wrap{margin-top:6px;flex-shrink:0;}
+  .footer-text{text-align:center;font-weight:700;font-size:13px;margin:4px 0;}
+  .footer-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:3px;font-weight:700;font-size:13px;}
+  .footer-귀하{text-align:right;font-weight:900;font-size:13px;}
 </style>
 </head><body>
 <div class="no-print">
@@ -1552,9 +1498,8 @@ ${ONE_PAGE_CSS}
     <p class="footer-귀하">국립종자원 전북지원장 귀하</p>
   </div>
 </div>
-<script>window.onload=()=>window.print();<\/script>
 </body></html>`;
-    openHtmlInNewTab(html);
+    const blob=new Blob([html],{type:"text/html;charset=utf-8"});const url=URL.createObjectURL(blob);const win2=window.open(url,"_blank","width=820,height=960");if(!win2)alert("팝업이 차단되었습니다.");
   };
 
   if(preview)return(
@@ -1617,7 +1562,7 @@ ${ONE_PAGE_CSS}
         <div style={{display:"flex",gap:10,justifyContent:"center",alignItems:"center",marginBottom:16}}>
           <select value={year} onChange={e=>changeYear(Number(e.target.value))}
             style={{border:"2px solid #16a34a",borderRadius:10,padding:"8px 12px",fontWeight:900,fontSize:15,color:"#16a34a",background:"white",outline:"none",cursor:"pointer"}}>
-            {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>(
+            {Array.from({length:5},(_,i)=>new Date().getFullYear()-1+i).map(y=>(
               <option key={y} value={y}>{y}년</option>
             ))}
           </select>
@@ -1738,27 +1683,42 @@ function CropOverview({app,setApp,onBack}){
 
   const openDownload=(member)=>{
     const rk=`${member.id}_${year}_${month}`;
-    const rec=app.records[rk];
-    const rows=(rec&&rec.rows)||[];const filled=rows.filter(r=>r.date).length;
-    const dName=member.danjiName||member.danji_name||'—';
-    const cName=member.chairName||member.chair_name||'—';
-    const cropName=member.crop||'—';
-    const infoRows=[["단지명",dName],["작물명",cropName],["성명",cName],["근무일수",`${filled}일`]]
-      .map(([k,v])=>`<tr><td style="border:1px solid #555;padding:5px 10px;font-weight:700;background:#f0fdf4;width:80px;white-space:nowrap;font-size:14px">${k}</td><td style="border:1px solid #555;padding:5px 10px;font-size:14px">${v||'—'}</td></tr>`).join("");
-    const dataRows=rows.map(r=>`<tr><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${r.date||"&nbsp;"}</td><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.time||"&nbsp;"}</td><td style="border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;">${r.activity||"&nbsp;"}</td></tr>`).join("");
+    const rec=app.records[rk];if(!rec)return;
+    const rows=rec.rows||[];const filled=rows.filter(r=>r.date).length;
+    const infoRows=[["단지명",member.danjiName],["작물명",member.crop],["성명",member.chairName],["근무일수",`${filled}일`]]
+      .map(([k,v])=>`<tr><td style="border:1px solid #555;padding:5px 10px;font-weight:700;background:#f0fdf4;width:80px;white-space:nowrap;font-size:14px">${k}</td><td style="border:1px solid #555;padding:5px 10px;font-size:14px">${v}</td></tr>`).join("");
+    const dataRows=rows.map(r=>`<tr><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.date||""}</td><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.time||""}</td><td style="border:1px solid #555;padding:3px 6px;font-size:12px;">${r.activity||""}</td></tr>`).join("");
     const sigImg=member.signature?`<img src="${member.signature}" alt="서명" style="height:40px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
     const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
 <style>
-${ONE_PAGE_CSS}
+  @page{size:A4 portrait;margin:1cm;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;}
+  .no-print{text-align:center;padding:8px 0 6px;border-bottom:1px solid #e5e7eb;margin-bottom:10px;}
+  button{padding:5px 14px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
+  @media print{.no-print{display:none!important;}}
+  .page{width:100%;display:flex;flex-direction:column;}
+  h2{text-align:center;font-size:20px;font-weight:900;margin-bottom:6px;}
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
+  .info-table td{font-size:13px;padding:4px 8px;border:1px solid #555;}
+  .section-title{font-weight:700;font-size:13px;margin-bottom:4px;}
+  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:6px;}
+  .data-table col.c1{width:22%;}.data-table col.c2{width:22%;}.data-table col.c3{width:56%;}
+  .data-table th{border:1px solid #555;padding:5px 4px;text-align:center;background:#f0fdf4;font-size:12px;}
+  .data-table td{border:1px solid #555;padding:3px 5px;font-size:11px;}
+  .footer-wrap{margin-top:8px;}
+  .footer-text{text-align:center;font-weight:700;font-size:12px;margin:4px 0;}
+  .footer-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:3px;font-weight:700;font-size:12px;}
+  .footer-end{text-align:right;font-weight:900;font-size:12px;}
 </style></head><body>
 <div class="no-print">
-  <button style="background:#ef4444;color:white" onclick="window.print()">📄 PDF로 저장</button>
+  <button style="background:#ef4444;color:white" onclick="window.print()">PDF로 저장</button>
   <button style="background:#6b7280;color:white" onclick="window.close()">닫기</button>
 </div>
 <div class="page">
   <h2>${year}년 ${month}월 생산관리지도부</h2>
   <table class="info-table"><tbody>${infoRows}</tbody></table>
-  <p class="section-title">◈ 지도상황</p>
+  <p class="section-title">&#9670; 지도상황</p>
   <table class="data-table">
     <colgroup><col class="c1"/><col class="c2"/><col class="c3"/></colgroup>
     <thead><tr><th>근무일자</th><th>활동시간</th><th>활동내용</th></tr></thead>
@@ -1766,12 +1726,15 @@ ${ONE_PAGE_CSS}
   </table>
   <div class="footer-wrap">
     <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
-    <div class="footer-sig"><span>(${dName}) 생산관리지도원: ${cName}</span>${sigImg}</div>
-    <p class="footer-귀하">국립종자원 전북지원장 귀하</p>
+    <div class="footer-sig"><span>(${member.danjiName}) 생산관리지도원: ${member.chairName}</span>${sigImg}</div>
+    <p class="footer-end">국립종자원 전북지원장 귀하</p>
   </div>
 </div>
 </body></html>`;
-    openHtmlInNewTab(html);
+    const blob=new Blob([html],{type:"text/html;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const win=window.open(url,"_blank","width=820,height=960");
+    if(!win)alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.");
   };
 
   const doReject=(memberId)=>{
@@ -1793,7 +1756,7 @@ ${ONE_PAGE_CSS}
         {/* 연도·월 선택 */}
         <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:16}}>
           <select value={year} onChange={e=>setYear(Number(e.target.value))} style={selSt}>
-            {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=><option key={y} value={y}>{y}년</option>)}
+            {Array.from({length:5},(_,i)=>new Date().getFullYear()-1+i).map(y=><option key={y} value={y}>{y}년</option>)}
           </select>
           <select value={month} onChange={e=>setMonth(Number(e.target.value))} style={selSt}>
             {Array.from({length:12},(_,i)=>i+1).map(m=><option key={m} value={m}>{m}월</option>)}
@@ -1818,16 +1781,7 @@ ${ONE_PAGE_CSS}
           const crops=CROP_GROUPS[sel];
           const members=app.users
             .filter(u=>u.role!=="admin"&&crops.includes(u.crop))
-            .map(u=>{
-              const rec=app.records[`${u.id}_${year}_${month}`];
-              return{
-                ...u,
-                danjiName:u.danjiName||u.danji_name||'—',
-                chairName:u.chairName||u.chair_name||'—',
-                submitted:rec?.sent===true,
-                hasRecord:!!rec,
-              };
-            })
+            .map(u=>{const rec=app.records[`${u.id}_${year}_${month}`];return{...u,submitted:rec?.sent===true,hasRecord:!!rec};})
             .sort((a,b)=>a.submitted-b.submitted);
           const colStyle="1.2fr 1.2fr 1fr 0.8fr 0.8fr 0.8fr";
           const hdrCell=(t,last=false)=>(<div style={{padding:"10px 4px",borderRight:last?"none":"1px solid #15803d",textAlign:"center"}}>{t}</div>);
@@ -2380,7 +2334,7 @@ function SeedlingTab({userId,onReset}){
 function DisSeedScreen({app,onBack}){
   const u=app.currentUser;
   const curY=new Date().getFullYear();
-  const[selYear,setSelYear]=useState(curY);
+  const[selYear,setSelYear]=useState(Math.max(curY,2026));
   const FARM_SK=`seedfarm_farms_${u?.id}`;
 
   // 농가 목록 로드 (연도별)
@@ -2398,7 +2352,7 @@ function DisSeedScreen({app,onBack}){
     }catch{}
   };
 
-  const[farms,setFarms]=useState(()=>loadFarms(curY));
+  const[farms,setFarms]=useState(()=>loadFarms(Math.max(curY,2026)));
   const[selFarm,setSelFarm]=useState(0); // 선택된 농가 인덱스
 
   const changeYear=(y)=>{
@@ -2452,7 +2406,7 @@ function DisSeedScreen({app,onBack}){
             <span style={{fontSize:14,fontWeight:700,color:"#374151",flex:"0 0 auto"}}>생산연도</span>
             <select value={selYear} onChange={e=>changeYear(Number(e.target.value))}
               style={{flex:1,border:"1.5px solid #9ca3af",borderRadius:10,padding:"7px 10px",fontSize:14,fontFamily:"inherit",outline:"none",background:"white",cursor:"pointer"}}>
-              {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>(
+              {Array.from({length:5},(_,i)=>2026+i).map(y=>(
                 <option key={y} value={y}>{y}년</option>
               ))}
             </select>
@@ -2528,7 +2482,7 @@ function DisSeedScreen({app,onBack}){
 function DisasterForm({app,onBack,editItem,onSave,year}){
   const u=app.currentUser;
   const SK="seedfarm_disaster_v1";
-  const selYear=year||new Date().getFullYear();
+  const selYear=year||Math.max(new Date().getFullYear(),2026);
   const blank={type:"",location:"",date:"",scale:"",damage:"",action:"",photos:[],variety:""};
   const isDual=u?.role==='dual'||u?.role==='admin';
   let myExtras=[];
@@ -2713,7 +2667,7 @@ function DisasterScreen({app,setApp,onBack}){
   const u=app.currentUser;
   const SK="seedfarm_disaster_v1";
   const PAGE_SIZE=10;
-  const curY=new Date().getFullYear();
+  const curY=Math.max(new Date().getFullYear(),2026);
   const[writing,setWriting]=useState(false);
   const[editItem,setEditItem]=useState(null);
   const[page,setPage]=useState(0);
@@ -2766,7 +2720,7 @@ function DisasterScreen({app,setApp,onBack}){
         <label style={{fontSize:13,fontWeight:700,color:"#374151"}}>📅 연도</label>
         <select value={selYear} onChange={e=>{setSelYear(Number(e.target.value));setPage(0);}}
           style={{border:"2px solid #dc2626",borderRadius:10,padding:"7px 12px",fontWeight:900,fontSize:14,color:"#dc2626",background:"white",outline:"none",cursor:"pointer"}}>
-          {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>(
+          {Array.from({length:5},(_,i)=>2026+i).map(y=>(
             <option key={y} value={y}>{y}년</option>
           ))}
         </select>
@@ -2890,7 +2844,7 @@ function RecordScreen({app,setApp,initDisaster,recordSelRef}){
 /* ════════════════════ ADMIN SOWING SCREEN ════════════════════ */
 function AdminSowingScreen({app,onBack}){
   const[sel,setSel]=useState(null);
-  const[selYear,setSelYear]=useState(new Date().getFullYear());
+  const[selYear,setSelYear]=useState(Math.max(new Date().getFullYear(),2026));
   const yearSt={border:"2px solid #16a34a",borderRadius:10,padding:"7px 12px",fontWeight:900,fontSize:14,color:"#16a34a",background:"white",outline:"none",cursor:"pointer"};
 
   const getMembers=(group)=>{
@@ -2934,7 +2888,7 @@ function AdminSowingScreen({app,onBack}){
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
           <label style={{fontSize:13,fontWeight:700,color:"#374151"}}>📅 생산연도</label>
           <select value={selYear} onChange={e=>{setSelYear(Number(e.target.value));setSel(null);}} style={yearSt}>
-            {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=><option key={y} value={y}>{y}년</option>)}
+            {Array.from({length:5},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}년</option>)}
           </select>
         </div>
         {/* 작물별 모아보기 박스 */}
@@ -3096,7 +3050,7 @@ function AdminSowingScreen({app,onBack}){
 /* ════════════════════ ADMIN DISASTER SCREEN ════════════════════ */
 function AdminDisasterScreen({app,onBack}){
   const[sel,setSel]=useState(null);
-  const[selYear,setSelYear]=useState(new Date().getFullYear());
+  const[selYear,setSelYear]=useState(Math.max(new Date().getFullYear(),2026));
   const yearSt={border:"2px solid #dc2626",borderRadius:10,padding:"7px 12px",fontWeight:900,fontSize:14,color:"#dc2626",background:"white",outline:"none",cursor:"pointer"};
   const cropIcon=g=>g==='벼'?'🌾':g==='콩'?'🫛':'🌿';
 
@@ -3139,7 +3093,7 @@ function AdminDisasterScreen({app,onBack}){
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
           <label style={{fontSize:13,fontWeight:700,color:"#374151"}}>📅 연도</label>
           <select value={selYear} onChange={e=>{setSelYear(Number(e.target.value));setSel(null);}} style={yearSt}>
-            {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=><option key={y} value={y}>{y}년</option>)}
+            {Array.from({length:5},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}년</option>)}
           </select>
         </div>
         {/* 작물별 모아보기 박스 */}
@@ -3189,7 +3143,7 @@ function AdminDisasterScreen({app,onBack}){
 /* ════════════════════ ADMIN HARVEST SCREEN ════════════════════ */
 function AdminHarvestScreen({app,onBack}){
   const[sel,setSel]=useState(null);
-  const[selYear,setSelYear]=useState(new Date().getFullYear());
+  const[selYear,setSelYear]=useState(Math.max(new Date().getFullYear(),2026));
   const yearSt={border:"2px solid #16a34a",borderRadius:10,padding:"7px 12px",fontWeight:900,fontSize:14,color:"#16a34a",background:"white",outline:"none",cursor:"pointer"};
   const cropIcon=g=>g==='벼'?'🌾':g==='콩'?'🫛':'🌿';
 
@@ -3235,7 +3189,7 @@ function AdminHarvestScreen({app,onBack}){
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
           <label style={{fontSize:13,fontWeight:700,color:"#374151"}}>📅 생산연도</label>
           <select value={selYear} onChange={e=>{setSelYear(Number(e.target.value));setSel(null);}} style={yearSt}>
-            {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=><option key={y} value={y}>{y}년</option>)}
+            {Array.from({length:5},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}년</option>)}
           </select>
         </div>
         {/* 작물별 모아보기 박스 */}
@@ -3395,7 +3349,7 @@ function AdminHarvestScreen({app,onBack}){
 /* ════════════════════ ADMIN DISSEED SCREEN ════════════════════ */
 function AdminDisSeedScreen({app,onBack}){
   const[sel,setSel]=useState(null);
-  const[selYear,setSelYear]=useState(new Date().getFullYear());
+  const[selYear,setSelYear]=useState(Math.max(new Date().getFullYear(),2026));
   const yearSt={border:"2px solid #16a34a",borderRadius:10,padding:"7px 12px",fontWeight:900,fontSize:14,color:"#16a34a",background:"white",outline:"none",cursor:"pointer"};
   const cropIcon=g=>g==='벼'?'🌾':g==='콩'?'🫛':'🌿';
 
@@ -3431,7 +3385,7 @@ function AdminDisSeedScreen({app,onBack}){
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
           <label style={{fontSize:13,fontWeight:700,color:"#374151"}}>📅 생산연도</label>
           <select value={selYear} onChange={e=>{setSelYear(Number(e.target.value));setSel(null);}} style={yearSt}>
-            {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=><option key={y} value={y}>{y}년</option>)}
+            {Array.from({length:5},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}년</option>)}
           </select>
         </div>
         {/* 작물별 모아보기 박스 */}
@@ -3520,7 +3474,7 @@ function AdminScreen({app,setApp}){
 /* ════════════════════ ROOT ════════════════════ */
 function App(){
   const[app,setApp]=useState(()=>ld()||INIT);
-  const[supaLoading,setSupaLoading]=useState(false);
+  const[supaLoading,setSupaLoading]=useState(true);
   const[screen,setScreen]=useState(()=>{
     const stayId=localStorage.getItem("stay_login");
     if(stayId){
@@ -3539,24 +3493,18 @@ function App(){
   useEffect(()=>{
     ldFromSupabase().then(data=>{
       if(data){
-        setApp(p=>{
-          // localStorage users와 Supabase users 병합 (localStorage 우선 - 신규 회원 보존)
-          const localUsers=p.users||[];
-          const supaUsers=data.users||[];
-          const merged=[...supaUsers];
-          localUsers.forEach(lu=>{if(!merged.find(u=>u.id===lu.id))merged.push(lu);});
-          INIT.users.forEach(iu=>{if(!merged.find(u=>u.id===iu.id))merged.unshift(iu);});
-          // currentUser 복원
-          const stayId=localStorage.getItem("stay_login");
-          const existCu=p.currentUser;
-          const freshCu=existCu?merged.find(u=>u.id===existCu.id)||existCu
-            :stayId?merged.find(u=>u.id===stayId)||null:null;
-          const next={...data,users:merged,currentUser:freshCu};
-          svLocal(next);
-          return next;
-        });
+        // currentUser 복원 (stay_login)
         const stayId=localStorage.getItem("stay_login");
-        if(stayId) setScreen("app");
+        let cu=null;
+        if(stayId) cu=(data.users||[]).find(u=>u.id===stayId)||null;
+        setApp(p=>{
+          // 기존 currentUser 유지 (이미 로그인된 경우)
+          const existCu=p.currentUser||cu;
+          // currentUser 정보도 최신 user 데이터로 갱신
+          const freshCu=existCu?(data.users||[]).find(u=>u.id===existCu.id)||existCu:null;
+          return {...data,currentUser:freshCu};
+        });
+        if(stayId&&cu) setScreen("app");
       }
       setSupaLoading(false);
     }).catch(()=>setSupaLoading(false));
@@ -3702,6 +3650,7 @@ function App(){
     <div style={{maxWidth:480,margin:"0 auto",minHeight:"100vh",background:"white",position:"relative"}}>
       <NoticeScreen app={app} setApp={setApp} noticeModalCloser={noticeModalCloser} onBack={()=>{pushNav({screen:"app",tab,noticeOpen:true,disasterOpen});setNoticeOpen(false);}}/>
       <NavBar active={tab} setActive={t=>{goTab(t);setNoticeOpen(false);}} isAdmin={isAdmin}/>
+      {backBtn}
     </div>
   );
   const goDisaster=()=>{
@@ -3716,6 +3665,7 @@ function App(){
       {tab==="my"       &&<MyScreen       app={app} setApp={setApp} onLogout={onLogout}/>}
       {tab==="admin"    &&isAdmin&&<AdminScreen app={app} setApp={setApp}/>}
       <NavBar active={tab} setActive={goTab} isAdmin={isAdmin}/>
+      {backBtn}
     </div>
   );
 }
@@ -3802,7 +3752,7 @@ function openShModal(type, user) {
     document.getElementById('sowingBtns').style.display = 'block';
     document.getElementById('harvestCards').style.display = 'none';
     document.getElementById('harvestBtns').style.display = 'none';
-    const curYear = new Date().getFullYear();
+    const curYear = Math.max(new Date().getFullYear(), 2026);
     const userSowing = db.sowingData?.[key];
     // 연도별 구조 지원 (객체) 및 이전 배열 구조 호환
     let saved = [];
@@ -3826,7 +3776,7 @@ function openShModal(type, user) {
     document.getElementById('harvestBtns').style.display = 'block';
     document.getElementById('sowingCards').style.display = 'none';
     document.getElementById('sowingBtns').style.display = 'none';
-    const curYear = new Date().getFullYear();
+    const curYear = Math.max(new Date().getFullYear(), 2026);
     const userHarvest = db.harvestData?.[key];
     let havSaved;
     if (!userHarvest) {
@@ -4307,7 +4257,7 @@ function _makeSowingCardHTML(d, user, idx){
   const defaultVariety  = d.variety  !== undefined ? d.variety  : (myExtra1.variety || user?.variety||'');
   const defaultArea     = d.area     !== undefined ? d.area     : (myExtra1.area    || user?.area||'');
   const defaultFarmCount= d.farmCount!== undefined ? d.farmCount: (myExtra1.farmCount || user?.farmCount||'');
-  const defaultYear = d.prodYear || new Date().getFullYear();
+  const defaultYear = d.prodYear || Math.max(new Date().getFullYear(), 2026);
   const defaultPlanM1 = d.planM1||'';
   const defaultPlanD1 = d.planD1||'';
   const defaultPlanM2 = d.planM2||'';
@@ -4321,7 +4271,7 @@ function _makeSowingCardHTML(d, user, idx){
   const allDates=[]; farms.forEach(f=>{if(f.date1)allDates.push(new Date(f.date1));if(f.date2)allDates.push(new Date(f.date2));});
   let tp=''; if(allDates.length>=2){const mn=new Date(Math.min(...allDates)),mx=new Date(Math.max(...allDates));const fmt=d=>`${d.getMonth()+1}.${d.getDate()}`;tp=`${fmt(mn)} ~ ${fmt(mx)}`;}
   const curY=new Date().getFullYear();
-  const yearOpts=Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>`<option value="${y}"${y==defaultYear?' selected':''}>${y}년</option>`).join('');
+  const yearOpts=Array.from({length:5},(_,i)=>2026+i).map(y=>`<option value="${y}"${y==defaultYear?' selected':''}>${y}년</option>`).join('');
   const monthOpts=(sel)=>Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}"${m==sel?' selected':''}>${String(m).padStart(2,'0')}</option>`).join('');
   const dayOpts=(sel)=>Array.from({length:31},(_,i)=>i+1).map(d=>`<option value="${d}"${d==sel?' selected':''}>${String(d).padStart(2,'0')}</option>`).join('');
   const selSt='border:1.5px solid #ddd;border-radius:8px;padding:6px 4px;font-size:13px;font-family:inherit;background:white;';
@@ -4470,7 +4420,7 @@ function addSowingVariety(){
   const wrap=document.getElementById('sowingCards');
   const idx=wrap.querySelectorAll('.sow-card').length;
   // 첫 번째 카드의 현재 연도 가져오기
-  const firstYear=document.querySelector('#sowingCards .sow-card .sow-year')?.value||new Date().getFullYear();
+  const firstYear=document.querySelector('#sowingCards .sow-card .sow-year')?.value||Math.max(new Date().getFullYear(),2026);
   // MY extra_varieties에서 해당 인덱스 품종 기본값 가져오기
   let evData={};
   try{
@@ -4499,7 +4449,7 @@ function _makeHarvestCardHTML(d, user, idx){
   const defaultVariety   = d.variety   !== undefined ? d.variety   : (myExtra.variety  || user?.variety||'');
   const defaultArea      = d.area      !== undefined ? d.area      : (myExtra.area     || user?.area||'');
   const defaultFarmCount = d.farmCount !== undefined ? d.farmCount : (myExtra.farmCount|| user?.farmCount||'');
-  const defaultYear = d.prodYear || new Date().getFullYear();
+  const defaultYear = d.prodYear || Math.max(new Date().getFullYear(), 2026);
   const defaultPlanM1 = d.planM1||'';
   const defaultPlanD1 = d.planD1||'';
   const defaultPlanM2 = d.planM2||'';
@@ -4512,7 +4462,7 @@ function _makeHarvestCardHTML(d, user, idx){
   const farms=(d.farms&&d.farms.length)?d.farms:[{},{},{}];
   const allDates=[]; farms.forEach(f=>{if(f.date1)allDates.push(new Date(f.date1));if(f.date2)allDates.push(new Date(f.date2));});
   let tp=''; if(allDates.length>=2){const mn=new Date(Math.min(...allDates)),mx=new Date(Math.max(...allDates));const fmt=d=>`${d.getMonth()+1}.${d.getDate()}`;tp=`${fmt(mn)} ~ ${fmt(mx)}`;}
-  const yearOpts=Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>`<option value="${y}"${y==defaultYear?" selected":""}>${y}년</option>`).join("");
+  const yearOpts=Array.from({length:5},(_,i)=>2026+i).map(y=>`<option value="${y}"${y==defaultYear?" selected":""}>${y}년</option>`).join("");
   const monthOpts=(sel)=>Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}"${m==sel?' selected':''}>${String(m).padStart(2,'0')}</option>`).join('');
   const dayOpts=(sel)=>Array.from({length:31},(_,i)=>i+1).map(d=>`<option value="${d}"${d==sel?' selected':''}>${String(d).padStart(2,'0')}</option>`).join('');
   const selSt='border:1.5px solid #ddd;border-radius:8px;padding:6px 4px;font-size:13px;font-family:inherit;background:white;';
@@ -4661,7 +4611,7 @@ function addHarvestVariety(){
   let evLen=0;
   try{evLen=JSON.parse(localStorage.getItem(`extra_varieties_${_shUser?.id}`)||'[]').length;}catch{}
   if(idx>=evLen) return;
-  const firstYear=document.querySelector('#harvestCards .hav-card .hav-year')?.value||new Date().getFullYear();
+  const firstYear=document.querySelector('#harvestCards .hav-card .hav-year')?.value||Math.max(new Date().getFullYear(),2026);
   let evData={prodYear:firstYear};
   try{
     const ev=JSON.parse(localStorage.getItem(`extra_varieties_${_shUser?.id}`)||'[]');
