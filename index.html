@@ -87,11 +87,46 @@ const {useState,useRef,useEffect,useCallback}=React;
 /* ── Supabase 설정 ── */
 const SUPA_URL="https://vastpgtqjfowcxdopvpp.supabase.co";
 const SUPA_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZhc3RwZ3RxamZvd2N4ZG9wdnBwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU1NDAxMzcsImV4cCI6MjA5MTExNjEzN30.Gik7i6jL_9vwIh0Vd1OLr4frlK7GcSK-7I2OA3dJc5c";
-const _supa={from:()=>({
-  select:()=>({order:()=>Promise.resolve({data:[],error:null})}),
-  upsert:()=>Promise.resolve({data:null,error:null}),
-  delete:()=>({eq:()=>Promise.resolve({data:null,error:null})}),
-})};
+
+/* ── 실제 Supabase REST API 클라이언트 ── */
+const _supa=(()=>{
+  const headers={"apikey":SUPA_KEY,"Authorization":"Bearer "+SUPA_KEY,"Content-Type":"application/json","Prefer":"return=representation"};
+  const base=SUPA_URL+"/rest/v1/";
+  function from(table){
+    let _filters=[];
+    let _order=null;
+    const obj={
+      select:(cols="*")=>{
+        obj._cols=cols;
+        return{
+          order:(col,opts={})=>{
+            _order=col+(opts.ascending===false?"?order="+col+".desc":"?order="+col+".asc");
+            return obj._doSelect();
+          },
+          then:(res,rej)=>obj._doSelect().then(res,rej),
+        };
+      },
+      _doSelect:()=>{
+        let url=base+table+"?select="+(obj._cols||"*");
+        if(_order){const o=_order.split("?order=")[1];url+="&order="+o;}
+        _filters.forEach(f=>url+="&"+f);
+        return fetch(url,{headers}).then(r=>r.json()).then(data=>({data:Array.isArray(data)?data:[],error:null})).catch(e=>({data:[],error:e}));
+      },
+      upsert:(rows,opts={})=>{
+        const arr=Array.isArray(rows)?rows:[rows];
+        const conflict=opts.onConflict?("?on_conflict="+opts.onConflict):"";
+        return fetch(base+table+conflict,{method:"POST",headers:{...headers,"Prefer":"resolution=merge-duplicates,return=representation"},body:JSON.stringify(arr)})
+          .then(r=>r.ok?r.json().then(data=>({data,error:null})):r.json().then(e=>({data:null,error:e})))
+          .catch(e=>({data:null,error:e}));
+      },
+      delete:()=>({
+        eq:(col,val)=>fetch(base+table+"?"+col+"=eq."+val,{method:"DELETE",headers}).then(r=>({data:null,error:r.ok?null:r.status})).catch(e=>({data:null,error:e})),
+      }),
+    };
+    return obj;
+  }
+  return{from};
+})();
 
 /* ── localStorage fallback (오프라인/속도용) ── */
 const SK="seedfarm_v8";
@@ -172,7 +207,7 @@ async function svToSupabase(d){
   try{
     // users upsert
     if(d.users&&d.users.length){
-      await _supa.from('sf_users').upsert(
+      const r=await _supa.from('sf_users').upsert(
         d.users.map(u=>({
           id:u.id, pw:u.pw, role:u.role||'user',
           region:u.region||'', danji_name:u.danjiName||'',
@@ -184,6 +219,8 @@ async function svToSupabase(d){
         })),
         {onConflict:'id'}
       );
+      if(r.error) console.error('[Supabase] sf_users upsert error:',r.error);
+      else console.log('[Supabase] sf_users 저장 OK');
     }
     // notices upsert
     if(d.notices&&d.notices.length){
@@ -207,15 +244,17 @@ async function svToSupabase(d){
         {onConflict:'id'}
       );
     }
-    // records upsert
+    // records upsert — 제출 상태 포함 전체 저장
     const recEntries=Object.entries(d.records||{});
     if(recEntries.length){
-      await _supa.from('sf_records').upsert(
+      const r=await _supa.from('sf_records').upsert(
         recEntries.map(([key,val])=>({record_key:key,data:val})),
         {onConflict:'record_key'}
       );
+      if(r.error) console.error('[Supabase] sf_records upsert error:',r.error);
+      else console.log('[Supabase] sf_records 저장 OK, 건수:',recEntries.length);
     }
-  }catch(e){console.error('Supabase save error:',e);}
+  }catch(e){console.error('[Supabase] svToSupabase error:',e);}
 }
 
 /* ── Supabase: 특수 스토리지(소독/육묘/파종/수확/재해/extra_varieties) 저장 ── */
