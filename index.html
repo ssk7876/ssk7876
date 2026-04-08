@@ -330,8 +330,22 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
     return base;
   };
   const doLogin=()=>{
+    // localStorage를 먼저 확인 (회원가입 직후 신규 유저 포함)
+    const localApp=ld()||{users:app.users};
+    const localMerged=mergeAllUsers(localApp.users);
+    const localUser=localMerged.find(u=>u.id===id&&u.pw===pw);
+    if(localUser){
+      if(remId) localStorage.setItem("saved_id",id);
+      else localStorage.removeItem("saved_id");
+      if(stayLogin) localStorage.setItem("stay_login",id);
+      else localStorage.removeItem("stay_login");
+      setApp(p=>({...p,...localApp,users:localMerged,currentUser:localUser}));
+      onLogin();
+      return;
+    }
+    // localStorage에 없으면 Supabase에서 재시도
     ldFromSupabase().then(freshData=>{
-      const freshApp=freshData||ld()||{users:app.users};
+      const freshApp=freshData||localApp;
       const mergedUsers=mergeAllUsers(freshApp.users);
       const u=mergedUsers.find(u=>u.id===id&&u.pw===pw);
       if(u){
@@ -343,17 +357,7 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
         onLogin();
       } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
     }).catch(()=>{
-      const freshApp=ld()||{users:app.users};
-      const mergedUsers=mergeAllUsers(freshApp.users);
-      const u=mergedUsers.find(u=>u.id===id&&u.pw===pw);
-      if(u){
-        if(remId) localStorage.setItem("saved_id",id);
-        else localStorage.removeItem("saved_id");
-        if(stayLogin) localStorage.setItem("stay_login",id);
-        else localStorage.removeItem("stay_login");
-        setApp(p=>({...p,...freshApp,users:mergedUsers,currentUser:u}));
-        onLogin();
-      } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
+      setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
     });
   };
 
@@ -1506,7 +1510,7 @@ ${ONE_PAGE_CSS}
         <div style={{display:"flex",gap:10,justifyContent:"center",alignItems:"center",marginBottom:16}}>
           <select value={year} onChange={e=>changeYear(Number(e.target.value))}
             style={{border:"2px solid #16a34a",borderRadius:10,padding:"8px 12px",fontWeight:900,fontSize:15,color:"#16a34a",background:"white",outline:"none",cursor:"pointer"}}>
-            {Array.from({length:5},(_,i)=>2026+i).map(y=>(
+            {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>(
               <option key={y} value={y}>{y}년</option>
             ))}
           </select>
@@ -1620,7 +1624,7 @@ ${ONE_PAGE_CSS}
 function CropOverview({app,setApp,onBack}){
   const[sel,setSel]=useState(null);
   const today=new Date();
-  const[year,setYear]=useState(Math.max(today.getFullYear(),2026));
+  const[year,setYear]=useState(today.getFullYear());
   const[month,setMonth]=useState(today.getMonth()+1);
   const btnSt={background:"white",border:"2px solid #e5e7eb",borderRadius:10,width:34,height:34,fontWeight:900,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0};
   const selSt={flex:1,border:"2px solid #e5e7eb",borderRadius:12,padding:"8px 12px",fontSize:14,fontWeight:700,background:"white",outline:"none"};
@@ -1681,7 +1685,7 @@ ${ONE_PAGE_CSS}
         {/* 연도·월 선택 */}
         <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:16}}>
           <select value={year} onChange={e=>setYear(Number(e.target.value))} style={selSt}>
-            {Array.from({length:5},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}년</option>)}
+            {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=><option key={y} value={y}>{y}년</option>)}
           </select>
           <select value={month} onChange={e=>setMonth(Number(e.target.value))} style={selSt}>
             {Array.from({length:12},(_,i)=>i+1).map(m=><option key={m} value={m}>{m}월</option>)}
@@ -2259,7 +2263,7 @@ function SeedlingTab({userId,onReset}){
 function DisSeedScreen({app,onBack}){
   const u=app.currentUser;
   const curY=new Date().getFullYear();
-  const[selYear,setSelYear]=useState(Math.max(curY,2026));
+  const[selYear,setSelYear]=useState(curY);
   const FARM_SK=`seedfarm_farms_${u?.id}`;
 
   // 농가 목록 로드 (연도별)
@@ -2277,7 +2281,7 @@ function DisSeedScreen({app,onBack}){
     }catch{}
   };
 
-  const[farms,setFarms]=useState(()=>loadFarms(Math.max(curY,2026)));
+  const[farms,setFarms]=useState(()=>loadFarms(curY));
   const[selFarm,setSelFarm]=useState(0); // 선택된 농가 인덱스
 
   const changeYear=(y)=>{
@@ -2331,7 +2335,7 @@ function DisSeedScreen({app,onBack}){
             <span style={{fontSize:14,fontWeight:700,color:"#374151",flex:"0 0 auto"}}>생산연도</span>
             <select value={selYear} onChange={e=>changeYear(Number(e.target.value))}
               style={{flex:1,border:"1.5px solid #9ca3af",borderRadius:10,padding:"7px 10px",fontSize:14,fontFamily:"inherit",outline:"none",background:"white",cursor:"pointer"}}>
-              {Array.from({length:5},(_,i)=>2026+i).map(y=>(
+              {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>(
                 <option key={y} value={y}>{y}년</option>
               ))}
             </select>
@@ -2407,7 +2411,7 @@ function DisSeedScreen({app,onBack}){
 function DisasterForm({app,onBack,editItem,onSave,year}){
   const u=app.currentUser;
   const SK="seedfarm_disaster_v1";
-  const selYear=year||Math.max(new Date().getFullYear(),2026);
+  const selYear=year||new Date().getFullYear();
   const blank={type:"",location:"",date:"",scale:"",damage:"",action:"",photos:[],variety:""};
   const isDual=u?.role==='dual'||u?.role==='admin';
   let myExtras=[];
@@ -2592,7 +2596,7 @@ function DisasterScreen({app,setApp,onBack}){
   const u=app.currentUser;
   const SK="seedfarm_disaster_v1";
   const PAGE_SIZE=10;
-  const curY=Math.max(new Date().getFullYear(),2026);
+  const curY=new Date().getFullYear();
   const[writing,setWriting]=useState(false);
   const[editItem,setEditItem]=useState(null);
   const[page,setPage]=useState(0);
@@ -2645,7 +2649,7 @@ function DisasterScreen({app,setApp,onBack}){
         <label style={{fontSize:13,fontWeight:700,color:"#374151"}}>📅 연도</label>
         <select value={selYear} onChange={e=>{setSelYear(Number(e.target.value));setPage(0);}}
           style={{border:"2px solid #dc2626",borderRadius:10,padding:"7px 12px",fontWeight:900,fontSize:14,color:"#dc2626",background:"white",outline:"none",cursor:"pointer"}}>
-          {Array.from({length:5},(_,i)=>2026+i).map(y=>(
+          {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>(
             <option key={y} value={y}>{y}년</option>
           ))}
         </select>
@@ -2702,7 +2706,7 @@ function RecordScreen({app,setApp,initDisaster,recordSelRef}){
   const today=new Date();
   const[sel,setSel]=useState(initDisaster?"disaster":null);
   const[selMonth,setSelMonth]=useState(today.getMonth()+1);
-  const[selYear,setSelYear]=useState(Math.max(today.getFullYear(),2026));
+  const[selYear,setSelYear]=useState(today.getFullYear());
 
   const productionBackRef=useRef(null);
 
@@ -2769,7 +2773,7 @@ function RecordScreen({app,setApp,initDisaster,recordSelRef}){
 /* ════════════════════ ADMIN SOWING SCREEN ════════════════════ */
 function AdminSowingScreen({app,onBack}){
   const[sel,setSel]=useState(null);
-  const[selYear,setSelYear]=useState(Math.max(new Date().getFullYear(),2026));
+  const[selYear,setSelYear]=useState(new Date().getFullYear());
   const yearSt={border:"2px solid #16a34a",borderRadius:10,padding:"7px 12px",fontWeight:900,fontSize:14,color:"#16a34a",background:"white",outline:"none",cursor:"pointer"};
 
   const getMembers=(group)=>{
@@ -2813,7 +2817,7 @@ function AdminSowingScreen({app,onBack}){
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
           <label style={{fontSize:13,fontWeight:700,color:"#374151"}}>📅 생산연도</label>
           <select value={selYear} onChange={e=>{setSelYear(Number(e.target.value));setSel(null);}} style={yearSt}>
-            {Array.from({length:5},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}년</option>)}
+            {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=><option key={y} value={y}>{y}년</option>)}
           </select>
         </div>
         {/* 작물별 모아보기 박스 */}
@@ -2975,7 +2979,7 @@ function AdminSowingScreen({app,onBack}){
 /* ════════════════════ ADMIN DISASTER SCREEN ════════════════════ */
 function AdminDisasterScreen({app,onBack}){
   const[sel,setSel]=useState(null);
-  const[selYear,setSelYear]=useState(Math.max(new Date().getFullYear(),2026));
+  const[selYear,setSelYear]=useState(new Date().getFullYear());
   const yearSt={border:"2px solid #dc2626",borderRadius:10,padding:"7px 12px",fontWeight:900,fontSize:14,color:"#dc2626",background:"white",outline:"none",cursor:"pointer"};
   const cropIcon=g=>g==='벼'?'🌾':g==='콩'?'🫛':'🌿';
 
@@ -3018,7 +3022,7 @@ function AdminDisasterScreen({app,onBack}){
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
           <label style={{fontSize:13,fontWeight:700,color:"#374151"}}>📅 연도</label>
           <select value={selYear} onChange={e=>{setSelYear(Number(e.target.value));setSel(null);}} style={yearSt}>
-            {Array.from({length:5},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}년</option>)}
+            {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=><option key={y} value={y}>{y}년</option>)}
           </select>
         </div>
         {/* 작물별 모아보기 박스 */}
@@ -3068,7 +3072,7 @@ function AdminDisasterScreen({app,onBack}){
 /* ════════════════════ ADMIN HARVEST SCREEN ════════════════════ */
 function AdminHarvestScreen({app,onBack}){
   const[sel,setSel]=useState(null);
-  const[selYear,setSelYear]=useState(Math.max(new Date().getFullYear(),2026));
+  const[selYear,setSelYear]=useState(new Date().getFullYear());
   const yearSt={border:"2px solid #16a34a",borderRadius:10,padding:"7px 12px",fontWeight:900,fontSize:14,color:"#16a34a",background:"white",outline:"none",cursor:"pointer"};
   const cropIcon=g=>g==='벼'?'🌾':g==='콩'?'🫛':'🌿';
 
@@ -3114,7 +3118,7 @@ function AdminHarvestScreen({app,onBack}){
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
           <label style={{fontSize:13,fontWeight:700,color:"#374151"}}>📅 생산연도</label>
           <select value={selYear} onChange={e=>{setSelYear(Number(e.target.value));setSel(null);}} style={yearSt}>
-            {Array.from({length:5},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}년</option>)}
+            {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=><option key={y} value={y}>{y}년</option>)}
           </select>
         </div>
         {/* 작물별 모아보기 박스 */}
@@ -3274,7 +3278,7 @@ function AdminHarvestScreen({app,onBack}){
 /* ════════════════════ ADMIN DISSEED SCREEN ════════════════════ */
 function AdminDisSeedScreen({app,onBack}){
   const[sel,setSel]=useState(null);
-  const[selYear,setSelYear]=useState(Math.max(new Date().getFullYear(),2026));
+  const[selYear,setSelYear]=useState(new Date().getFullYear());
   const yearSt={border:"2px solid #16a34a",borderRadius:10,padding:"7px 12px",fontWeight:900,fontSize:14,color:"#16a34a",background:"white",outline:"none",cursor:"pointer"};
   const cropIcon=g=>g==='벼'?'🌾':g==='콩'?'🫛':'🌿';
 
@@ -3310,7 +3314,7 @@ function AdminDisSeedScreen({app,onBack}){
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
           <label style={{fontSize:13,fontWeight:700,color:"#374151"}}>📅 생산연도</label>
           <select value={selYear} onChange={e=>{setSelYear(Number(e.target.value));setSel(null);}} style={yearSt}>
-            {Array.from({length:5},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}년</option>)}
+            {Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=><option key={y} value={y}>{y}년</option>)}
           </select>
         </div>
         {/* 작물별 모아보기 박스 */}
@@ -3675,7 +3679,7 @@ function openShModal(type, user) {
     document.getElementById('sowingBtns').style.display = 'block';
     document.getElementById('harvestCards').style.display = 'none';
     document.getElementById('harvestBtns').style.display = 'none';
-    const curYear = Math.max(new Date().getFullYear(), 2026);
+    const curYear = new Date().getFullYear();
     const userSowing = db.sowingData?.[key];
     // 연도별 구조 지원 (객체) 및 이전 배열 구조 호환
     let saved = [];
@@ -3699,7 +3703,7 @@ function openShModal(type, user) {
     document.getElementById('harvestBtns').style.display = 'block';
     document.getElementById('sowingCards').style.display = 'none';
     document.getElementById('sowingBtns').style.display = 'none';
-    const curYear = Math.max(new Date().getFullYear(), 2026);
+    const curYear = new Date().getFullYear();
     const userHarvest = db.harvestData?.[key];
     let havSaved;
     if (!userHarvest) {
@@ -4180,7 +4184,7 @@ function _makeSowingCardHTML(d, user, idx){
   const defaultVariety  = d.variety  !== undefined ? d.variety  : (myExtra1.variety || user?.variety||'');
   const defaultArea     = d.area     !== undefined ? d.area     : (myExtra1.area    || user?.area||'');
   const defaultFarmCount= d.farmCount!== undefined ? d.farmCount: (myExtra1.farmCount || user?.farmCount||'');
-  const defaultYear = d.prodYear || Math.max(new Date().getFullYear(), 2026);
+  const defaultYear = d.prodYear || new Date().getFullYear();
   const defaultPlanM1 = d.planM1||'';
   const defaultPlanD1 = d.planD1||'';
   const defaultPlanM2 = d.planM2||'';
@@ -4194,7 +4198,7 @@ function _makeSowingCardHTML(d, user, idx){
   const allDates=[]; farms.forEach(f=>{if(f.date1)allDates.push(new Date(f.date1));if(f.date2)allDates.push(new Date(f.date2));});
   let tp=''; if(allDates.length>=2){const mn=new Date(Math.min(...allDates)),mx=new Date(Math.max(...allDates));const fmt=d=>`${d.getMonth()+1}.${d.getDate()}`;tp=`${fmt(mn)} ~ ${fmt(mx)}`;}
   const curY=new Date().getFullYear();
-  const yearOpts=Array.from({length:5},(_,i)=>2026+i).map(y=>`<option value="${y}"${y==defaultYear?' selected':''}>${y}년</option>`).join('');
+  const yearOpts=Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>`<option value="${y}"${y==defaultYear?' selected':''}>${y}년</option>`).join('');
   const monthOpts=(sel)=>Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}"${m==sel?' selected':''}>${String(m).padStart(2,'0')}</option>`).join('');
   const dayOpts=(sel)=>Array.from({length:31},(_,i)=>i+1).map(d=>`<option value="${d}"${d==sel?' selected':''}>${String(d).padStart(2,'0')}</option>`).join('');
   const selSt='border:1.5px solid #ddd;border-radius:8px;padding:6px 4px;font-size:13px;font-family:inherit;background:white;';
@@ -4343,7 +4347,7 @@ function addSowingVariety(){
   const wrap=document.getElementById('sowingCards');
   const idx=wrap.querySelectorAll('.sow-card').length;
   // 첫 번째 카드의 현재 연도 가져오기
-  const firstYear=document.querySelector('#sowingCards .sow-card .sow-year')?.value||Math.max(new Date().getFullYear(),2026);
+  const firstYear=document.querySelector('#sowingCards .sow-card .sow-year')?.value||new Date().getFullYear();
   // MY extra_varieties에서 해당 인덱스 품종 기본값 가져오기
   let evData={};
   try{
@@ -4372,7 +4376,7 @@ function _makeHarvestCardHTML(d, user, idx){
   const defaultVariety   = d.variety   !== undefined ? d.variety   : (myExtra.variety  || user?.variety||'');
   const defaultArea      = d.area      !== undefined ? d.area      : (myExtra.area     || user?.area||'');
   const defaultFarmCount = d.farmCount !== undefined ? d.farmCount : (myExtra.farmCount|| user?.farmCount||'');
-  const defaultYear = d.prodYear || Math.max(new Date().getFullYear(), 2026);
+  const defaultYear = d.prodYear || new Date().getFullYear();
   const defaultPlanM1 = d.planM1||'';
   const defaultPlanD1 = d.planD1||'';
   const defaultPlanM2 = d.planM2||'';
@@ -4385,7 +4389,7 @@ function _makeHarvestCardHTML(d, user, idx){
   const farms=(d.farms&&d.farms.length)?d.farms:[{},{},{}];
   const allDates=[]; farms.forEach(f=>{if(f.date1)allDates.push(new Date(f.date1));if(f.date2)allDates.push(new Date(f.date2));});
   let tp=''; if(allDates.length>=2){const mn=new Date(Math.min(...allDates)),mx=new Date(Math.max(...allDates));const fmt=d=>`${d.getMonth()+1}.${d.getDate()}`;tp=`${fmt(mn)} ~ ${fmt(mx)}`;}
-  const yearOpts=Array.from({length:5},(_,i)=>2026+i).map(y=>`<option value="${y}"${y==defaultYear?" selected":""}>${y}년</option>`).join("");
+  const yearOpts=Array.from({length:5},(_,i)=>new Date().getFullYear()-2+i).map(y=>`<option value="${y}"${y==defaultYear?" selected":""}>${y}년</option>`).join("");
   const monthOpts=(sel)=>Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}"${m==sel?' selected':''}>${String(m).padStart(2,'0')}</option>`).join('');
   const dayOpts=(sel)=>Array.from({length:31},(_,i)=>i+1).map(d=>`<option value="${d}"${d==sel?' selected':''}>${String(d).padStart(2,'0')}</option>`).join('');
   const selSt='border:1.5px solid #ddd;border-radius:8px;padding:6px 4px;font-size:13px;font-family:inherit;background:white;';
@@ -4534,7 +4538,7 @@ function addHarvestVariety(){
   let evLen=0;
   try{evLen=JSON.parse(localStorage.getItem(`extra_varieties_${_shUser?.id}`)||'[]').length;}catch{}
   if(idx>=evLen) return;
-  const firstYear=document.querySelector('#harvestCards .hav-card .hav-year')?.value||Math.max(new Date().getFullYear(),2026);
+  const firstYear=document.querySelector('#harvestCards .hav-card .hav-year')?.value||new Date().getFullYear();
   let evData={prodYear:firstYear};
   try{
     const ev=JSON.parse(localStorage.getItem(`extra_varieties_${_shUser?.id}`)||'[]');
