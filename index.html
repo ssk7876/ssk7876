@@ -420,7 +420,7 @@ function SignupScreen({app,setApp,onBack}){
   const ID_REGEX=/^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z0-9]{2,}$/;
   const upd=(k,v)=>{setF(p=>({...p,[k]:v}));if(k==="id"){setIdOk(false);setIdMsg(v&&!ID_REGEX.test(v)?"영문과 숫자를 모두 포함하여 2자 이상으로 입력해주세요.":"");}if(k==="pw")setPwErr(/^(?=.*[a-zA-Z])(?=.*\d).{10,}$/.test(v)?"":"10자 이상의 영문과 숫자 조합이어야 합니다.");};
   const updExtra=(i,k,v)=>setExtras(p=>{const n=[...p];n[i]={...n[i],[k]:v};return n;});
-  const checkId=()=>{if(!f.id)return setIdMsg("아이디를 입력하세요.");if(!ID_REGEX.test(f.id))return setIdMsg("영문과 숫자를 모두 포함하여 2자 이상으로 입력해주세요.");if(app.users.some(u=>u.id===f.id)){setIdMsg("이미 사용중인 아이디입니다.");setIdOk(false);}else{setIdMsg("사용 가능한 아이디입니다.");setIdOk(true);}};
+  const checkId=()=>{if(!f.id)return setIdMsg("아이디를 입력하세요.");if(!ID_REGEX.test(f.id))return setIdMsg("영문과 숫자를 모두 포함하여 2자 이상으로 입력해주세요.");const localApp=ldLocal();const allUsers=[...(app.users||[]),...(localApp?.users||[])];const uniqueIds=new Set(allUsers.map(u=>u.id));if(uniqueIds.has(f.id)){setIdMsg("이미 사용중인 아이디입니다.");setIdOk(false);}else{setIdMsg("사용 가능한 아이디입니다.");setIdOk(true);}};
   const submit=()=>{
     if(!idOk)return setErr("중복 ID 확인을 해주세요.");
     if(!ID_REGEX.test(f.id))return setErr("아이디는 영문과 숫자를 포함하여 2자 이상이어야 합니다.");
@@ -3422,18 +3422,24 @@ function App(){
   useEffect(()=>{
     ldFromSupabase().then(data=>{
       if(data){
-        // currentUser 복원 (stay_login)
-        const stayId=localStorage.getItem("stay_login");
-        let cu=null;
-        if(stayId) cu=(data.users||[]).find(u=>u.id===stayId)||null;
         setApp(p=>{
-          // 기존 currentUser 유지 (이미 로그인된 경우)
-          const existCu=p.currentUser||cu;
-          // currentUser 정보도 최신 user 데이터로 갱신
-          const freshCu=existCu?(data.users||[]).find(u=>u.id===existCu.id)||existCu:null;
-          return {...data,currentUser:freshCu};
+          // localStorage users와 Supabase users 병합 (localStorage 우선 - 신규 회원 보존)
+          const localUsers=p.users||[];
+          const supaUsers=data.users||[];
+          const merged=[...supaUsers];
+          localUsers.forEach(lu=>{if(!merged.find(u=>u.id===lu.id))merged.push(lu);});
+          INIT.users.forEach(iu=>{if(!merged.find(u=>u.id===iu.id))merged.unshift(iu);});
+          // currentUser 복원
+          const stayId=localStorage.getItem("stay_login");
+          const existCu=p.currentUser;
+          const freshCu=existCu?merged.find(u=>u.id===existCu.id)||existCu
+            :stayId?merged.find(u=>u.id===stayId)||null:null;
+          const next={...data,users:merged,currentUser:freshCu};
+          svLocal(next);
+          return next;
         });
-        if(stayId&&cu) setScreen("app");
+        const stayId=localStorage.getItem("stay_login");
+        if(stayId) setScreen("app");
       }
       setSupaLoading(false);
     }).catch(()=>setSupaLoading(false));
