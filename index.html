@@ -140,15 +140,7 @@ async function ldFromSupabase(){
       Object.entries(evData).forEach(([uid,vars])=>{try{localStorage.setItem(`extra_varieties_${uid}`,JSON.stringify(vars));}catch{}});
     }
     const result={
-      users: (uRes.data||[]).map(u=>({
-        id:u.id, pw:u.pw, role:u.role||'user',
-        region:u.region||'', danjiName:u.danji_name||'',
-        chairName:u.chair_name||'', crop:u.crop||'',
-        variety:u.variety||'', farmCount:u.farm_count||0,
-        area:u.area||0, production:u.production||0,
-        signature:u.signature||null, cropCount:u.crop_count||1,
-        linkedId:u.linked_id||null,
-      })),
+      users: uRes.data||[],
       notices: nRes.data||[],
       schedules: sRes.data||[],
       records,
@@ -261,7 +253,7 @@ const INIT={
     {id:3,date:"2025-06-15",title:"포장관리 점검",     location:"전북 고창군"},
   ],
 };
-const ACTS=["단지 회원 교육 및 유의사항 안내","원종 배부","포장관리(이형주, 잡초 제거 등)","관개수 관리 지도","병해충 방제 지도","비료 관리 지도","콤바인/건조기 점검","수확/탈곡 지도","공동 수확/건조 작업","수매 준비 작업","기상재해 피해 점검","포장검사 실시","생육상태 점검","기타"];
+const ACTS=["단지 회원 교육 및 유의사항 안내","원종 배부","포장관리(이형주, 잡초 제거 등)","관개수 관리 지도","병해충 방제 지도","비료 관리 지도","콤바인/건조기점검 또는 수확/탈곡 지도","공동 수확/건조 작업","수매 준비 작업","기상재해 피해 점검","포장검사 실시","생육상태 점검","기타"];
 
 /* ── icons ── */
 const IcoHome=()=><svg viewBox="0 0 24 24" fill="currentColor" style={{width:24,height:24}}><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>;
@@ -314,40 +306,29 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
   const[remId,setRemId]=useState(()=>!!localStorage.getItem("saved_id"));
   const[stayLogin,setStayLogin]=useState(()=>!!localStorage.getItem("stay_login"));
 
-  // INIT 기본 계정 + Supabase + localStorage 사용자 모두 병합
-  const mergeAllUsers=(supaUsers)=>{
-    const localApp=ld();
-    const localUsers=localApp?.users||[];
-    const base=[...(supaUsers||[])];
-    // localStorage에만 있는 유저 추가 (Supabase 저장 미완료 케이스)
-    localUsers.forEach(lu=>{if(!base.find(u=>u.id===lu.id))base.push(lu);});
-    // INIT 기본 계정 (admin 등) 추가
-    INIT.users.forEach(iu=>{if(!base.find(u=>u.id===iu.id))base.unshift(iu);});
-    return base;
-  };
   const doLogin=()=>{
+    // Supabase에서 최신 데이터 가져온 후 로그인 처리
     ldFromSupabase().then(freshData=>{
       const freshApp=freshData||ld()||{users:app.users};
-      const mergedUsers=mergeAllUsers(freshApp.users);
-      const u=mergedUsers.find(u=>u.id===id&&u.pw===pw);
+      const u=(freshApp.users||app.users).find(u=>u.id===id&&u.pw===pw);
       if(u){
         if(remId) localStorage.setItem("saved_id",id);
         else localStorage.removeItem("saved_id");
         if(stayLogin) localStorage.setItem("stay_login",id);
         else localStorage.removeItem("stay_login");
-        setApp(p=>({...p,...freshApp,users:mergedUsers,currentUser:u}));
+        setApp(p=>({...p,...freshApp,currentUser:u}));
         onLogin();
       } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
     }).catch(()=>{
+      // 네트워크 오류 시 로컬 fallback
       const freshApp=ld()||{users:app.users};
-      const mergedUsers=mergeAllUsers(freshApp.users);
-      const u=mergedUsers.find(u=>u.id===id&&u.pw===pw);
+      const u=(freshApp.users||app.users).find(u=>u.id===id&&u.pw===pw);
       if(u){
         if(remId) localStorage.setItem("saved_id",id);
         else localStorage.removeItem("saved_id");
         if(stayLogin) localStorage.setItem("stay_login",id);
         else localStorage.removeItem("stay_login");
-        setApp(p=>({...p,...freshApp,users:mergedUsers,currentUser:u}));
+        setApp(p=>({...p,...freshApp,currentUser:u}));
         onLogin();
       } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
     });
@@ -785,18 +766,18 @@ function HomeCalendar({app,setApp,isAdmin}){
               const isSel=selDay===d;
               const hasSched=scheds.length>0;
               return(
-                <div key={di} onClick={()=>setSelDay(isSel?null:d)}
+                <div key={di} onClick={()=>{setSelDay(isSel?null:d);if(isAdmin&&!isSel){}}}
                   style={{minHeight:44,borderRadius:10,padding:"4px 2px",cursor:"pointer",textAlign:"center",
                     background:isSel?"#16a34a":isToday?"#dcfce7":"white",
                     border:isSel?"2px solid #15803d":isToday?"2px solid #16a34a":"2px solid transparent",
-                    transition:"all .12s",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start"}}>
-                  <div style={{fontSize:13,fontWeight:isToday||isSel?900:500,color:di===0?"#ef4444":di===6?"#2563eb":isSel?"white":isToday?"#15803d":"#1f2937",lineHeight:1.6}}>{d}</div>
+                    transition:"all .12s"}}>
+                  <div style={{fontSize:13,fontWeight:isToday||isSel?900:500,color:di===0?"#ef4444":di===6?"#2563eb":isSel?"white":isToday?"#15803d":"#1f2937",lineHeight:1.4}}>{d}</div>
                   {hasSched&&(
-                    <div style={{display:"flex",flexDirection:"row",gap:2,marginTop:1,justifyContent:"center",flexWrap:"wrap"}}>
-                      {scheds.slice(0,3).map((_,si)=>(
-                        <div key={si} style={{width:6,height:6,borderRadius:"50%",background:isSel?"rgba(255,255,255,.9)":"#f97316",flexShrink:0}}/>
+                    <div style={{display:"flex",flexDirection:"column",gap:1,marginTop:1}}>
+                      {scheds.slice(0,2).map((s,si)=>(
+                        <div key={si} style={{background:isSel?"rgba(255,255,255,.3)":"#16a34a",borderRadius:3,padding:"1px 2px",fontSize:"8px",color:"white",fontWeight:700,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.title}</div>
                       ))}
-                      {scheds.length>3&&<div key="more" style={{width:6,height:6,borderRadius:"50%",background:isSel?"rgba(255,255,255,.5)":"#fdba74",flexShrink:0}}/>}
+                      {scheds.length>2&&<div style={{fontSize:"8px",color:isSel?"rgba(255,255,255,.7)":"#9ca3af",fontWeight:700}}>+{scheds.length-2}</div>}
                     </div>
                   )}
                 </div>
@@ -817,12 +798,9 @@ function HomeCalendar({app,setApp,isAdmin}){
             ?<p style={{color:"#9ca3af",fontSize:13,margin:0,textAlign:"center",padding:"8px 0"}}>이 날 일정이 없습니다.</p>
             :selDayScheds.map(s=>(
               <div key={s.id} style={{background:"#f0fdf4",borderRadius:10,padding:"10px 12px",marginBottom:6,display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8}}>
-                <div style={{display:"flex",alignItems:"flex-start",gap:8,flex:1,minWidth:0}}>
-                  <div style={{width:8,height:8,borderRadius:"50%",background:"#f97316",flexShrink:0,marginTop:5}}/>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontWeight:700,fontSize:14,color:"#14532d",marginBottom:2}}>{s.title}</div>
-                    {s.location&&<div style={{fontSize:12,color:"#6b7280"}}>📍 {s.location}</div>}
-                  </div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontWeight:700,fontSize:14,color:"#14532d",marginBottom:2}}>{s.title}</div>
+                  {s.location&&<div style={{fontSize:12,color:"#6b7280"}}>📍 {s.location}</div>}
                 </div>
                 {isAdmin&&(
                   <div style={{display:"flex",gap:4,flexShrink:0}}>
@@ -910,8 +888,8 @@ function HomeScreen({app,setApp,onNoticeMore,onDisasterLink}){
           width:"100%",display:"flex",alignItems:"center",justifyContent:"space-between",
           background:"linear-gradient(135deg,#dc2626,#b91c1c)",
           border:"none",borderRadius:16,padding:"18px 20px",marginBottom:16,
-          cursor:"pointer",
-
+          boxShadow:"0 4px 16px rgba(220,38,38,.4)",cursor:"pointer",
+          animation:"pulse-red 2s infinite"
         }}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <span style={{fontSize:28}}>🚨</span>
@@ -923,6 +901,7 @@ function HomeScreen({app,setApp,onNoticeMore,onDisasterLink}){
           </div>
           <div style={{background:"rgba(255,255,255,.25)",borderRadius:10,padding:"8px 14px",color:"white",fontWeight:900,fontSize:14}}>바로가기 →</div>
         </button>
+        <style>{`@keyframes pulse-red{0%,100%{box-shadow:0 4px 16px rgba(220,38,38,.4);}50%{box-shadow:0 4px 28px rgba(220,38,38,.7);}}`}</style>
 
         {/* 공지사항 2탭 */}
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
@@ -1341,7 +1320,7 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
   const u=app.currentUser;
   const rk=`${u.id}_${year}_${month}`;
   const stored=app.records[rk];
-  const TOTAL=12;const emptyRow=()=>({date:"",time:"",activity:""});
+  const TOTAL=12;const emptyRow=()=>({date:"",time:"3시간",activity:""});
   const[rows,setRows]=useState(stored?.rows||Array.from({length:TOTAL},emptyRow));
   const[delModal,setDel]=useState(false);const[preview,setPrev]=useState(false);
   const[toast,setToast]=useState(false);
@@ -1352,11 +1331,13 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
   const changeMonth=(m)=>{if(setSelMonth)setSelMonth(m);};
 
   // year/month prop 변경 시 rows/sent 동기화
-  useEffect(()=>{
+  const prevRk=React.useRef(rk);
+  if(prevRk.current!==rk){
+    prevRk.current=rk;
     const s=app.records[rk];
     setRows(s?.rows||Array.from({length:TOTAL},emptyRow));
     setSent(s?.sent||false);
-  },[rk]);
+  }
   const filled=rows.filter(r=>r.date).length;
   const updRow=(i,k,v)=>setRows(p=>{const n=[...p];n[i]={...n[i],[k]:v};return n;});
   const doSave=()=>{
@@ -1373,35 +1354,35 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
   const COL="25% 22% 53%";
 
   const openDownloadWindow=()=>{
-    const infoRows=INFO.map(([k,v])=>`<tr><td style="border:1px solid #555;padding:5px 10px;font-weight:700;background:#f0fdf4;width:80px;white-space:nowrap;font-size:14px">${k}</td><td style="border:1px solid #555;padding:5px 10px;font-size:14px">${v}</td></tr>`).join("");
-    const dataRows=rows.map(r=>`<tr><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${r.date||"&nbsp;"}</td><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.time||"&nbsp;"}</td><td style="border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;">${r.activity||"&nbsp;"}</td></tr>`).join("");
-    const sigImg=u.signature?`<img src="${u.signature}" alt="서명" style="height:40px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
+    const infoRows=INFO.map(([k,v])=>`<tr><td style="border:1px solid #555;padding:8px 16px;font-weight:700;background:#f0fdf4;width:144px;white-space:nowrap;font-size:22px">${k}</td><td style="border:1px solid #555;padding:8px 16px;font-size:22px">${v}</td></tr>`).join("");
+    const dataRows=rows.map(r=>`<tr style="height:36px"><td style="border:1px solid #555;padding:6px 8px;text-align:center;font-size:20px;height:36px">${r.date||"&nbsp;"}</td><td style="border:1px solid #555;padding:6px 8px;text-align:center;font-size:20px;height:36px">${r.time||"&nbsp;"}</td><td style="border:1px solid #555;padding:6px 8px;font-size:20px;height:36px">${r.activity||"&nbsp;"}</td></tr>`).join("");
+    const sigImg=u.signature?`<img src="${u.signature}" alt="서명" style="height:72px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
     const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
 <style>
-  @page{size:A4 portrait;margin:1cm;}
+  @page{size:A4 portrait;margin:2cm;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{width:210mm;height:297mm;overflow:hidden;}
-  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;}
-  .no-print{text-align:center;padding:8px 0 6px;border-bottom:1px solid #e5e7eb;margin-bottom:10px;}
-  button{padding:5px 14px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
-  @media print{.no-print{display:none!important;}html,body{overflow:hidden;}}
-  .page{width:100%;height:calc(297mm - 2cm);display:flex;flex-direction:column;overflow:hidden;}
-  h2{text-align:center;font-size:22px;font-weight:900;margin-bottom:6px;}
-  .info-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
-  .info-table td{font-size:14px;padding:5px 10px;}
-  .section-title{font-weight:700;font-size:14px;margin-bottom:4px;}
-  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;}
-  .data-table col.c1{width:22%;}.data-table col.c2{width:22%;}.data-table col.c3{width:56%;}
-  .data-table th{border:1px solid #555;padding:5px 4px;text-align:center;background:#f0fdf4;font-size:13px;}
-  .data-table td{border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
-  .footer-wrap{margin-top:6px;flex-shrink:0;}
-  .footer-text{text-align:center;font-weight:700;font-size:13px;margin:4px 0;}
-  .footer-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:3px;font-weight:700;font-size:13px;}
-  .footer-귀하{text-align:right;font-weight:900;font-size:13px;}
+  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;font-size:22px;}
+  .no-print{text-align:center;padding:12px 0 8px;border-bottom:1px solid #e5e7eb;margin-bottom:16px;}
+  button{padding:6px 16px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
+  @media print{.no-print{display:none!important;}}
+  .page{width:100%;}
+  h2{text-align:center;font-size:30px;font-weight:900;margin-bottom:10px;}
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:8px;}
+  .section-title{font-weight:700;font-size:22px;margin-bottom:5px;}
+  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:8px;}
+  .data-table col.c1{width:22%;}.data-table col.c2{width:25%;}.data-table col.c3{width:53%;}
+  .data-table th{border:1px solid #555;padding:8px 6px;text-align:center;background:#f0fdf4;font-size:20px;}
+  .data-table td{height:36px;}
+  .footer-text{text-align:center;font-weight:700;font-size:22px;margin:8px 0 6px;}
+  .footer-sig{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:5px;font-weight:700;font-size:22px;}
+  .footer-귀하{text-align:right;font-weight:900;font-size:22px;}
 </style>
 </head><body>
 <div class="no-print">
+  <p style="font-size:12px;color:#6b7280;margin-bottom:6px">형식 선택 후 저장 (상하좌우 여백 2cm)</p>
   <button style="background:#ef4444;color:white" onclick="window.print()">📄 PDF 저장</button>
+  <button style="background:#3b82f6;color:white" onclick="alert('인쇄 → PDF 저장 후 한글에서 변환')">📝 HWP</button>
+  <button style="background:#6366f1;color:white" onclick="alert('인쇄 → PDF 저장 후 Word에서 변환')">📋 DOCX</button>
   <button style="background:#6b7280;color:white" onclick="window.close()">닫기</button>
 </div>
 <div class="page">
@@ -1413,44 +1394,40 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
     <thead><tr><th>근무일자</th><th>활동시간</th><th>활동내용</th></tr></thead>
     <tbody>${dataRows}</tbody>
   </table>
-  <div class="footer-wrap">
-    <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
-    <div class="footer-sig"><span>(${u.danjiName}) 생산관리지도원: ${u.chairName}</span>${sigImg}</div>
-    <p class="footer-귀하">국립종자원 전북지원장 귀하</p>
-  </div>
+  <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
+  <div class="footer-sig"><span>(${u.danjiName}) 생산관리지도원: ${u.chairName}</span>${sigImg}</div>
+  <p class="footer-귀하">국립종자원 전북지원장 귀하</p>
 </div>
 </body></html>`;
-    const blob=new Blob([html],{type:"text/html;charset=utf-8"});const url=URL.createObjectURL(blob);const win2=window.open(url,"_blank","width=820,height=960");if(!win2)alert("팝업이 차단되었습니다.");
+    const win=window.open("","_blank","width=820,height=960");
+    if(win){win.document.write(html);win.document.close();}
     else alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.");
   };
 
   /* 인쇄 전용 창 — 파일 형식 선택 없이 바로 인쇄 */
   const openPrintWindow=()=>{
-    const infoRows=INFO.map(([k,v])=>`<tr><td style="border:1px solid #555;padding:5px 10px;font-weight:700;background:#f0fdf4;width:80px;white-space:nowrap;font-size:14px">${k}</td><td style="border:1px solid #555;padding:5px 10px;font-size:14px">${v}</td></tr>`).join("");
-    const dataRows=rows.map(r=>`<tr><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${r.date||"&nbsp;"}</td><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.time||"&nbsp;"}</td><td style="border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;">${r.activity||"&nbsp;"}</td></tr>`).join("");
-    const sigImg=u.signature?`<img src="${u.signature}" alt="서명" style="height:40px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
+    const infoRows=INFO.map(([k,v])=>`<tr><td style="border:1px solid #555;padding:8px 16px;font-weight:700;background:#f0fdf4;width:144px;white-space:nowrap;font-size:22px">${k}</td><td style="border:1px solid #555;padding:8px 16px;font-size:22px">${v}</td></tr>`).join("");
+    const dataRows=rows.map(r=>`<tr style="height:36px"><td style="border:1px solid #555;padding:6px 8px;text-align:center;font-size:20px;height:36px">${r.date||"&nbsp;"}</td><td style="border:1px solid #555;padding:6px 8px;text-align:center;font-size:20px;height:36px">${r.time||"&nbsp;"}</td><td style="border:1px solid #555;padding:6px 8px;font-size:20px;height:36px">${r.activity||"&nbsp;"}</td></tr>`).join("");
+    const sigImg=u.signature?`<img src="${u.signature}" alt="서명" style="height:72px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
     const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
 <style>
-  @page{size:A4 portrait;margin:1cm;}
+  @page{size:A4 portrait;margin:2cm;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{width:210mm;height:297mm;overflow:hidden;}
-  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;}
-  .no-print{text-align:center;padding:8px 0 6px;border-bottom:1px solid #e5e7eb;margin-bottom:10px;}
-  button{padding:5px 14px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
-  @media print{.no-print{display:none!important;}html,body{overflow:hidden;}}
-  .page{width:100%;height:calc(297mm - 2cm);display:flex;flex-direction:column;overflow:hidden;}
-  h2{text-align:center;font-size:22px;font-weight:900;margin-bottom:6px;}
-  .info-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
-  .info-table td{font-size:14px;padding:5px 10px;}
-  .section-title{font-weight:700;font-size:14px;margin-bottom:4px;}
-  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;}
-  .data-table col.c1{width:22%;}.data-table col.c2{width:22%;}.data-table col.c3{width:56%;}
-  .data-table th{border:1px solid #555;padding:5px 4px;text-align:center;background:#f0fdf4;font-size:13px;}
-  .data-table td{border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
-  .footer-wrap{margin-top:6px;flex-shrink:0;}
-  .footer-text{text-align:center;font-weight:700;font-size:13px;margin:4px 0;}
-  .footer-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:3px;font-weight:700;font-size:13px;}
-  .footer-귀하{text-align:right;font-weight:900;font-size:13px;}
+  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;font-size:22px;}
+  @media print{.no-print{display:none!important;}}
+  .no-print{text-align:center;padding:10px 0 8px;border-bottom:1px solid #e5e7eb;margin-bottom:14px;}
+  button{padding:6px 16px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
+  .page{width:100%;}
+  h2{text-align:center;font-size:30px;font-weight:900;margin-bottom:10px;}
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:8px;}
+  .section-title{font-weight:700;font-size:22px;margin-bottom:5px;}
+  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:8px;}
+  .data-table col.c1{width:22%;}.data-table col.c2{width:25%;}.data-table col.c3{width:53%;}
+  .data-table th{border:1px solid #555;padding:8px 6px;text-align:center;background:#f0fdf4;font-size:20px;}
+  .data-table td{height:36px;}
+  .footer-text{text-align:center;font-weight:700;font-size:22px;margin:8px 0 6px;}
+  .footer-sig{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:5px;font-weight:700;font-size:22px;}
+  .footer-귀하{text-align:right;font-weight:900;font-size:22px;}
 </style>
 </head><body>
 <div class="no-print">
@@ -1466,79 +1443,76 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
     <thead><tr><th>근무일자</th><th>활동시간</th><th>활동내용</th></tr></thead>
     <tbody>${dataRows}</tbody>
   </table>
-  <div class="footer-wrap">
-    <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
-    <div class="footer-sig"><span>(${u.danjiName}) 생산관리지도원: ${u.chairName}</span>${sigImg}</div>
-    <p class="footer-귀하">국립종자원 전북지원장 귀하</p>
-  </div>
+  <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
+  <div class="footer-sig"><span>(${u.danjiName}) 생산관리지도원: ${u.chairName}</span>${sigImg}</div>
+  <p class="footer-귀하">국립종자원 전북지원장 귀하</p>
 </div>
 <script>window.onload=()=>window.print();<\/script>
 </body></html>`;
-    const blob=new Blob([html],{type:"text/html;charset=utf-8"});const url=URL.createObjectURL(blob);const win2=window.open(url,"_blank","width=820,height=960");if(!win2)alert("팝업이 차단되었습니다.");
+    const win=window.open("","_blank","width=820,height=960");
+    if(win){win.document.write(html);win.document.close();}
     else alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.");
   };
 
   if(preview)return(
     <div style={{minHeight:"100vh",background:"#e5e7eb"}}>
       <style>{`
-        @page{size:A4 portrait;margin:1cm;}
-        *{box-sizing:border-box;}
-        @media print{
+        @media print {
+          body{margin:0;padding:0;}
           .no-print{display:none!important;}
-          html,body{width:210mm;height:297mm;overflow:hidden;}
-          .print-a4{box-shadow:none!important;margin:0!important;}
+          .print-a4{width:210mm;min-height:297mm;margin:0;padding:10mm 14mm;page-break-after:always;box-sizing:border-box;display:flex;flex-direction:column;}
         }
+        @page{size:A4 portrait;margin:0;}
       `}</style>
       <div className="no-print" style={{background:"#16a34a",padding:"16px",display:"flex",alignItems:"center",position:"sticky",top:0,zIndex:10}}>
         <button onClick={()=>setPrev(false)} style={{background:"none",border:"none",color:"white",fontSize:14,fontWeight:700,cursor:"pointer",marginRight:12}}>← 돌아가기</button>
         <span style={{color:"white",fontWeight:700,flex:1,textAlign:"center"}}>서식 미리보기</span>
         <button onClick={()=>window.print()} style={{background:"white",color:"#16a34a",border:"none",borderRadius:8,padding:"6px 14px",fontWeight:700,cursor:"pointer"}}>🖨 인쇄</button>
       </div>
-      {/* A4 page — 1페이지 고정 */}
-      <div className="print-a4" style={{width:"210mm",height:"277mm",background:"white",margin:"16px auto",padding:"8mm 12mm",boxSizing:"border-box",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,.15)"}}>
-        <h2 style={{textAlign:"center",fontSize:18,fontWeight:900,marginBottom:8}}>{year}년 {month}월 생산관리지도부</h2>
-        <table style={{width:"100%",borderCollapse:"collapse",marginBottom:6,fontSize:12}}>
+      {/* A4 page */}
+      <div className="print-a4" style={{width:"210mm",minHeight:"297mm",background:"white",margin:"16px auto",padding:"10mm 14mm",boxSizing:"border-box",display:"flex",flexDirection:"column",boxShadow:"0 4px 20px rgba(0,0,0,.15)"}}>
+        <h2 style={{textAlign:"center",fontSize:20,fontWeight:900,marginBottom:12}}>{year}년 {month}월 생산관리지도부</h2>
+        <table style={{width:"100%",borderCollapse:"collapse",marginBottom:10,fontSize:13}}>
           <tbody>{INFO.map(([k,v])=>(
-            <tr key={k}><td style={{border:"1px solid #555",padding:"4px 8px",fontWeight:700,background:"#f0fdf4",width:70,whiteSpace:"nowrap",fontSize:12}}>{k}</td><td style={{border:"1px solid #555",padding:"4px 8px",fontSize:12}}>{v}</td></tr>
+            <tr key={k}><td style={{border:"1px solid #555",padding:"6px 10px",fontWeight:700,background:"#f0fdf4",width:80,whiteSpace:"nowrap"}}>{k}</td><td style={{border:"1px solid #555",padding:"6px 10px"}}>{v}</td></tr>
           ))}</tbody>
         </table>
-        <p style={{fontWeight:700,marginBottom:4,fontSize:12}}>◈ 지도상황</p>
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,tableLayout:"fixed",flex:1,overflow:"hidden"}}>
-          <colgroup><col style={{width:"22%"}}/><col style={{width:"22%"}}/><col style={{width:"56%"}}/></colgroup>
-          <thead><tr style={{background:"#f0fdf4"}}>{["근무일자","활동시간","활동내용"].map(h=><th key={h} style={{border:"1px solid #555",padding:"4px",textAlign:"center",fontSize:12}}>{h}</th>)}</tr></thead>
+        <p style={{fontWeight:700,marginBottom:6,fontSize:13}}>◈ 지도상황</p>
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,tableLayout:"fixed",flex:1}}>
+          <colgroup><col style={{width:"22%"}}/><col style={{width:"25%"}}/><col style={{width:"53%"}}/></colgroup>
+          <thead><tr style={{background:"#f0fdf4"}}>{["근무일자","활동시간","활동내용"].map(h=><th key={h} style={{border:"1px solid #555",padding:"6px 4px",textAlign:"center"}}>{h}</th>)}</tr></thead>
           <tbody>{rows.map((r,i)=>(
-            <tr key={i}>
-              <td style={{border:"1px solid #555",padding:"2px 4px",textAlign:"center",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{r.date}</td>
-              <td style={{border:"1px solid #555",padding:"2px 4px",textAlign:"center"}}>{r.time}</td>
-              <td style={{border:"1px solid #555",padding:"2px 4px",overflow:"hidden"}}>{r.activity}</td>
+            <tr key={i} style={{height:18}}>
+              <td style={{border:"1px solid #555",padding:"4px",textAlign:"center"}}>{r.date}</td>
+              <td style={{border:"1px solid #555",padding:"4px",textAlign:"center"}}>{r.time}</td>
+              <td style={{border:"1px solid #555",padding:"4px"}}>{r.activity}</td>
             </tr>
           ))}</tbody>
         </table>
-        <div style={{marginTop:6,flexShrink:0}}>
-          <p style={{fontSize:12,fontWeight:700,textAlign:"center",marginBottom:6}}>상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
-          <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:4}}>
-            <span style={{fontSize:12,fontWeight:700}}>({u.danjiName}) 생산관리지도원: {u.chairName}</span>
-            {u.signature&&<img src={u.signature} alt="서명" style={{height:36,border:"1px solid #ccc",borderRadius:4}}/>}
+        <div style={{marginTop:"auto",paddingTop:12}}>
+          <p style={{fontSize:13,fontWeight:700,textAlign:"center",marginBottom:12}}>상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
+          <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap",marginBottom:8}}>
+            <span style={{fontSize:13,fontWeight:700}}>({u.danjiName}) 생산관리지도원: {u.chairName}</span>
+            {u.signature&&<img src={u.signature} alt="서명" style={{height:48,border:"1px solid #ccc",borderRadius:4}}/>}
           </div>
-          <p style={{textAlign:"right",fontWeight:900,fontSize:12}}>국립종자원 전북지원장 귀하</p>
+          <p style={{textAlign:"right",fontWeight:900,fontSize:13}}>국립종자원 전북지원장 귀하</p>
         </div>
       </div>
-
     </div>
   );
 
   return(
     <div style={{minHeight:"100vh",background:"#f9fafb"}}>
-      <div style={{background:"#16a34a",padding:"16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+      <div style={{background:"#16a34a",padding:"16px",display:"flex",alignItems:"center"}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:22,cursor:"pointer",marginRight:8,lineHeight:1}}>←</button>
         <h1 style={{color:"white",fontWeight:900,fontSize:17,margin:0}}>📋 생산관리지도부</h1>
-        <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:24,cursor:"pointer",lineHeight:1,padding:"0 4px",fontWeight:700}}>✕</button>
       </div>
       <div style={{padding:"16px 12px 130px"}}>
         {/* 연도·월 선택 */}
         <div style={{display:"flex",gap:10,justifyContent:"center",alignItems:"center",marginBottom:16}}>
           <select value={year} onChange={e=>changeYear(Number(e.target.value))}
             style={{border:"2px solid #16a34a",borderRadius:10,padding:"8px 12px",fontWeight:900,fontSize:15,color:"#16a34a",background:"white",outline:"none",cursor:"pointer"}}>
-            {Array.from({length:5},(_,i)=>new Date().getFullYear()-1+i).map(y=>(
+            {Array.from({length:5},(_,i)=>2026+i).map(y=>(
               <option key={y} value={y}>{y}년</option>
             ))}
           </select>
@@ -1583,9 +1557,8 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
               <div style={{padding:"6px 4px",borderRight:"1px solid #f3f4f6",fontSize:"0.72rem"}}>
                 {sent
                   ?<span style={{fontSize:"0.82rem",color:"#374151",padding:"3px 4px",display:"block",textAlign:"center"}}>{row.time||""}</span>
-                  :<select value={row.time||""} onChange={e=>updRow(i,"time",e.target.value)}
+                  :<select value={row.time||"3시간"} onChange={e=>updRow(i,"time",e.target.value)}
                       style={{width:"100%",border:"1px solid #d1d5db",borderRadius:6,padding:"4px 2px",fontSize:"0.72rem",fontFamily:"inherit",background:"white",textAlign:"center"}}>
-                      <option value=""></option>
                       <option value="1시간">1시간</option>
                       <option value="2시간">2시간</option>
                       <option value="3시간">3시간</option>
@@ -1652,7 +1625,7 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
 function CropOverview({app,setApp,onBack}){
   const[sel,setSel]=useState(null);
   const today=new Date();
-  const[year,setYear]=useState(today.getFullYear());
+  const[year,setYear]=useState(Math.max(today.getFullYear(),2026));
   const[month,setMonth]=useState(today.getMonth()+1);
   const btnSt={background:"white",border:"2px solid #e5e7eb",borderRadius:10,width:34,height:34,fontWeight:900,fontSize:16,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0};
   const selSt={flex:1,border:"2px solid #e5e7eb",borderRadius:12,padding:"8px 12px",fontSize:14,fontWeight:700,background:"white",outline:"none"};
@@ -1662,55 +1635,53 @@ function CropOverview({app,setApp,onBack}){
     const rec=app.records[rk];if(!rec)return;
     const rows=rec.rows||[];const filled=rows.filter(r=>r.date).length;
     const infoRows=[["단지명",member.danjiName],["작물명",member.crop],["성명",member.chairName],["근무일수",`${filled}일`]]
-      .map(([k,v])=>`<tr><td style="border:1px solid #555;padding:5px 10px;font-weight:700;background:#f0fdf4;width:80px;white-space:nowrap;font-size:14px">${k}</td><td style="border:1px solid #555;padding:5px 10px;font-size:14px">${v}</td></tr>`).join("");
-    const dataRows=rows.map(r=>`<tr><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.date||""}</td><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.time||""}</td><td style="border:1px solid #555;padding:3px 6px;font-size:12px;">${r.activity||""}</td></tr>`).join("");
-    const sigImg=member.signature?`<img src="${member.signature}" alt="서명" style="height:40px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
+      .map(([k,v])=>`<tr><td style="border:1px solid #555;padding:8px 16px;font-weight:700;background:#f0fdf4;width:144px;white-space:nowrap;font-size:22px">${k}</td><td style="border:1px solid #555;padding:8px 16px;font-size:22px">${v}</td></tr>`).join("");
+    const dataRows=rows.map(r=>`<tr style="height:36px"><td style="border:1px solid #555;padding:6px 8px;text-align:center;font-size:20px;height:36px">${r.date||"&nbsp;"}</td><td style="border:1px solid #555;padding:6px 8px;text-align:center;font-size:20px;height:36px">${r.time||"&nbsp;"}</td><td style="border:1px solid #555;padding:6px 8px;font-size:20px;height:36px">${r.activity||"&nbsp;"}</td></tr>`).join("");
+    const sigImg=member.signature?`<img src="${member.signature}" alt="서명" style="height:72px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
     const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
 <style>
-  @page{size:A4 portrait;margin:1cm;}
+  @page{size:A4 portrait;margin:2cm;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'\353\247\201\354\235\200 \352\263\240\353\224\225',sans-serif;}
-  .no-print{text-align:center;padding:8px 0 6px;border-bottom:1px solid #e5e7eb;margin-bottom:10px;}
-  button{padding:5px 14px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
+  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;font-size:22px;}
+  .no-print{text-align:center;padding:12px 0 8px;border-bottom:1px solid #e5e7eb;margin-bottom:16px;}
+  button{padding:6px 16px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
   @media print{.no-print{display:none!important;}}
-  .page{width:100%;display:flex;flex-direction:column;}
-  h2{text-align:center;font-size:20px;font-weight:900;margin-bottom:6px;}
-  .info-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
-  .info-table td{font-size:13px;padding:4px 8px;border:1px solid #555;}
-  .section-title{font-weight:700;font-size:13px;margin-bottom:4px;}
-  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:6px;}
-  .data-table col.c1{width:22%;}.data-table col.c2{width:22%;}.data-table col.c3{width:56%;}
-  .data-table th{border:1px solid #555;padding:5px 4px;text-align:center;background:#f0fdf4;font-size:12px;}
-  .data-table td{border:1px solid #555;padding:3px 5px;font-size:11px;}
-  .footer-wrap{margin-top:8px;}
-  .footer-text{text-align:center;font-weight:700;font-size:12px;margin:4px 0;}
-  .footer-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:3px;font-weight:700;font-size:12px;}
-  .footer-end{text-align:right;font-weight:900;font-size:12px;}
+  .page{width:100%;}
+  h2{text-align:center;font-size:30px;font-weight:900;margin-bottom:10px;}
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:8px;}
+  .section-title{font-weight:700;font-size:22px;margin-bottom:5px;}
+  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:8px;}
+  .data-table col.c1{width:22%;}.data-table col.c2{width:25%;}.data-table col.c3{width:53%;}
+  .data-table th{border:1px solid #555;padding:8px 6px;text-align:center;background:#f0fdf4;font-size:20px;}
+  .data-table td{height:36px;}
+  .footer-text{text-align:center;font-weight:700;font-size:22px;margin:8px 0 6px;}
+  .footer-sig{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:5px;font-weight:700;font-size:22px;}
+  .footer-귀하{text-align:right;font-weight:900;font-size:22px;}
 </style></head><body>
 <div class="no-print">
-  <button style="background:#ef4444;color:white" onclick="window.print()">PDF로 저장</button>
+  <p style="font-size:12px;color:#6b7280;margin-bottom:6px">저장할 형식을 선택하세요 (상하좌우 여백 2cm)</p>
+  <button style="background:#ef4444;color:white" onclick="window.print()">📄 PDF로 저장</button>
+  <button style="background:#3b82f6;color:white" onclick="alert('인쇄 → PDF 저장 후 한글에서 변환')">📝 HWP</button>
+  <button style="background:#6366f1;color:white" onclick="alert('인쇄 → PDF 저장 후 Word에서 변환')">📋 DOCX</button>
   <button style="background:#6b7280;color:white" onclick="window.close()">닫기</button>
 </div>
 <div class="page">
   <h2>${year}년 ${month}월 생산관리지도부</h2>
   <table class="info-table"><tbody>${infoRows}</tbody></table>
-  <p class="section-title">&#9670; 지도상황</p>
+  <p class="section-title">◈ 지도상황</p>
   <table class="data-table">
     <colgroup><col class="c1"/><col class="c2"/><col class="c3"/></colgroup>
     <thead><tr><th>근무일자</th><th>활동시간</th><th>활동내용</th></tr></thead>
     <tbody>${dataRows}</tbody>
   </table>
-  <div class="footer-wrap">
-    <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
-    <div class="footer-sig"><span>(${member.danjiName}) 생산관리지도원: ${member.chairName}</span>${sigImg}</div>
-    <p class="footer-end">국립종자원 전북지원장 귀하</p>
-  </div>
+  <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
+  <div class="footer-sig"><span>(${member.danjiName}) 생산관리지도원: ${member.chairName}</span>${sigImg}</div>
+  <p class="footer-귀하">국립종자원 전북지원장 귀하</p>
 </div>
 </body></html>`;
-    const blob=new Blob([html],{type:"text/html;charset=utf-8"});
-    const url=URL.createObjectURL(blob);
-    const win=window.open(url,"_blank","width=820,height=960");
-    if(!win)alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.");
+    const win=window.open("","_blank","width=820,height=960");
+    if(win){win.document.write(html);win.document.close();}
+    else alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.");
   };
 
   const doReject=(memberId)=>{
@@ -1732,7 +1703,7 @@ function CropOverview({app,setApp,onBack}){
         {/* 연도·월 선택 */}
         <div style={{display:"flex",gap:10,alignItems:"center",marginBottom:16}}>
           <select value={year} onChange={e=>setYear(Number(e.target.value))} style={selSt}>
-            {Array.from({length:5},(_,i)=>new Date().getFullYear()-1+i).map(y=><option key={y} value={y}>{y}년</option>)}
+            {Array.from({length:5},(_,i)=>2026+i).map(y=><option key={y} value={y}>{y}년</option>)}
           </select>
           <select value={month} onChange={e=>setMonth(Number(e.target.value))} style={selSt}>
             {Array.from({length:12},(_,i)=>i+1).map(m=><option key={m} value={m}>{m}월</option>)}
@@ -2371,9 +2342,9 @@ function DisSeedScreen({app,onBack}){
 
   return(
     <div style={{minHeight:"100vh",background:"#f9fafb",paddingBottom:100}}>
-      <div style={{background:"#16a34a",padding:"16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+      <div style={{background:"#16a34a",padding:"16px",display:"flex",alignItems:"center"}}>
+        <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:22,cursor:"pointer",marginRight:8,lineHeight:1}}>←</button>
         <h1 style={{color:"white",fontWeight:900,fontSize:18,margin:0}}>🌱 소독 · 육묘 관리</h1>
-        <button onClick={onBack} style={{background:"none",border:"none",color:"white",fontSize:24,cursor:"pointer",lineHeight:1,padding:"0 4px",fontWeight:700}}>✕</button>
       </div>
       <div style={{padding:"16px"}}>
         {/* 기본 정보 카드 */}
@@ -2753,7 +2724,7 @@ function RecordScreen({app,setApp,initDisaster,recordSelRef}){
   const today=new Date();
   const[sel,setSel]=useState(initDisaster?"disaster":null);
   const[selMonth,setSelMonth]=useState(today.getMonth()+1);
-  const[selYear,setSelYear]=useState(today.getFullYear());
+  const[selYear,setSelYear]=useState(Math.max(today.getFullYear(),2026));
 
   const productionBackRef=useRef(null);
 
@@ -2769,11 +2740,11 @@ function RecordScreen({app,setApp,initDisaster,recordSelRef}){
   const goSel=(key)=>setSel(key);
 
   if(sel==="production"){
-    productionBackRef.current=()=>{ setSel(null); };
-    return<MonthForm month={selMonth} year={selYear}
+    productionBackRef.current=()=>{ setSel(null); setSelMonth(null); };
+    return<MonthForm month={today.getMonth()+1} year={Math.max(today.getFullYear(),2026)}
       app={app} setApp={setApp} onBack={()=>history.back()}
-      selMonth={selMonth} setSelMonth={setSelMonth}
-      selYear={selYear} setSelYear={setSelYear}/>;
+      selMonth={today.getMonth()+1} setSelMonth={setSelMonth}
+      selYear={Math.max(today.getFullYear(),2026)} setSelYear={setSelYear}/>;
   }
   if(sel==="disseed")return<DisSeedScreen app={app} onBack={()=>history.back()}/>;
   if(sel==="disaster")return<DisasterScreen app={app} setApp={setApp} onBack={()=>history.back()}/>;
@@ -3651,9 +3622,9 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 ════════════════════════════════════════════ -->
 <div id="shModal" style="display:none;" class="sh-modal-overlay">
   <div class="sh-modal-inner">
-    <div class="sh-modal-header" style="justify-content:space-between;">
+    <div class="sh-modal-header">
+      <button class="sh-back" onclick="closeShModal();if(typeof window._pushNavRecord!=='function'){history.back();}else{history.back();}">←</button>
       <h2 id="shModalTitle">파종현황</h2>
-      <button class="sh-back" style="margin-right:0;font-size:24px;font-weight:700;" onclick="closeShModal();history.back();">✕</button>
     </div>
     <div class="sh-content">
       <div id="sowingCards" style="display:none;"></div>
