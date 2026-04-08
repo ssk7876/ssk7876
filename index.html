@@ -1420,8 +1420,7 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
   </div>
 </div>
 </body></html>`;
-    const win=window.open("","_blank","width=820,height=960");
-    if(win){win.document.write(html);win.document.close();}
+    const blob=new Blob([html],{type:"text/html;charset=utf-8"});const url=URL.createObjectURL(blob);const win2=window.open(url,"_blank","width=820,height=960");if(!win2)alert("팝업이 차단되었습니다.");
     else alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.");
   };
 
@@ -1475,8 +1474,7 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
 </div>
 <script>window.onload=()=>window.print();<\/script>
 </body></html>`;
-    const win=window.open("","_blank","width=820,height=960");
-    if(win){win.document.write(html);win.document.close();}
+    const blob=new Blob([html],{type:"text/html;charset=utf-8"});const url=URL.createObjectURL(blob);const win2=window.open(url,"_blank","width=820,height=960");if(!win2)alert("팝업이 차단되었습니다.");
     else alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.");
   };
 
@@ -1665,39 +1663,38 @@ function CropOverview({app,setApp,onBack}){
     const rows=rec.rows||[];const filled=rows.filter(r=>r.date).length;
     const infoRows=[["단지명",member.danjiName],["작물명",member.crop],["성명",member.chairName],["근무일수",`${filled}일`]]
       .map(([k,v])=>`<tr><td style="border:1px solid #555;padding:5px 10px;font-weight:700;background:#f0fdf4;width:80px;white-space:nowrap;font-size:14px">${k}</td><td style="border:1px solid #555;padding:5px 10px;font-size:14px">${v}</td></tr>`).join("");
-    const dataRows=rows.map(r=>`<tr><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${r.date||"&nbsp;"}</td><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.time||"&nbsp;"}</td><td style="border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;">${r.activity||"&nbsp;"}</td></tr>`).join("");
+    const dataRows=rows.map(r=>`<tr><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.date||""}</td><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.time||""}</td><td style="border:1px solid #555;padding:3px 6px;font-size:12px;">${r.activity||""}</td></tr>`).join("");
     const sigImg=member.signature?`<img src="${member.signature}" alt="서명" style="height:40px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
     const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
 <style>
   @page{size:A4 portrait;margin:1cm;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{width:210mm;height:297mm;overflow:hidden;}
-  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;}
+  body{font-family:'\353\247\201\354\235\200 \352\263\240\353\224\225',sans-serif;}
   .no-print{text-align:center;padding:8px 0 6px;border-bottom:1px solid #e5e7eb;margin-bottom:10px;}
   button{padding:5px 14px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
-  @media print{.no-print{display:none!important;}html,body{overflow:hidden;}}
-  .page{width:100%;height:calc(297mm - 2cm);display:flex;flex-direction:column;overflow:hidden;}
-  h2{text-align:center;font-size:22px;font-weight:900;margin-bottom:6px;}
+  @media print{.no-print{display:none!important;}}
+  .page{width:100%;display:flex;flex-direction:column;}
+  h2{text-align:center;font-size:20px;font-weight:900;margin-bottom:6px;}
   .info-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
-  .info-table td{font-size:14px;padding:5px 10px;}
-  .section-title{font-weight:700;font-size:14px;margin-bottom:4px;}
-  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;}
+  .info-table td{font-size:13px;padding:4px 8px;border:1px solid #555;}
+  .section-title{font-weight:700;font-size:13px;margin-bottom:4px;}
+  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:6px;}
   .data-table col.c1{width:22%;}.data-table col.c2{width:22%;}.data-table col.c3{width:56%;}
-  .data-table th{border:1px solid #555;padding:5px 4px;text-align:center;background:#f0fdf4;font-size:13px;}
-  .data-table td{border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
-  .footer-wrap{margin-top:6px;flex-shrink:0;}
-  .footer-text{text-align:center;font-weight:700;font-size:13px;margin:4px 0;}
-  .footer-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:3px;font-weight:700;font-size:13px;}
-  .footer-귀하{text-align:right;font-weight:900;font-size:13px;}
+  .data-table th{border:1px solid #555;padding:5px 4px;text-align:center;background:#f0fdf4;font-size:12px;}
+  .data-table td{border:1px solid #555;padding:3px 5px;font-size:11px;}
+  .footer-wrap{margin-top:8px;}
+  .footer-text{text-align:center;font-weight:700;font-size:12px;margin:4px 0;}
+  .footer-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:3px;font-weight:700;font-size:12px;}
+  .footer-end{text-align:right;font-weight:900;font-size:12px;}
 </style></head><body>
 <div class="no-print">
-  <button style="background:#ef4444;color:white" onclick="window.print()">📄 PDF로 저장</button>
+  <button style="background:#ef4444;color:white" onclick="window.print()">PDF로 저장</button>
   <button style="background:#6b7280;color:white" onclick="window.close()">닫기</button>
 </div>
 <div class="page">
   <h2>${year}년 ${month}월 생산관리지도부</h2>
   <table class="info-table"><tbody>${infoRows}</tbody></table>
-  <p class="section-title">◈ 지도상황</p>
+  <p class="section-title">&#9670; 지도상황</p>
   <table class="data-table">
     <colgroup><col class="c1"/><col class="c2"/><col class="c3"/></colgroup>
     <thead><tr><th>근무일자</th><th>활동시간</th><th>활동내용</th></tr></thead>
@@ -1706,13 +1703,14 @@ function CropOverview({app,setApp,onBack}){
   <div class="footer-wrap">
     <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
     <div class="footer-sig"><span>(${member.danjiName}) 생산관리지도원: ${member.chairName}</span>${sigImg}</div>
-    <p class="footer-귀하">국립종자원 전북지원장 귀하</p>
+    <p class="footer-end">국립종자원 전북지원장 귀하</p>
   </div>
 </div>
 </body></html>`;
-    const win=window.open("","_blank","width=820,height=960");
-    if(win){win.document.write(html);win.document.close();}
-    else alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.");
+    const blob=new Blob([html],{type:"text/html;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const win=window.open(url,"_blank","width=820,height=960");
+    if(!win)alert("팝업이 차단되었습니다. 팝업 허용 후 다시 시도해주세요.");
   };
 
   const doReject=(memberId)=>{
