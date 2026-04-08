@@ -1400,83 +1400,175 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
   const COL="25% 22% 53%";
 
   const openDownloadWindow=()=>{
-    const infoRows=INFO.map(([k,v])=>`<tr><td style="border:1px solid #555;padding:5px 10px;font-weight:700;background:#f0fdf4;width:80px;white-space:nowrap;font-size:14px">${k}</td><td style="border:1px solid #555;padding:5px 10px;font-size:14px">${v}</td></tr>`).join("");
-    const dataRows=rows.map(r=>`<tr><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${r.date||"&nbsp;"}</td><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.time||"&nbsp;"}</td><td style="border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;">${r.activity||"&nbsp;"}</td></tr>`).join("");
-    const sigImg=u.signature?`<img src="${u.signature}" alt="서명" style="height:40px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
+    const infoRows=INFO.map(([k,v])=>`<tr><td class="info-key">${k}</td><td class="info-val">${v}</td></tr>`).join("");
+    const dataRows=rows.map(r=>`<tr><td class="dc">${r.date||"&nbsp;"}</td><td class="dc">${r.time||"&nbsp;"}</td><td class="dl">${r.activity||"&nbsp;"}</td></tr>`).join("");
+    const sigImg=u.signature?`<img src="${u.signature}" alt="서명" class="sig-img"/>`:"";
     const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
 <style>
-  @page{size:A4 portrait;margin:1cm;}
+  @page{size:A4 portrait;margin:18mm 20mm 20mm 20mm;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{width:210mm;height:297mm;overflow:hidden;}
-  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;}
-  .no-print{text-align:center;padding:8px 0 6px;border-bottom:1px solid #e5e7eb;margin-bottom:10px;}
-  button{padding:5px 14px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
-  @media print{.no-print{display:none!important;}html,body{overflow:hidden;}}
-  .page{width:100%;height:calc(297mm - 2cm);display:flex;flex-direction:column;overflow:hidden;}
-  h2{text-align:center;font-size:22px;font-weight:900;margin-bottom:6px;}
-  .info-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
-  .info-table td{font-size:14px;padding:5px 10px;}
-  .section-title{font-weight:700;font-size:14px;margin-bottom:4px;}
-  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;}
-  .data-table col.c1{width:22%;}.data-table col.c2{width:22%;}.data-table col.c3{width:56%;}
-  .data-table th{border:1px solid #555;padding:5px 4px;text-align:center;background:#f0fdf4;font-size:13px;}
-  .data-table td{border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
-  .footer-wrap{margin-top:6px;flex-shrink:0;}
-  .footer-text{text-align:center;font-weight:700;font-size:13px;margin:4px 0;}
-  .footer-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:3px;font-weight:700;font-size:13px;}
-  .footer-귀하{text-align:right;font-weight:900;font-size:13px;}
+  html,body{width:210mm;background:#fff;font-family:'맑은 고딕','Malgun Gothic','Apple SD Gothic Neo',sans-serif;}
+  body{padding:0;}
+  .no-print{text-align:center;padding:10px 0 8px;background:#f8fafc;border-bottom:1px solid #e2e8f0;margin-bottom:0;}
+  .no-print button{padding:7px 18px;margin:3px;border-radius:8px;cursor:pointer;font-weight:700;border:none;font-size:13px;font-family:inherit;}
+  @media print{.no-print{display:none!important;}}
+  /* ── A4 page wrapper ── */
+  .page{
+    width:170mm; /* 210mm - 20mm*2 margins */
+    min-height:257mm; /* 297mm - 20mm top/bottom */
+    margin:0 auto;
+    display:flex;
+    flex-direction:column;
+    padding:0;
+  }
+  /* ── 제목 ── */
+  .doc-title{
+    text-align:center;
+    font-size:20pt;
+    font-weight:900;
+    letter-spacing:2px;
+    margin-bottom:14px;
+    padding-bottom:8px;
+    border-bottom:2.5px solid #1a3a1a;
+  }
+  /* ── 기본정보 테이블 ── */
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:12px;border:1.5px solid #333;}
+  .info-key{
+    border:1px solid #555;
+    padding:6px 12px;
+    font-weight:700;
+    background:#f0fdf4;
+    width:72px;
+    white-space:nowrap;
+    font-size:10pt;
+    color:#14532d;
+    vertical-align:middle;
+  }
+  .info-val{
+    border:1px solid #555;
+    padding:6px 12px;
+    font-size:10pt;
+    vertical-align:middle;
+  }
+  /* ── 섹션 제목 ── */
+  .section-title{
+    font-weight:700;
+    font-size:10pt;
+    margin-bottom:6px;
+    padding:4px 6px;
+    background:#f0fdf4;
+    border-left:4px solid #16a34a;
+    color:#14532d;
+  }
+  /* ── 지도상황 테이블 ── */
+  .data-table{
+    width:100%;
+    border-collapse:collapse;
+    table-layout:fixed;
+    border:1.5px solid #333;
+    margin-bottom:16px;
+    flex:1;
+  }
+  .data-table colgroup col:nth-child(1){width:23%;}
+  .data-table colgroup col:nth-child(2){width:22%;}
+  .data-table colgroup col:nth-child(3){width:55%;}
+  .data-table th{
+    border:1px solid #555;
+    padding:7px 4px;
+    text-align:center;
+    background:#dcfce7;
+    font-size:10pt;
+    font-weight:700;
+    color:#14532d;
+  }
+  .data-table td{border:1px solid #777;padding:5px 7px;font-size:9.5pt;vertical-align:middle;}
+  .dc{text-align:center;white-space:nowrap;}
+  .dl{word-break:keep-all;}
+  /* ── 빈 행 높이 ── */
+  .data-table tbody tr{height:22px;}
+  /* ── 하단 서명 영역 ── */
+  .footer-wrap{
+    margin-top:auto;
+    padding-top:18px;
+    border-top:1px solid #ccc;
+    flex-shrink:0;
+  }
+  .footer-text{
+    text-align:center;
+    font-weight:700;
+    font-size:10pt;
+    margin-bottom:12px;
+    letter-spacing:0.5px;
+  }
+  .footer-sig-row{
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:12px;
+    margin-bottom:6px;
+    font-weight:700;
+    font-size:10pt;
+  }
+  .sig-img{height:44px;border:1px solid #ccc;border-radius:4px;vertical-align:middle;}
+  .footer-end{text-align:right;font-weight:900;font-size:11pt;margin-top:8px;}
 </style>
 </head><body>
 <div class="no-print">
-  <button style="background:#ef4444;color:white" onclick="window.print()">📄 PDF 저장</button>
+  <button style="background:#16a34a;color:white" onclick="window.print()">📄 PDF 저장 / 인쇄</button>
   <button style="background:#6b7280;color:white" onclick="window.close()">닫기</button>
 </div>
 <div class="page">
-  <h2>${year}년 ${month}월 생산관리지도부</h2>
+  <h2 class="doc-title">${year}년 ${month}월 생산관리지도부</h2>
   <table class="info-table"><tbody>${infoRows}</tbody></table>
   <p class="section-title">◈ 지도상황</p>
   <table class="data-table">
-    <colgroup><col class="c1"/><col class="c2"/><col class="c3"/></colgroup>
+    <colgroup><col/><col/><col/></colgroup>
     <thead><tr><th>근무일자</th><th>활동시간</th><th>활동내용</th></tr></thead>
     <tbody>${dataRows}</tbody>
   </table>
   <div class="footer-wrap">
     <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
-    <div class="footer-sig"><span>(${u.danjiName}) 생산관리지도원: ${u.chairName}</span>${sigImg}</div>
-    <p class="footer-귀하">국립종자원 전북지원장 귀하</p>
+    <div class="footer-sig-row"><span>(${u.danjiName}) 생산관리지도원: ${u.chairName}</span>${sigImg}</div>
+    <p class="footer-end">국립종자원 전북지원장 귀하</p>
   </div>
 </div>
 </body></html>`;
-    const blob=new Blob([html],{type:"text/html;charset=utf-8"});const url=URL.createObjectURL(blob);const win2=window.open(url,"_blank","width=820,height=960");if(!win2)alert("팝업이 차단되었습니다.");
+    const blob=new Blob([html],{type:"text/html;charset=utf-8"});const url=URL.createObjectURL(blob);const win2=window.open(url,"_blank","width=860,height=1080");if(!win2)alert("팝업이 차단되었습니다.");
   };
 
   /* 인쇄 전용 창 — 파일 형식 선택 없이 바로 인쇄 */
   const openPrintWindow=()=>{
-    const infoRows=INFO.map(([k,v])=>`<tr><td style="border:1px solid #555;padding:5px 10px;font-weight:700;background:#f0fdf4;width:80px;white-space:nowrap;font-size:14px">${k}</td><td style="border:1px solid #555;padding:5px 10px;font-size:14px">${v}</td></tr>`).join("");
-    const dataRows=rows.map(r=>`<tr><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">${r.date||"&nbsp;"}</td><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.time||"&nbsp;"}</td><td style="border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;">${r.activity||"&nbsp;"}</td></tr>`).join("");
-    const sigImg=u.signature?`<img src="${u.signature}" alt="서명" style="height:40px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
+    const infoRows=INFO.map(([k,v])=>`<tr><td class="info-key">${k}</td><td class="info-val">${v}</td></tr>`).join("");
+    const dataRows=rows.map(r=>`<tr><td class="dc">${r.date||"&nbsp;"}</td><td class="dc">${r.time||"&nbsp;"}</td><td class="dl">${r.activity||"&nbsp;"}</td></tr>`).join("");
+    const sigImg=u.signature?`<img src="${u.signature}" alt="서명" class="sig-img"/>`:"";
     const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
 <style>
-  @page{size:A4 portrait;margin:1cm;}
+  @page{size:A4 portrait;margin:18mm 20mm 20mm 20mm;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{width:210mm;height:297mm;overflow:hidden;}
-  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;}
-  .no-print{text-align:center;padding:8px 0 6px;border-bottom:1px solid #e5e7eb;margin-bottom:10px;}
-  button{padding:5px 14px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
-  @media print{.no-print{display:none!important;}html,body{overflow:hidden;}}
-  .page{width:100%;height:calc(297mm - 2cm);display:flex;flex-direction:column;overflow:hidden;}
-  h2{text-align:center;font-size:22px;font-weight:900;margin-bottom:6px;}
-  .info-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
-  .info-table td{font-size:14px;padding:5px 10px;}
-  .section-title{font-weight:700;font-size:14px;margin-bottom:4px;}
-  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;flex:1;}
-  .data-table col.c1{width:22%;}.data-table col.c2{width:22%;}.data-table col.c3{width:56%;}
-  .data-table th{border:1px solid #555;padding:5px 4px;text-align:center;background:#f0fdf4;font-size:13px;}
-  .data-table td{border:1px solid #555;padding:3px 6px;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
-  .footer-wrap{margin-top:6px;flex-shrink:0;}
-  .footer-text{text-align:center;font-weight:700;font-size:13px;margin:4px 0;}
-  .footer-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:3px;font-weight:700;font-size:13px;}
-  .footer-귀하{text-align:right;font-weight:900;font-size:13px;}
+  html,body{width:210mm;background:#fff;font-family:'맑은 고딕','Malgun Gothic','Apple SD Gothic Neo',sans-serif;}
+  .no-print{text-align:center;padding:10px 0 8px;background:#f8fafc;border-bottom:1px solid #e2e8f0;}
+  .no-print button{padding:7px 18px;margin:3px;border-radius:8px;cursor:pointer;font-weight:700;border:none;font-size:13px;font-family:inherit;}
+  @media print{.no-print{display:none!important;}}
+  .page{width:170mm;min-height:257mm;margin:0 auto;display:flex;flex-direction:column;padding:0;}
+  .doc-title{text-align:center;font-size:20pt;font-weight:900;letter-spacing:2px;margin-bottom:14px;padding-bottom:8px;border-bottom:2.5px solid #1a3a1a;}
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:12px;border:1.5px solid #333;}
+  .info-key{border:1px solid #555;padding:6px 12px;font-weight:700;background:#f0fdf4;width:72px;white-space:nowrap;font-size:10pt;color:#14532d;vertical-align:middle;}
+  .info-val{border:1px solid #555;padding:6px 12px;font-size:10pt;vertical-align:middle;}
+  .section-title{font-weight:700;font-size:10pt;margin-bottom:6px;padding:4px 6px;background:#f0fdf4;border-left:4px solid #16a34a;color:#14532d;}
+  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;border:1.5px solid #333;margin-bottom:16px;flex:1;}
+  .data-table colgroup col:nth-child(1){width:23%;}
+  .data-table colgroup col:nth-child(2){width:22%;}
+  .data-table colgroup col:nth-child(3){width:55%;}
+  .data-table th{border:1px solid #555;padding:7px 4px;text-align:center;background:#dcfce7;font-size:10pt;font-weight:700;color:#14532d;}
+  .data-table td{border:1px solid #777;padding:5px 7px;font-size:9.5pt;vertical-align:middle;}
+  .dc{text-align:center;white-space:nowrap;}
+  .dl{word-break:keep-all;}
+  .data-table tbody tr{height:22px;}
+  .footer-wrap{margin-top:auto;padding-top:18px;border-top:1px solid #ccc;flex-shrink:0;}
+  .footer-text{text-align:center;font-weight:700;font-size:10pt;margin-bottom:12px;letter-spacing:0.5px;}
+  .footer-sig-row{display:flex;align-items:center;justify-content:flex-start;gap:12px;margin-bottom:6px;font-weight:700;font-size:10pt;}
+  .sig-img{height:44px;border:1px solid #ccc;border-radius:4px;vertical-align:middle;}
+  .footer-end{text-align:right;font-weight:900;font-size:11pt;margin-top:8px;}
 </style>
 </head><body>
 <div class="no-print">
@@ -1484,70 +1576,90 @@ function MonthForm({month,year,app,setApp,onBack,selMonth,setSelMonth,selYear,se
   <button style="background:#6b7280;color:white" onclick="window.close()">닫기</button>
 </div>
 <div class="page">
-  <h2>${year}년 ${month}월 생산관리지도부</h2>
+  <h2 class="doc-title">${year}년 ${month}월 생산관리지도부</h2>
   <table class="info-table"><tbody>${infoRows}</tbody></table>
   <p class="section-title">◈ 지도상황</p>
   <table class="data-table">
-    <colgroup><col class="c1"/><col class="c2"/><col class="c3"/></colgroup>
+    <colgroup><col/><col/><col/></colgroup>
     <thead><tr><th>근무일자</th><th>활동시간</th><th>활동내용</th></tr></thead>
     <tbody>${dataRows}</tbody>
   </table>
   <div class="footer-wrap">
     <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
-    <div class="footer-sig"><span>(${u.danjiName}) 생산관리지도원: ${u.chairName}</span>${sigImg}</div>
-    <p class="footer-귀하">국립종자원 전북지원장 귀하</p>
+    <div class="footer-sig-row"><span>(${u.danjiName}) 생산관리지도원: ${u.chairName}</span>${sigImg}</div>
+    <p class="footer-end">국립종자원 전북지원장 귀하</p>
   </div>
 </div>
 </body></html>`;
-    const blob=new Blob([html],{type:"text/html;charset=utf-8"});const url=URL.createObjectURL(blob);const win2=window.open(url,"_blank","width=820,height=960");if(!win2)alert("팝업이 차단되었습니다.");
+    const blob=new Blob([html],{type:"text/html;charset=utf-8"});const url=URL.createObjectURL(blob);const win2=window.open(url,"_blank","width=860,height=1080");if(!win2)alert("팝업이 차단되었습니다.");
   };
 
   if(preview)return(
-    <div style={{minHeight:"100vh",background:"#e5e7eb"}}>
+    <div style={{minHeight:"100vh",background:"#d1d5db"}}>
       <style>{`
-        @page{size:A4 portrait;margin:1cm;}
+        @page{size:A4 portrait;margin:18mm 20mm 20mm 20mm;}
         *{box-sizing:border-box;}
         @media print{
           .no-print{display:none!important;}
-          html,body{width:210mm;height:297mm;overflow:hidden;}
-          .print-a4{box-shadow:none!important;margin:0!important;}
+          body{background:white!important;}
+          .print-a4{box-shadow:none!important;margin:0!important;width:170mm!important;min-height:257mm!important;padding:0!important;}
         }
       `}</style>
-      <div className="no-print" style={{background:"#16a34a",padding:"16px",display:"flex",alignItems:"center",position:"sticky",top:0,zIndex:10}}>
-        <button onClick={()=>setPrev(false)} style={{background:"none",border:"none",color:"white",fontSize:14,fontWeight:700,cursor:"pointer",marginRight:12}}>← 돌아가기</button>
-        <span style={{color:"white",fontWeight:700,flex:1,textAlign:"center"}}>서식 미리보기</span>
-        <button onClick={()=>window.print()} style={{background:"white",color:"#16a34a",border:"none",borderRadius:8,padding:"6px 14px",fontWeight:700,cursor:"pointer"}}>🖨 인쇄</button>
+      <div className="no-print" style={{background:"#16a34a",padding:"14px 16px",display:"flex",alignItems:"center",position:"sticky",top:0,zIndex:10,gap:8}}>
+        <button onClick={()=>setPrev(false)} style={{background:"rgba(255,255,255,0.2)",border:"none",color:"white",fontSize:13,fontWeight:700,cursor:"pointer",borderRadius:8,padding:"6px 12px"}}>← 돌아가기</button>
+        <span style={{color:"white",fontWeight:700,flex:1,textAlign:"center",fontSize:15}}>서식 미리보기</span>
+        <button onClick={()=>window.print()} style={{background:"white",color:"#16a34a",border:"none",borderRadius:8,padding:"6px 14px",fontWeight:700,cursor:"pointer",fontSize:13}}>🖨 인쇄</button>
       </div>
-      {/* A4 page — 1페이지 고정 */}
-      <div className="print-a4" style={{width:"210mm",height:"277mm",background:"white",margin:"16px auto",padding:"8mm 12mm",boxSizing:"border-box",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 4px 20px rgba(0,0,0,.15)"}}>
-        <h2 style={{textAlign:"center",fontSize:18,fontWeight:900,marginBottom:8}}>{year}년 {month}월 생산관리지도부</h2>
-        <table style={{width:"100%",borderCollapse:"collapse",marginBottom:6,fontSize:12}}>
+      {/* A4 page — 실제 mm 비율 유지 */}
+      <div style={{padding:"20px 16px 40px",display:"flex",justifyContent:"center"}}>
+      <div className="print-a4" style={{
+        width:"210mm",
+        minHeight:"297mm",
+        background:"white",
+        boxShadow:"0 4px 24px rgba(0,0,0,.18)",
+        display:"flex",
+        flexDirection:"column",
+        padding:"18mm 20mm 20mm 20mm",
+        boxSizing:"border-box",
+      }}>
+        {/* 제목 */}
+        <h2 style={{textAlign:"center",fontSize:"20pt",fontWeight:900,letterSpacing:2,marginBottom:14,paddingBottom:8,borderBottom:"2.5px solid #1a3a1a",margin:"0 0 14px"}}>{year}년 {month}월 생산관리지도부</h2>
+        {/* 기본 정보 */}
+        <table style={{width:"100%",borderCollapse:"collapse",marginBottom:12,border:"1.5px solid #333"}}>
           <tbody>{INFO.map(([k,v])=>(
-            <tr key={k}><td style={{border:"1px solid #555",padding:"4px 8px",fontWeight:700,background:"#f0fdf4",width:70,whiteSpace:"nowrap",fontSize:12}}>{k}</td><td style={{border:"1px solid #555",padding:"4px 8px",fontSize:12}}>{v}</td></tr>
-          ))}</tbody>
-        </table>
-        <p style={{fontWeight:700,marginBottom:4,fontSize:12}}>◈ 지도상황</p>
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:11,tableLayout:"fixed",flex:1,overflow:"hidden"}}>
-          <colgroup><col style={{width:"22%"}}/><col style={{width:"22%"}}/><col style={{width:"56%"}}/></colgroup>
-          <thead><tr style={{background:"#f0fdf4"}}>{["근무일자","활동시간","활동내용"].map(h=><th key={h} style={{border:"1px solid #555",padding:"4px",textAlign:"center",fontSize:12}}>{h}</th>)}</tr></thead>
-          <tbody>{rows.map((r,i)=>(
-            <tr key={i}>
-              <td style={{border:"1px solid #555",padding:"2px 4px",textAlign:"center",overflow:"hidden",whiteSpace:"nowrap",textOverflow:"ellipsis"}}>{r.date}</td>
-              <td style={{border:"1px solid #555",padding:"2px 4px",textAlign:"center"}}>{r.time}</td>
-              <td style={{border:"1px solid #555",padding:"2px 4px",overflow:"hidden"}}>{r.activity}</td>
+            <tr key={k}>
+              <td style={{border:"1px solid #555",padding:"6px 12px",fontWeight:700,background:"#f0fdf4",width:72,whiteSpace:"nowrap",fontSize:"10pt",color:"#14532d",verticalAlign:"middle"}}>{k}</td>
+              <td style={{border:"1px solid #555",padding:"6px 12px",fontSize:"10pt",verticalAlign:"middle"}}>{v}</td>
             </tr>
           ))}</tbody>
         </table>
-        <div style={{marginTop:6,flexShrink:0}}>
-          <p style={{fontSize:12,fontWeight:700,textAlign:"center",marginBottom:6}}>상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
-          <div style={{display:"flex",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:4}}>
-            <span style={{fontSize:12,fontWeight:700}}>({u.danjiName}) 생산관리지도원: {u.chairName}</span>
-            {u.signature&&<img src={u.signature} alt="서명" style={{height:36,border:"1px solid #ccc",borderRadius:4}}/>}
+        {/* 섹션 타이틀 */}
+        <p style={{fontWeight:700,marginBottom:6,fontSize:"10pt",padding:"4px 6px",background:"#f0fdf4",borderLeft:"4px solid #16a34a",color:"#14532d"}}>◈ 지도상황</p>
+        {/* 지도상황 테이블 */}
+        <table style={{width:"100%",borderCollapse:"collapse",fontSize:"9.5pt",tableLayout:"fixed",border:"1.5px solid #333",marginBottom:16,flex:1}}>
+          <colgroup><col style={{width:"23%"}}/><col style={{width:"22%"}}/><col style={{width:"55%"}}/></colgroup>
+          <thead>
+            <tr>{["근무일자","활동시간","활동내용"].map(h=><th key={h} style={{border:"1px solid #555",padding:"7px 4px",textAlign:"center",background:"#dcfce7",fontSize:"10pt",fontWeight:700,color:"#14532d"}}>{h}</th>)}</tr>
+          </thead>
+          <tbody>{rows.map((r,i)=>(
+            <tr key={i} style={{height:22}}>
+              <td style={{border:"1px solid #777",padding:"5px 7px",textAlign:"center",whiteSpace:"nowrap",verticalAlign:"middle"}}>{r.date}</td>
+              <td style={{border:"1px solid #777",padding:"5px 7px",textAlign:"center",verticalAlign:"middle"}}>{r.time}</td>
+              <td style={{border:"1px solid #777",padding:"5px 7px",wordBreak:"keep-all",verticalAlign:"middle"}}>{r.activity}</td>
+            </tr>
+          ))}</tbody>
+        </table>
+        {/* 하단 서명 */}
+        <div style={{marginTop:"auto",paddingTop:18,borderTop:"1px solid #ccc",flexShrink:0}}>
+          <p style={{fontSize:"10pt",fontWeight:700,textAlign:"center",marginBottom:12,letterSpacing:0.5}}>상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
+          <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:6,fontWeight:700,fontSize:"10pt"}}>
+            <span>({u.danjiName}) 생산관리지도원: {u.chairName}</span>
+            {u.signature&&<img src={u.signature} alt="서명" style={{height:44,border:"1px solid #ccc",borderRadius:4}}/>}
           </div>
-          <p style={{textAlign:"right",fontWeight:900,fontSize:12}}>국립종자원 전북지원장 귀하</p>
+          <p style={{textAlign:"right",fontWeight:900,fontSize:"11pt",marginTop:8}}>국립종자원 전북지원장 귀하</p>
         </div>
       </div>
-
+      </div>
     </div>
   );
 
@@ -1686,47 +1798,54 @@ function CropOverview({app,setApp,onBack}){
     const rec=app.records[rk];if(!rec)return;
     const rows=rec.rows||[];const filled=rows.filter(r=>r.date).length;
     const infoRows=[["단지명",member.danjiName],["작물명",member.crop],["성명",member.chairName],["근무일수",`${filled}일`]]
-      .map(([k,v])=>`<tr><td style="border:1px solid #555;padding:5px 10px;font-weight:700;background:#f0fdf4;width:80px;white-space:nowrap;font-size:14px">${k}</td><td style="border:1px solid #555;padding:5px 10px;font-size:14px">${v}</td></tr>`).join("");
-    const dataRows=rows.map(r=>`<tr><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.date||""}</td><td style="border:1px solid #555;padding:3px 6px;text-align:center;font-size:12px;">${r.time||""}</td><td style="border:1px solid #555;padding:3px 6px;font-size:12px;">${r.activity||""}</td></tr>`).join("");
-    const sigImg=member.signature?`<img src="${member.signature}" alt="서명" style="height:40px;border:1px solid #ccc;border-radius:3px;vertical-align:middle"/>`:"";
+      .map(([k,v])=>`<tr><td class="info-key">${k}</td><td class="info-val">${v}</td></tr>`).join("");
+    const dataRows=rows.map(r=>`<tr><td class="dc">${r.date||""}</td><td class="dc">${r.time||""}</td><td class="dl">${r.activity||""}</td></tr>`).join("");
+    const sigImg=member.signature?`<img src="${member.signature}" alt="서명" class="sig-img"/>`:"";
     const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/>
 <style>
-  @page{size:A4 portrait;margin:1cm;}
+  @page{size:A4 portrait;margin:18mm 20mm 20mm 20mm;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;}
-  .no-print{text-align:center;padding:8px 0 6px;border-bottom:1px solid #e5e7eb;margin-bottom:10px;}
-  button{padding:5px 14px;margin:3px;border-radius:6px;cursor:pointer;font-weight:700;border:none;font-size:12px;}
+  html,body{width:210mm;background:#fff;font-family:'맑은 고딕','Malgun Gothic','Apple SD Gothic Neo',sans-serif;}
+  .no-print{text-align:center;padding:10px 0 8px;background:#f8fafc;border-bottom:1px solid #e2e8f0;}
+  .no-print button{padding:7px 18px;margin:3px;border-radius:8px;cursor:pointer;font-weight:700;border:none;font-size:13px;font-family:inherit;}
   @media print{.no-print{display:none!important;}}
-  .page{width:100%;display:flex;flex-direction:column;}
-  h2{text-align:center;font-size:20px;font-weight:900;margin-bottom:6px;}
-  .info-table{width:100%;border-collapse:collapse;margin-bottom:6px;}
-  .info-table td{font-size:13px;padding:4px 8px;border:1px solid #555;}
-  .section-title{font-weight:700;font-size:13px;margin-bottom:4px;}
-  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;margin-bottom:6px;}
-  .data-table col.c1{width:22%;}.data-table col.c2{width:22%;}.data-table col.c3{width:56%;}
-  .data-table th{border:1px solid #555;padding:5px 4px;text-align:center;background:#f0fdf4;font-size:12px;}
-  .data-table td{border:1px solid #555;padding:3px 5px;font-size:11px;}
-  .footer-wrap{margin-top:8px;}
-  .footer-text{text-align:center;font-weight:700;font-size:12px;margin:4px 0;}
-  .footer-sig{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:3px;font-weight:700;font-size:12px;}
-  .footer-end{text-align:right;font-weight:900;font-size:12px;}
+  .page{width:170mm;min-height:257mm;margin:0 auto;display:flex;flex-direction:column;padding:0;}
+  .doc-title{text-align:center;font-size:20pt;font-weight:900;letter-spacing:2px;margin-bottom:14px;padding-bottom:8px;border-bottom:2.5px solid #1a3a1a;}
+  .info-table{width:100%;border-collapse:collapse;margin-bottom:12px;border:1.5px solid #333;}
+  .info-key{border:1px solid #555;padding:6px 12px;font-weight:700;background:#f0fdf4;width:72px;white-space:nowrap;font-size:10pt;color:#14532d;vertical-align:middle;}
+  .info-val{border:1px solid #555;padding:6px 12px;font-size:10pt;vertical-align:middle;}
+  .section-title{font-weight:700;font-size:10pt;margin-bottom:6px;padding:4px 6px;background:#f0fdf4;border-left:4px solid #16a34a;color:#14532d;}
+  .data-table{width:100%;border-collapse:collapse;table-layout:fixed;border:1.5px solid #333;margin-bottom:16px;flex:1;}
+  .data-table colgroup col:nth-child(1){width:23%;}
+  .data-table colgroup col:nth-child(2){width:22%;}
+  .data-table colgroup col:nth-child(3){width:55%;}
+  .data-table th{border:1px solid #555;padding:7px 4px;text-align:center;background:#dcfce7;font-size:10pt;font-weight:700;color:#14532d;}
+  .data-table td{border:1px solid #777;padding:5px 7px;font-size:9.5pt;vertical-align:middle;}
+  .dc{text-align:center;white-space:nowrap;}
+  .dl{word-break:keep-all;}
+  .data-table tbody tr{height:22px;}
+  .footer-wrap{margin-top:auto;padding-top:18px;border-top:1px solid #ccc;flex-shrink:0;}
+  .footer-text{text-align:center;font-weight:700;font-size:10pt;margin-bottom:12px;letter-spacing:0.5px;}
+  .footer-sig-row{display:flex;align-items:center;justify-content:flex-start;gap:12px;margin-bottom:6px;font-weight:700;font-size:10pt;}
+  .sig-img{height:44px;border:1px solid #ccc;border-radius:4px;vertical-align:middle;}
+  .footer-end{text-align:right;font-weight:900;font-size:11pt;margin-top:8px;}
 </style></head><body>
 <div class="no-print">
-  <button style="background:#ef4444;color:white" onclick="window.print()">PDF로 저장</button>
+  <button style="background:#16a34a;color:white" onclick="window.print()">PDF로 저장 / 인쇄</button>
   <button style="background:#6b7280;color:white" onclick="window.close()">닫기</button>
 </div>
 <div class="page">
-  <h2>${year}년 ${month}월 생산관리지도부</h2>
+  <h2 class="doc-title">${year}년 ${month}월 생산관리지도부</h2>
   <table class="info-table"><tbody>${infoRows}</tbody></table>
   <p class="section-title">&#9670; 지도상황</p>
   <table class="data-table">
-    <colgroup><col class="c1"/><col class="c2"/><col class="c3"/></colgroup>
+    <colgroup><col/><col/><col/></colgroup>
     <thead><tr><th>근무일자</th><th>활동시간</th><th>활동내용</th></tr></thead>
     <tbody>${dataRows}</tbody>
   </table>
   <div class="footer-wrap">
     <p class="footer-text">상기와 같이 생산관리지도원 활동상황을 제출합니다.</p>
-    <div class="footer-sig"><span>(${member.danjiName}) 생산관리지도원: ${member.chairName}</span>${sigImg}</div>
+    <div class="footer-sig-row"><span>(${member.danjiName}) 생산관리지도원: ${member.chairName}</span>${sigImg}</div>
     <p class="footer-end">국립종자원 전북지원장 귀하</p>
   </div>
 </div>
