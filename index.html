@@ -341,13 +341,16 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
     cropCount:u.cropCount||u.crop_count||1,
     linkedId:u.linkedId||u.linked_id||null,
   });
-  // INIT 기본 계정 + Supabase + localStorage 사용자 모두 병합
-  const mergeAllUsers=(supaUsers)=>{
-    const localApp=ld();
-    const localUsers=(localApp?.users||[]).map(normalizeUser);
+  // INIT 기본 계정 + Supabase 사용자 병합 (Supabase가 권위 있는 소스)
+  // supaUsers가 있을 경우 localStorage 유저는 병합하지 않음 (퇴출된 유저 부활 방지)
+  const mergeAllUsers=(supaUsers, supaAvailable=true)=>{
     const base=(supaUsers||[]).map(normalizeUser);
-    // localStorage에만 있는 유저 추가 (Supabase 저장 미완료 케이스)
-    localUsers.forEach(lu=>{if(!base.find(u=>u.id===lu.id))base.push(lu);});
+    if(!supaAvailable){
+      // Supabase 연결 실패 시에만 localStorage 유저 병합 (오프라인 폴백)
+      const localApp=ld();
+      const localUsers=(localApp?.users||[]).map(normalizeUser);
+      localUsers.forEach(lu=>{if(!base.find(u=>u.id===lu.id))base.push(lu);});
+    }
     // INIT 기본 계정 (admin 등) 추가
     INIT.users.forEach(iu=>{if(!base.find(u=>u.id===iu.id))base.unshift(iu);});
     return base;
@@ -355,7 +358,11 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
   const doLogin=()=>{
     ldFromSupabase().then(freshData=>{
       const freshApp=freshData||ld()||{users:app.users};
-      const mergedUsers=mergeAllUsers(freshApp.users);
+      // Supabase 성공 시: localStorage 병합 안 함 (퇴출된 유저 부활 방지)
+      const supaOk=!!freshData;
+      const mergedUsers=mergeAllUsers(freshApp.users, supaOk);
+      // 로그인 성공 시 localStorage를 Supabase 기준으로 덮어씀
+      if(supaOk) svLocal({...freshApp,users:mergedUsers});
       const u=mergedUsers.find(u=>u.id===id&&u.pw===pw);
       if(u){
         if(remId) localStorage.setItem("saved_id",id);
@@ -366,8 +373,9 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
         onLogin();
       } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
     }).catch(()=>{
+      // Supabase 연결 실패 시: 오프라인 폴백으로 localStorage 사용
       const freshApp=ld()||{users:app.users};
-      const mergedUsers=mergeAllUsers(freshApp.users);
+      const mergedUsers=mergeAllUsers(freshApp.users, false);
       const u=mergedUsers.find(u=>u.id===id&&u.pw===pw);
       if(u){
         if(remId) localStorage.setItem("saved_id",id);
@@ -1019,6 +1027,7 @@ function UserManageScreen({app,setApp,onBack}){
   const[saved,setSaved]=useState(false);
   const[kickTarget,setKickTarget]=useState(null); // 퇴출 확인 대상 user
   const[kickDone,setKickDone]=useState(null);     // 퇴출 완료 메시지
+  const[kicking,setKicking]=useState(false);      // 퇴출 진행 중
 
   const changeRole=(userId,newRole)=>{
     const users=app.users.map(u=>u.id===userId?{...u,role:newRole}:u);
@@ -1028,14 +1037,28 @@ function UserManageScreen({app,setApp,onBack}){
   };
 
   const doKick=async(userId)=>{
-    // 1. 앱 상태에서 제거
+    if(kicking) return;
+    setKicking(true);
     const users=app.users.filter(u=>u.id!==userId);
     const next={...app,users};
     setApp(next);
+    // 2. localStorage에서 완전 제거 (병합으로 되살아나는 문제 방지)
     svLocal(next);
-    // 2. Supabase에서 삭제
-    try{await _supa.from('sf_users').delete().eq('id',userId);}catch(e){console.error('kick error:',e);}
-    // 3. 관련 데이터 삭제 (소독/육묘/파종/수확/재해)
+    // localStorage 개별 키도 정리
+    try{
+      localStorage.removeItem(`seedfarm_dis_${userId}`);
+      localStorage.removeItem(`seedfarm_sl_${userId}`);
+      localStorage.removeItem(`seedfarm_sow_${userId}`);
+      localStorage.removeItem(`seedfarm_hav_${userId}`);
+      localStorage.removeItem(`seedfarm_disaster_${userId}`);
+      localStorage.removeItem(`extra_varieties_${userId}`);
+    }catch{}
+    // 3. Supabase sf_users 삭제
+    try{
+      const {error}=await _supa.from('sf_users').delete().eq('id',userId);
+      if(error) console.error('kick sf_users error:',error);
+    }catch(e){console.error('kick error:',e);}
+    // 4. 관련 데이터 삭제 (소독/육묘/파종/수확/재해/extra_varieties)
     try{
       await Promise.all([
         _supa.from('sf_disinfection').delete().eq('user_key',userId),
@@ -1046,6 +1069,17 @@ function UserManageScreen({app,setApp,onBack}){
         _supa.from('sf_extra_varieties').delete().eq('user_id',userId),
       ]);
     }catch(e){console.error('kick data cleanup error:',e);}
+    // 5. 퇴출 후 Supabase와 localStorage 최종 동기화
+    try{
+      const freshData=await ldFromSupabase();
+      if(freshData){
+        // 혹시 Supabase에서 다시 불러온 데이터에도 해당 유저가 없는지 재확인 후 저장
+        freshData.users=(freshData.users||[]).filter(u=>u.id!==userId);
+        svLocal(freshData);
+        setApp(p=>({...p,users:freshData.users}));
+      }
+    }catch(e){console.error('kick sync error:',e);}
+    setKicking(false);
     setKickTarget(null);
     setKickDone(userId);
     setTimeout(()=>setKickDone(null),2500);
@@ -1080,9 +1114,9 @@ function UserManageScreen({app,setApp,onBack}){
                 style={{flex:1,padding:"12px 0",borderRadius:12,border:"2px solid #e5e7eb",background:"white",color:"#374151",fontWeight:700,fontSize:14,cursor:"pointer"}}>
                 취소
               </button>
-              <button onClick={()=>doKick(kickTarget.id)}
-                style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:"linear-gradient(135deg,#dc2626,#991b1b)",color:"white",fontWeight:900,fontSize:14,cursor:"pointer",boxShadow:"0 4px 12px rgba(220,38,38,.35)"}}>
-                퇴출 확인
+              <button onClick={()=>doKick(kickTarget.id)} disabled={kicking}
+                style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:kicking?"#9ca3af":"linear-gradient(135deg,#dc2626,#991b1b)",color:"white",fontWeight:900,fontSize:14,cursor:kicking?"not-allowed":"pointer",boxShadow:"0 4px 12px rgba(220,38,38,.35)"}}>
+                {kicking?"퇴출 중...":"퇴출 확인"}
               </button>
             </div>
           </div>
