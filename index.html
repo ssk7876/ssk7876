@@ -112,21 +112,61 @@ async function ldFromSupabase(){
     // records: {userId_year_month: {rows,sent}}
     const records={};
     (rRes.data||[]).forEach(r=>{records[r.record_key]=r.data;});
-    // disinfection: localStorage 형식 {userId: {...}}
+    // disinfection: 컬럼 분리 구조 → localStorage 형식 {userId: {...}} 로 변환
     const disData={};
-    (disRes.data||[]).forEach(r=>{disData[r.user_key]=r.data;});
-    // seedling
+    (disRes.data||[]).forEach(r=>{disData[r.user_key]={
+      hotDate:{start:r.hot_date_start||'',end:r.hot_date_end||''},
+      hotTemp:r.hot_temp||'60',hotCompliance:r.hot_compliance||'',
+      cleanState:r.clean_state||'',
+      soakDate:{start:r.soak_date_start||'',end:r.soak_date_end||''},
+      extraDrugUse:r.extra_drug_use||'',insecticide:r.insecticide||'사용안함',
+      fungicide:r.fungicide||'',drugTemp:r.drug_temp||'30',
+      otherNote:r.other_note||'',
+      hotPhotos:r.hot_photos||[],photos:r.photos||[],
+    };});
+    // seedling: 컬럼 분리 구조 → localStorage 형식 변환
     const slData={};
-    (slRes.data||[]).forEach(r=>{slData[r.user_key]=r.data;});
-    // sowing
+    (slRes.data||[]).forEach(r=>{slData[r.user_key]={
+      sowDate:{start:r.sow_date_start||'',end:r.sow_date_end||''},
+      bedPeriod:{start:r.bed_period_start||'',end:r.bed_period_end||''},
+      height:r.height||'',emerge:r.emerge||'',trays:r.trays||'',
+      rootMat:r.root_mat||'',fusa:r.fusa||'',fusaSub:r.fusa_sub||'',
+      fusaCount:r.fusa_count||'',sep:r.sep||'',note:r.note||'',
+      photos:r.photos||[],
+    };});
+    // sowing: 컬럼 분리 구조 → localStorage 형식 변환
     const sowData={};
-    (sowRes.data||[]).forEach(r=>{sowData[r.user_key]=r.data;});
-    // harvest
+    (sowRes.data||[]).forEach(r=>{sowData[r.user_key]=[{
+      prodYear:r.prod_year||'',unit:r.unit||'',variety:r.variety||'',
+      area:r.area||'',farmCount:r.farm_count||'',
+      planM1:r.plan_m1||'',planD1:r.plan_d1||'',
+      planM2:r.plan_m2||'',planD2:r.plan_d2||'',
+      actM1:r.act_m1||'',actD1:r.act_d1||'',
+      actM2:r.act_m2||'',actD2:r.act_d2||'',
+      rate:r.rate||'0',note:r.note||'',farms:r.farms||[],
+    }];});
+    // harvest: 컬럼 분리 구조 → localStorage 형식 변환
     const havData={};
-    (havRes.data||[]).forEach(r=>{havData[r.user_key]=r.data;});
-    // disaster
+    (havRes.data||[]).forEach(r=>{havData[r.user_key]=[{
+      prodYear:r.prod_year||'',unit:r.unit||'',variety:r.variety||'',
+      area:r.area||'',farmCount:r.farm_count||'',
+      planM1:r.plan_m1||'',planD1:r.plan_d1||'',
+      planM2:r.plan_m2||'',planD2:r.plan_d2||'',
+      actM1:r.act_m1||'',actD1:r.act_d1||'',
+      actM2:r.act_m2||'',actD2:r.act_d2||'',
+      rate:r.rate||'0',note:r.note||'',farms:r.farms||[],
+    }];});
+    // disaster: 컬럼 분리 구조 → localStorage 형식 {userKey_year: [...]} 변환
     const disaData={};
-    (disaRes.data||[]).forEach(r=>{disaData[r.user_key]=r.data;});
+    (disaRes.data||[]).forEach(r=>{
+      if(!disaData[r.user_key]) disaData[r.user_key]=[];
+      disaData[r.user_key].push({
+        _id:r.record_id||'',variety:r.variety||'',type:r.type||'',
+        location:r.location||'',date:r.date||'',scale:r.scale||'',
+        damage:r.damage||'',action:r.action||'',savedAt:r.saved_at||'',
+        photos:r.photos||[],
+      });
+    });
     // extra_varieties
     const evData={};
     (evRes.data||[]).forEach(r=>{evData[r.user_id]=r.varieties;});
@@ -214,10 +254,76 @@ async function svToSupabase(d){
   }catch(e){console.error('Supabase save error:',e);}
 }
 
-/* ── Supabase: 특수 스토리지(소독/육묘/파종/수확/재해/extra_varieties) 저장 ── */
+/* ── Supabase: 테이블별 컬럼 분리 저장 함수 ── */
 async function svSpecialToSupabase(table,userKey,data){
   try{
-    await _supa.from(table).upsert({user_key:userKey,data},{onConflict:'user_key'});
+    if(table==='sf_disinfection'){
+      await _supa.from('sf_disinfection').upsert({
+        user_key:userKey,
+        hot_date_start:data.hotDate?.start||'',hot_date_end:data.hotDate?.end||'',
+        hot_temp:data.hotTemp||'60',hot_compliance:data.hotCompliance||'',
+        clean_state:data.cleanState||'',
+        soak_date_start:data.soakDate?.start||'',soak_date_end:data.soakDate?.end||'',
+        extra_drug_use:data.extraDrugUse||'',insecticide:data.insecticide||'사용안함',
+        fungicide:data.fungicide||'',drug_temp:data.drugTemp||'30',
+        other_note:data.otherNote||'',
+        hot_photos:data.hotPhotos||[],photos:data.photos||[],
+      },{onConflict:'user_key'});
+    } else if(table==='sf_seedling'){
+      await _supa.from('sf_seedling').upsert({
+        user_key:userKey,
+        sow_date_start:data.sowDate?.start||'',sow_date_end:data.sowDate?.end||'',
+        bed_period_start:data.bedPeriod?.start||'',bed_period_end:data.bedPeriod?.end||'',
+        height:data.height||'',emerge:data.emerge||'',trays:data.trays||'',
+        root_mat:data.rootMat||'',fusa:data.fusa||'',fusa_sub:data.fusaSub||'',
+        fusa_count:data.fusaCount||'',sep:data.sep||'',note:data.note||'',
+        photos:data.photos||[],
+      },{onConflict:'user_key'});
+    } else if(table==='sf_sowing'){
+      // data는 배열, 첫번째 카드만 저장 (단일 품종 회원)
+      const d=Array.isArray(data)?data[0]:data;
+      if(!d) return;
+      await _supa.from('sf_sowing').upsert({
+        user_key:userKey,
+        prod_year:d.prodYear||'',unit:d.unit||'',variety:d.variety||'',
+        area:d.area||'',farm_count:d.farmCount||'',
+        plan_m1:d.planM1||'',plan_d1:d.planD1||'',
+        plan_m2:d.planM2||'',plan_d2:d.planD2||'',
+        act_m1:d.actM1||'',act_d1:d.actD1||'',
+        act_m2:d.actM2||'',act_d2:d.actD2||'',
+        rate:d.rate||'0',note:d.note||'',farms:d.farms||[],
+      },{onConflict:'user_key'});
+    } else if(table==='sf_harvest'){
+      const d=Array.isArray(data)?data[0]:data;
+      if(!d) return;
+      await _supa.from('sf_harvest').upsert({
+        user_key:userKey,
+        prod_year:d.prodYear||'',unit:d.unit||'',variety:d.variety||'',
+        area:d.area||'',farm_count:d.farmCount||'',
+        plan_m1:d.planM1||'',plan_d1:d.planD1||'',
+        plan_m2:d.planM2||'',plan_d2:d.planD2||'',
+        act_m1:d.actM1||'',act_d1:d.actD1||'',
+        act_m2:d.actM2||'',act_d2:d.actD2||'',
+        rate:d.rate||'0',note:d.note||'',farms:d.farms||[],
+      },{onConflict:'user_key'});
+    } else if(table==='sf_disaster'){
+      // data는 배열, 각 항목을 개별 행으로 upsert
+      const list=Array.isArray(data)?data:(data?[data]:[]);
+      for(const item of list){
+        if(!item._id) continue;
+        await _supa.from('sf_disaster').upsert({
+          user_key:userKey,record_id:item._id,
+          variety:item.variety||'',type:item.type||'',
+          location:item.location||'',date:item.date||'',
+          scale:item.scale||'',damage:item.damage||'',
+          action:item.action||'',saved_at:item.savedAt||'',
+          photos:item.photos||[],
+        },{onConflict:'user_key,record_id'});
+      }
+    } else {
+      // 기타 테이블 폴백 (혹시 모를 경우)
+      await _supa.from(table).upsert({user_key:userKey,data},{onConflict:'user_key'});
+    }
   }catch(e){console.error(`Supabase ${table} save error:`,e);}
 }
 async function svExtraVarietiesToSupabase(userId,varieties){
@@ -363,7 +469,7 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
       const mergedUsers=mergeAllUsers(freshApp.users, supaOk);
       // 로그인 성공 시 localStorage를 Supabase 기준으로 덮어씀
       if(supaOk) svLocal({...freshApp,users:mergedUsers});
-      const u=mergedUsers.find(u=>u.id.toLowerCase()===id.toLowerCase()&&u.pw===pw);
+      const u=mergedUsers.find(u=>u.id===id&&u.pw===pw);
       if(u){
         if(remId) localStorage.setItem("saved_id",id);
         else localStorage.removeItem("saved_id");
@@ -376,7 +482,7 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
       // Supabase 연결 실패 시: 오프라인 폴백으로 localStorage 사용
       const freshApp=ld()||{users:app.users};
       const mergedUsers=mergeAllUsers(freshApp.users, false);
-      const u=mergedUsers.find(u=>u.id.toLowerCase()===id.toLowerCase()&&u.pw===pw);
+      const u=mergedUsers.find(u=>u.id===id&&u.pw===pw);
       if(u){
         if(remId) localStorage.setItem("saved_id",id);
         else localStorage.removeItem("saved_id");
