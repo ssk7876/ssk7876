@@ -363,7 +363,7 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
       const mergedUsers=mergeAllUsers(freshApp.users, supaOk);
       // 로그인 성공 시 localStorage를 Supabase 기준으로 덮어씀
       if(supaOk) svLocal({...freshApp,users:mergedUsers});
-      const u=mergedUsers.find(u=>u.id===id&&u.pw===pw);
+      const u=mergedUsers.find(u=>u.id.toLowerCase()===id.toLowerCase()&&u.pw===pw);
       if(u){
         if(remId) localStorage.setItem("saved_id",id);
         else localStorage.removeItem("saved_id");
@@ -376,7 +376,7 @@ function LoginScreen({app,setApp,onLogin,onSignup}){
       // Supabase 연결 실패 시: 오프라인 폴백으로 localStorage 사용
       const freshApp=ld()||{users:app.users};
       const mergedUsers=mergeAllUsers(freshApp.users, false);
-      const u=mergedUsers.find(u=>u.id===id&&u.pw===pw);
+      const u=mergedUsers.find(u=>u.id.toLowerCase()===id.toLowerCase()&&u.pw===pw);
       if(u){
         if(remId) localStorage.setItem("saved_id",id);
         else localStorage.removeItem("saved_id");
