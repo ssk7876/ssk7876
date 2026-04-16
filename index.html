@@ -1158,6 +1158,11 @@ function LoginScreen(_ref2) {
             currentUser: u
           });
         });
+        // 로그인 성공 시 특수 localStorage 완전 초기화 (Supabase 데이터가 권위)
+        try{localStorage.setItem('seedfarm_sh_v1',JSON.stringify({sowingData:{},harvestData:{}}));}catch{}
+        try{localStorage.setItem('seedfarm_dis_v1',JSON.stringify({}));}catch{}
+        try{localStorage.setItem('seedfarm_sl_v1',JSON.stringify({}));}catch{}
+        try{localStorage.setItem('seedfarm_disaster_v1',JSON.stringify({}));}catch{}
         onLogin();
       } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
     }).catch(function () {
@@ -11531,6 +11536,43 @@ const SH_KEY = 'seedfarm_sh_v1';
 function shLoad() {
   try { return JSON.parse(localStorage.getItem(SH_KEY)||'{}'); } catch{return{};}
 }
+async function shSyncFromSupabase() {
+  try {
+    const [sowRes,havRes] = await Promise.all([
+      _supa.from('sf_sowing').select('*'),
+      _supa.from('sf_harvest').select('*'),
+    ]);
+    const db = shLoad();
+    db.sowingData = {};
+    (sowRes.data||[]).forEach(r=>{
+      db.sowingData[r.user_key] = [{
+        prodYear:r.prod_year||'',unit:r.unit||'',variety:r.variety||'',
+        area:r.area||'',farmCount:r.farm_count||'',
+        planM1:r.plan_m1||'',planD1:r.plan_d1||'',
+        planM2:r.plan_m2||'',planD2:r.plan_d2||'',
+        actM1:r.act_m1||'',actD1:r.act_d1||'',
+        actM2:r.act_m2||'',actD2:r.act_d2||'',
+        rate:r.rate||'0',note:r.note||'',farms:r.farms||[],
+      }];
+    });
+    db.harvestData = {};
+    (havRes.data||[]).forEach(r=>{
+      db.harvestData[r.user_key] = [{
+        prodYear:r.prod_year||'',unit:r.unit||'',variety:r.variety||'',
+        area:r.area||'',farmCount:r.farm_count||'',
+        planM1:r.plan_m1||'',planD1:r.plan_d1||'',
+        planM2:r.plan_m2||'',planD2:r.plan_d2||'',
+        actM1:r.act_m1||'',actD1:r.act_d1||'',
+        actM2:r.act_m2||'',actD2:r.act_d2||'',
+        rate:r.rate||'0',note:r.note||'',farms:r.farms||[],
+      }];
+    });
+    try{localStorage.setItem(SH_KEY,JSON.stringify(db));}catch{}
+    return db;
+  } catch(e) {
+    return shLoad();
+  }
+}
 function shSave(data) {
   try { localStorage.setItem(SH_KEY, JSON.stringify(data)); } catch{}
   // Supabase에도 파종/수확 데이터 동기화
@@ -11561,9 +11603,8 @@ function openShModal(type, user) {
   const modal = document.getElementById('shModal');
   modal.style.display = 'flex';
 
-  const db = shLoad();
   const key = user?.id || 'unknown';
-
+  shSyncFromSupabase().then(db => {
   if (type === 'sowing') {
     document.getElementById('shModalTitle').textContent = '🌱 파종현황';
     document.getElementById('sowingCards').style.display = 'block';
@@ -11608,6 +11649,8 @@ function openShModal(type, user) {
   }
 }
 
+  }); // shSyncFromSupabase end
+}
 function closeShModal() {
   document.getElementById('shModal').style.display = 'none';
   
