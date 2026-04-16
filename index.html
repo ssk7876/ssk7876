@@ -350,15 +350,29 @@ function _ldFromSupabase() {
               }
             });
           } catch(_unused32) {}
-          // seedfarm_sh_v1 Supabase 데이터 반영
-          // 단, 기존 localStorage 데이터 구조는 유지하고 Supabase 데이터로 채움
+          // seedfarm_sh_v1 Supabase 데이터 반영 (연도별 구조)
           try {
             var shDbSync = JSON.parse(localStorage.getItem('seedfarm_sh_v1') || '{}');
             if (!shDbSync.sowingData) shDbSync.sowingData = {};
             if (!shDbSync.harvestData) shDbSync.harvestData = {};
-            // Supabase에 있는 유저 데이터만 업데이트 (없는 건 localStorage 유지)
-            Object.entries(sowData || {}).forEach(function(e) { shDbSync.sowingData[e[0]] = e[1]; });
-            Object.entries(havData || {}).forEach(function(e) { shDbSync.harvestData[e[0]] = e[1]; });
+            Object.entries(sowData || {}).forEach(function(entry) {
+              var uid = entry[0], cards = entry[1];
+              var arr = Array.isArray(cards) ? cards : (cards ? [cards] : []);
+              if (arr.length > 0) {
+                var yr = arr[0].prodYear || String(new Date().getFullYear());
+                if (!shDbSync.sowingData[uid]) shDbSync.sowingData[uid] = {};
+                if (!shDbSync.sowingData[uid][yr]) shDbSync.sowingData[uid][yr] = arr;
+              }
+            });
+            Object.entries(havData || {}).forEach(function(entry) {
+              var uid = entry[0], cards = entry[1];
+              var arr = Array.isArray(cards) ? cards : (cards ? [cards] : []);
+              if (arr.length > 0) {
+                var yr = arr[0].prodYear || String(new Date().getFullYear());
+                if (!shDbSync.harvestData[uid]) shDbSync.harvestData[uid] = {};
+                if (!shDbSync.harvestData[uid][yr]) shDbSync.harvestData[uid][yr] = arr;
+              }
+            });
             localStorage.setItem('seedfarm_sh_v1', JSON.stringify(shDbSync));
           } catch(_unused33) {}
           result = {
@@ -11588,9 +11602,11 @@ async function shSyncFromSupabase() {
       _supa.from('sf_harvest').select('*'),
     ]);
     const db = shLoad();
-    db.sowingData = {};
+    if(!db.sowingData) db.sowingData = {};
+    if(!db.harvestData) db.harvestData = {};
+    // 연도별 구조로 저장 {userId: {2026: [{...}]}} - shSaveSowing과 동일 구조
     (sowRes.data||[]).forEach(r=>{
-      db.sowingData[r.user_key] = [{
+      const card = {
         prodYear:r.prod_year||'',unit:r.unit||'',variety:r.variety||'',
         area:r.area||'',farmCount:r.farm_count||'',
         planM1:r.plan_m1||'',planD1:r.plan_d1||'',
@@ -11598,11 +11614,16 @@ async function shSyncFromSupabase() {
         actM1:r.act_m1||'',actD1:r.act_d1||'',
         actM2:r.act_m2||'',actD2:r.act_d2||'',
         rate:r.rate||'0',note:r.note||'',farms:r.farms||[],
-      }];
+      };
+      const yr = r.prod_year || String(new Date().getFullYear());
+      if(!db.sowingData[r.user_key]) db.sowingData[r.user_key] = {};
+      // 기존 localStorage에 같은 연도 데이터가 없을 때만 덮어씀
+      if(!db.sowingData[r.user_key][yr]) {
+        db.sowingData[r.user_key][yr] = [card];
+      }
     });
-    db.harvestData = {};
     (havRes.data||[]).forEach(r=>{
-      db.harvestData[r.user_key] = [{
+      const card = {
         prodYear:r.prod_year||'',unit:r.unit||'',variety:r.variety||'',
         area:r.area||'',farmCount:r.farm_count||'',
         planM1:r.plan_m1||'',planD1:r.plan_d1||'',
@@ -11610,7 +11631,12 @@ async function shSyncFromSupabase() {
         actM1:r.act_m1||'',actD1:r.act_d1||'',
         actM2:r.act_m2||'',actD2:r.act_d2||'',
         rate:r.rate||'0',note:r.note||'',farms:r.farms||[],
-      }];
+      };
+      const yr = r.prod_year || String(new Date().getFullYear());
+      if(!db.harvestData[r.user_key]) db.harvestData[r.user_key] = {};
+      if(!db.harvestData[r.user_key][yr]) {
+        db.harvestData[r.user_key][yr] = [card];
+      }
     });
     try{localStorage.setItem(SH_KEY,JSON.stringify(db));}catch{}
     return db;
