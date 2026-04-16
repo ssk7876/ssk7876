@@ -11647,14 +11647,30 @@ async function shSyncFromSupabase() {
 function shSave(data) {
   try { localStorage.setItem(SH_KEY, JSON.stringify(data)); } catch{}
   // Supabase에도 파종/수확 데이터 동기화
+  // val이 {year: [cards]} 연도별 구조이므로 가장 최근 연도의 카드 배열을 꺼내서 전달
   if(data.sowingData){
     Object.entries(data.sowingData).forEach(([uid,val])=>{
-      svSpecialToSupabase('sf_sowing',uid,val).catch(()=>{});
+      let cards;
+      if(Array.isArray(val)) {
+        cards = val; // 배열이면 그대로
+      } else if(val && typeof val === 'object') {
+        // 연도별 구조: {2026:[...]} → 가장 최근 연도 카드 꺼내기
+        const years = Object.keys(val).sort().reverse();
+        cards = years.length ? val[years[0]] : [];
+      } else { cards = []; }
+      if(cards && cards.length) svSpecialToSupabase('sf_sowing',uid,cards).catch(()=>{});
     });
   }
   if(data.harvestData){
     Object.entries(data.harvestData).forEach(([uid,val])=>{
-      svSpecialToSupabase('sf_harvest',uid,val).catch(()=>{});
+      let cards;
+      if(Array.isArray(val)) {
+        cards = val;
+      } else if(val && typeof val === 'object') {
+        const years = Object.keys(val).sort().reverse();
+        cards = years.length ? val[years[0]] : [];
+      } else { cards = []; }
+      if(cards && cards.length) svSpecialToSupabase('sf_harvest',uid,cards).catch(()=>{});
     });
   }
 }
