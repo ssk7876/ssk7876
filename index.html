@@ -194,9 +194,21 @@ function _ldFromSupabase() {
           disaRes = _yield$Promise$all2[8];
           evRes = _yield$Promise$all2[9];
           // records: {userId_year_month: {rows,sent}}
+          // sf_records 새 컬럼 구조에서 {record_key: {rows, sent}} 형식으로 재구성
           records = {};
           (rRes.data || []).forEach(function (r) {
-            records[r.record_key] = r.data;
+            var rk = r.record_key;
+            if (!records[rk]) {
+              records[rk] = { rows: Array.from({length:12}, function(){return {date:'',time:'',activity:''}}), sent: r.sent||false };
+            }
+            if (typeof r.row_index === 'number' && r.row_index >= 0 && r.row_index < 12) {
+              records[rk].rows[r.row_index] = {
+                date: r.work_date || '',
+                time: r.work_time || '',
+                activity: r.activity || ''
+              };
+              records[rk].sent = r.sent || records[rk].sent || false;
+            }
           });
           // disinfection: 컬럼 분리 구조 → localStorage 형식 {userId: {...}} 로 변환
           disData = {};
@@ -452,23 +464,33 @@ function _svToSupabase() {
             onConflict: 'id'
           });
         case 4:
-          // records upsert
+          // records upsert - 새 컬럼 구조 (근무일자/활동시간/활동내용 분리)
           recEntries = Object.entries(d.records || {});
           if (!recEntries.length) {
             _context3.n = 5;
             break;
           }
           _context3.n = 5;
-          return _supa.from('sf_records').upsert(recEntries.map(function (_ref77) {
-            var _ref78 = _slicedToArray(_ref77, 2),
-              key = _ref78[0],
-              val = _ref78[1];
-            return {
-              record_key: key,
-              data: val
-            };
-          }), {
-            onConflict: 'record_key'
+          var recRows = [];
+          recEntries.forEach(function(_ref77) {
+            var _ref78 = _slicedToArray(_ref77, 2), key = _ref78[0], val = _ref78[1];
+            var parts = key.split('_');
+            var uid = parts[0], yr = parseInt(parts[1]), mo = parseInt(parts[2]);
+            var rows = (val && val.rows) || [];
+            rows.forEach(function(row, idx) {
+              if (row && (row.date || row.time || row.activity)) {
+                recRows.push({
+                  record_key: key, user_id: uid, year: yr, month: mo,
+                  row_index: idx, work_date: row.date||'',
+                  work_time: row.time||'', activity: row.activity||'',
+                  sent: val.sent||false
+                });
+              }
+            });
+          });
+          if (!recRows.length) { _context3.n = 5; break; }
+          return _supa.from('sf_records').upsert(recRows, {
+            onConflict: 'record_key,row_index'
           });
         case 5:
           _context3.n = 7;
@@ -1158,17 +1180,17 @@ function LoginScreen(_ref2) {
             currentUser: u
           });
         });
-        // 로그인 성공 시 특수 localStorage 완전 삭제 (Supabase 데이터가 권위)
-        // 삭제 후 ldFromSupabase가 다시 올바른 데이터로 채움
+        // 로그인 성공 시 모든 특수 localStorage 완전 삭제
+        // ldFromSupabase가 Supabase 기준으로 다시 채워줌
         try{localStorage.removeItem('seedfarm_sh_v1');}catch{}
         try{localStorage.removeItem('seedfarm_dis_v1');}catch{}
         try{localStorage.removeItem('seedfarm_sl_v1');}catch{}
         try{localStorage.removeItem('seedfarm_disaster_v1');}catch{}
         try{localStorage.removeItem('seedfarm_sow_v1');}catch{}
         try{localStorage.removeItem('seedfarm_hav_v1');}catch{}
-        // extra_varieties도 Supabase 기준으로 재설정
+        try{localStorage.removeItem('seedfarm_v8');}catch{}
         try{
-          Object.keys(localStorage).forEach(k=>{
+          Object.keys(localStorage).forEach(function(k){
             if(k.startsWith('extra_varieties_')) localStorage.removeItem(k);
           });
         }catch{}
@@ -6860,13 +6882,12 @@ function DisinfectionTab(_ref52) {
     setSaved(false);
   };
   var saveNow = function saveNow(next) {
+    // localStorage에만 저장 (사진 추가/삭제 시 Supabase 자동 재업로드 방지)
     try {
       var d = JSON.parse(localStorage.getItem(SK_DIS) || "{}");
       d[userId] = next;
       localStorage.setItem(SK_DIS, JSON.stringify(d));
     } catch (_unused0) {}
-    ;
-    svSpecialToSupabase('sf_disinfection', userId, next).catch(function () {});
   };
   var addPhotos = function addPhotos(e) {
     var files = Array.from(e.target.files);
@@ -11364,17 +11385,14 @@ function App() {
       noticeOpen: false,
       disasterOpen: false
     });
-    setScreen("app");
-    setTab("home");
-    // 로그인 후 Supabase 최신 데이터로 localStorage 완전 재동기화
-    ldFromSupabase().then(function(freshData) {
-      if (!freshData) return;
-      // 모든 특수 데이터 localStorage 재설정
-      try { localStorage.setItem('seedfarm_dis_v1', JSON.stringify({})); } catch(e) {}
-      try { localStorage.setItem('seedfarm_sl_v1', JSON.stringify({})); } catch(e) {}
-      try { localStorage.setItem('seedfarm_sh_v1', JSON.stringify({sowingData:{},harvestData:{}})); } catch(e) {}
-      try { localStorage.setItem('seedfarm_disaster_v1', JSON.stringify({})); } catch(e) {}
-    }).catch(function(){});
+    // 로그인 후 Supabase 최신 데이터로 localStorage 완전 재동기화 후 화면 전환
+    ldFromSupabase().then(function(){
+      setScreen("app");
+      setTab("home");
+    }).catch(function(){
+      setScreen("app");
+      setTab("home");
+    });
   };
   var onLogout = function onLogout() {
     localStorage.removeItem("stay_login");
