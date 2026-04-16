@@ -312,22 +312,12 @@ function _ldFromSupabase() {
           (evRes.data || []).forEach(function (r) {
             evData[r.user_id] = r.varieties;
           });
-          // localStorage에도 동기화 (오프라인 지원)
-          if (disData && Object.keys(disData).length) try {
-            localStorage.setItem('seedfarm_dis_v1', JSON.stringify(disData));
-          } catch (_unused25) {}
-          if (slData && Object.keys(slData).length) try {
-            localStorage.setItem('seedfarm_sl_v1', JSON.stringify(slData));
-          } catch (_unused26) {}
-          if (sowData && Object.keys(sowData).length) try {
-            localStorage.setItem('seedfarm_sow_v1', JSON.stringify(sowData));
-          } catch (_unused27) {}
-          if (havData && Object.keys(havData).length) try {
-            localStorage.setItem('seedfarm_hav_v1', JSON.stringify(havData));
-          } catch (_unused28) {}
-          if (disaData && Object.keys(disaData).length) try {
-            localStorage.setItem('seedfarm_disaster_v1', JSON.stringify(disaData));
-          } catch (_unused29) {}
+          // localStorage를 Supabase 기준으로 완전히 덮어쓰기 (삭제된 데이터 부활 방지)
+          try { localStorage.setItem('seedfarm_dis_v1', JSON.stringify(disData)); } catch (_unused25) {}
+          try { localStorage.setItem('seedfarm_sl_v1', JSON.stringify(slData)); } catch (_unused26) {}
+          try { localStorage.setItem('seedfarm_sow_v1', JSON.stringify(sowData)); } catch (_unused27) {}
+          try { localStorage.setItem('seedfarm_hav_v1', JSON.stringify(havData)); } catch (_unused28) {}
+          try { localStorage.setItem('seedfarm_disaster_v1', JSON.stringify(disaData)); } catch (_unused29) {}
           if (evData && Object.keys(evData).length) {
             Object.entries(evData).forEach(function (_ref75) {
               var _ref76 = _slicedToArray(_ref75, 2),
@@ -338,6 +328,22 @@ function _ldFromSupabase() {
               } catch (_unused30) {}
             });
           }
+          // Supabase에 없는 extra_varieties 키 localStorage에서 제거
+          try {
+            var evKeys = Object.keys(evData || {});
+            Object.keys(localStorage).forEach(function(k) {
+              if (k.startsWith('extra_varieties_') && !evKeys.includes(k.replace('extra_varieties_',''))) {
+                localStorage.removeItem(k);
+              }
+            });
+          } catch(_unused32) {}
+          // seedfarm_sh_v1도 Supabase 기준으로 덮어쓰기 (파종/수확 부활 방지)
+          try {
+            var shDbSync = JSON.parse(localStorage.getItem('seedfarm_sh_v1') || '{}');
+            shDbSync.sowingData = sowData || {};
+            shDbSync.harvestData = havData || {};
+            localStorage.setItem('seedfarm_sh_v1', JSON.stringify(shDbSync));
+          } catch(_unused33) {}
           result = {
             users: (uRes.data || []).map(function (u) {
               return {
