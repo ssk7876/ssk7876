@@ -1158,11 +1158,20 @@ function LoginScreen(_ref2) {
             currentUser: u
           });
         });
-        // 로그인 성공 시 특수 localStorage 완전 초기화 (Supabase 데이터가 권위)
-        try{localStorage.setItem('seedfarm_sh_v1',JSON.stringify({sowingData:{},harvestData:{}}));}catch{}
-        try{localStorage.setItem('seedfarm_dis_v1',JSON.stringify({}));}catch{}
-        try{localStorage.setItem('seedfarm_sl_v1',JSON.stringify({}));}catch{}
-        try{localStorage.setItem('seedfarm_disaster_v1',JSON.stringify({}));}catch{}
+        // 로그인 성공 시 특수 localStorage 완전 삭제 (Supabase 데이터가 권위)
+        // 삭제 후 ldFromSupabase가 다시 올바른 데이터로 채움
+        try{localStorage.removeItem('seedfarm_sh_v1');}catch{}
+        try{localStorage.removeItem('seedfarm_dis_v1');}catch{}
+        try{localStorage.removeItem('seedfarm_sl_v1');}catch{}
+        try{localStorage.removeItem('seedfarm_disaster_v1');}catch{}
+        try{localStorage.removeItem('seedfarm_sow_v1');}catch{}
+        try{localStorage.removeItem('seedfarm_hav_v1');}catch{}
+        // extra_varieties도 Supabase 기준으로 재설정
+        try{
+          Object.keys(localStorage).forEach(k=>{
+            if(k.startsWith('extra_varieties_')) localStorage.removeItem(k);
+          });
+        }catch{}
         onLogin();
       } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
     }).catch(function () {
@@ -11357,6 +11366,15 @@ function App() {
     });
     setScreen("app");
     setTab("home");
+    // 로그인 후 Supabase 최신 데이터로 localStorage 완전 재동기화
+    ldFromSupabase().then(function(freshData) {
+      if (!freshData) return;
+      // 모든 특수 데이터 localStorage 재설정
+      try { localStorage.setItem('seedfarm_dis_v1', JSON.stringify({})); } catch(e) {}
+      try { localStorage.setItem('seedfarm_sl_v1', JSON.stringify({})); } catch(e) {}
+      try { localStorage.setItem('seedfarm_sh_v1', JSON.stringify({sowingData:{},harvestData:{}})); } catch(e) {}
+      try { localStorage.setItem('seedfarm_disaster_v1', JSON.stringify({})); } catch(e) {}
+    }).catch(function(){});
   };
   var onLogout = function onLogout() {
     localStorage.removeItem("stay_login");
@@ -11617,12 +11635,7 @@ function openShModal(type, user) {
     let saved = [];
     if (userSowing) {
       if (Array.isArray(userSowing)) {
-        // 이전 구조: 배열 → 첫 카드 연도로 마이그레이션
-        const yr = userSowing[0]?.prodYear || curYear;
-        const db2 = db;
-        if (!db2.sowingData) db2.sowingData = {};
-        db2.sowingData[key] = { [yr]: userSowing };
-        shSave(db2);
+        // 이전 구조: 배열 → 표시만 하고 Supabase 재업로드 안 함
         saved = userSowing;
       } else {
         saved = userSowing[curYear] || [];
