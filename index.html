@@ -350,11 +350,15 @@ function _ldFromSupabase() {
               }
             });
           } catch(_unused32) {}
-          // seedfarm_sh_v1도 Supabase 기준으로 덮어쓰기 (파종/수확 부활 방지)
+          // seedfarm_sh_v1 Supabase 데이터 반영
+          // 단, 기존 localStorage 데이터 구조는 유지하고 Supabase 데이터로 채움
           try {
             var shDbSync = JSON.parse(localStorage.getItem('seedfarm_sh_v1') || '{}');
-            shDbSync.sowingData = sowData || {};
-            shDbSync.harvestData = havData || {};
+            if (!shDbSync.sowingData) shDbSync.sowingData = {};
+            if (!shDbSync.harvestData) shDbSync.harvestData = {};
+            // Supabase에 있는 유저 데이터만 업데이트 (없는 건 localStorage 유지)
+            Object.entries(sowData || {}).forEach(function(e) { shDbSync.sowingData[e[0]] = e[1]; });
+            Object.entries(havData || {}).forEach(function(e) { shDbSync.harvestData[e[0]] = e[1]; });
             localStorage.setItem('seedfarm_sh_v1', JSON.stringify(shDbSync));
           } catch(_unused33) {}
           result = {
@@ -6873,12 +6877,13 @@ function DisinfectionTab(_ref52) {
     setSaved(false);
   };
   var saveNow = function saveNow(next) {
-    // localStorage에만 저장 (사진 추가/삭제 시 Supabase 자동 재업로드 방지)
+    // localStorage + Supabase 모두 저장 (사진 포함)
     try {
       var d = JSON.parse(localStorage.getItem(SK_DIS) || "{}");
       d[userId] = next;
       localStorage.setItem(SK_DIS, JSON.stringify(d));
     } catch (_unused0) {}
+    svSpecialToSupabase('sf_disinfection', userId, next).catch(function(){});
   };
   var addPhotos = function addPhotos(e) {
     var files = Array.from(e.target.files);
@@ -11643,66 +11648,31 @@ function openShModal(type, user) {
   const modal = document.getElementById('shModal');
   modal.style.display = 'flex';
   const key = user?.id || 'unknown';
-  shSyncFromSupabase().then(db => {
-    if (type === 'sowing') {
-      document.getElementById('shModalTitle').textContent = '🌱 파종현황';
-      document.getElementById('sowingCards').style.display = 'block';
-      document.getElementById('sowingBtns').style.display = 'block';
-      document.getElementById('harvestCards').style.display = 'none';
-      document.getElementById('harvestBtns').style.display = 'none';
-      const curYear = Math.max(new Date().getFullYear(), 2026);
-      const userSowing = db.sowingData?.[key];
-      let saved = [];
-      if (userSowing) {
-        if (Array.isArray(userSowing)) {
-          saved = userSowing;
-        } else {
-          saved = userSowing[curYear] || [];
-        }
-      }
-      renderSowingCards(saved.length ? saved : [{}], user);
-    } else {
-      document.getElementById('shModalTitle').textContent = '🌾 수확현황';
-      document.getElementById('harvestCards').style.display = 'block';
-      document.getElementById('harvestBtns').style.display = 'block';
-      document.getElementById('sowingCards').style.display = 'none';
-      document.getElementById('sowingBtns').style.display = 'none';
-      const curYear = Math.max(new Date().getFullYear(), 2026);
-      const userHarvest = db.harvestData?.[key];
-      let havSaved;
-      if (!userHarvest) {
-        havSaved = [];
-      } else if (Array.isArray(userHarvest)) {
-        havSaved = userHarvest;
-      } else {
-        havSaved = userHarvest[curYear] || [];
-      }
-      renderHarvestCards(havSaved.length ? havSaved : [{}], user);
+  const db = shLoad();
+  const curYear = Math.max(new Date().getFullYear(), 2026);
+  if (type === 'sowing') {
+    document.getElementById('shModalTitle').textContent = '🌱 파종현황';
+    document.getElementById('sowingCards').style.display = 'block';
+    document.getElementById('sowingBtns').style.display = 'block';
+    document.getElementById('harvestCards').style.display = 'none';
+    document.getElementById('harvestBtns').style.display = 'none';
+    const userSowing = db.sowingData?.[key];
+    let saved = [];
+    if (userSowing) {
+      if (Array.isArray(userSowing)) { saved = userSowing; }
+      else { saved = userSowing[curYear] || []; }
     }
-  }).catch(() => {
-    // Supabase 실패 시 localStorage로 폴백
-    const db = shLoad();
-    const curYear = Math.max(new Date().getFullYear(), 2026);
-    if (type === 'sowing') {
-      document.getElementById('shModalTitle').textContent = '🌱 파종현황';
-      document.getElementById('sowingCards').style.display = 'block';
-      document.getElementById('sowingBtns').style.display = 'block';
-      document.getElementById('harvestCards').style.display = 'none';
-      document.getElementById('harvestBtns').style.display = 'none';
-      const userSowing = db.sowingData?.[key];
-      let saved = Array.isArray(userSowing) ? userSowing : (userSowing?.[curYear] || []);
-      renderSowingCards(saved.length ? saved : [{}], user);
-    } else {
-      document.getElementById('shModalTitle').textContent = '🌾 수확현황';
-      document.getElementById('harvestCards').style.display = 'block';
-      document.getElementById('harvestBtns').style.display = 'block';
-      document.getElementById('sowingCards').style.display = 'none';
-      document.getElementById('sowingBtns').style.display = 'none';
-      const userHarvest = db.harvestData?.[key];
-      let havSaved = Array.isArray(userHarvest) ? userHarvest : (userHarvest?.[curYear] || []);
-      renderHarvestCards(havSaved.length ? havSaved : [{}], user);
-    }
-  });
+    renderSowingCards(saved.length ? saved : [{}], user);
+  } else {
+    document.getElementById('shModalTitle').textContent = '🌾 수확현황';
+    document.getElementById('harvestCards').style.display = 'block';
+    document.getElementById('harvestBtns').style.display = 'block';
+    document.getElementById('sowingCards').style.display = 'none';
+    document.getElementById('sowingBtns').style.display = 'none';
+    const userHarvest = db.harvestData?.[key];
+    let havSaved = !userHarvest ? [] : Array.isArray(userHarvest) ? userHarvest : (userHarvest[curYear] || []);
+    renderHarvestCards(havSaved.length ? havSaved : [{}], user);
+  }
 }
 function closeShModal() {
   document.getElementById('shModal').style.display = 'none';
