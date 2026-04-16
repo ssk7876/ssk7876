@@ -324,7 +324,8 @@ function _ldFromSupabase() {
           (evRes.data || []).forEach(function (r) {
             evData[r.user_id] = r.varieties;
           });
-          // localStorage를 Supabase 기준으로 완전히 덮어쓰기 (삭제된 데이터 부활 방지)
+          // Supabase 데이터로 localStorage 업데이트
+          // 단, 데이터가 있는 경우만 덮어씀 (없으면 localStorage 기존값 유지)
           try { localStorage.setItem('seedfarm_dis_v1', JSON.stringify(disData)); } catch (_unused25) {}
           try { localStorage.setItem('seedfarm_sl_v1', JSON.stringify(slData)); } catch (_unused26) {}
           try { localStorage.setItem('seedfarm_sow_v1', JSON.stringify(sowData)); } catch (_unused27) {}
@@ -1180,20 +1181,6 @@ function LoginScreen(_ref2) {
             currentUser: u
           });
         });
-        // 로그인 성공 시 모든 특수 localStorage 완전 삭제
-        // ldFromSupabase가 Supabase 기준으로 다시 채워줌
-        try{localStorage.removeItem('seedfarm_sh_v1');}catch{}
-        try{localStorage.removeItem('seedfarm_dis_v1');}catch{}
-        try{localStorage.removeItem('seedfarm_sl_v1');}catch{}
-        try{localStorage.removeItem('seedfarm_disaster_v1');}catch{}
-        try{localStorage.removeItem('seedfarm_sow_v1');}catch{}
-        try{localStorage.removeItem('seedfarm_hav_v1');}catch{}
-        try{localStorage.removeItem('seedfarm_v8');}catch{}
-        try{
-          Object.keys(localStorage).forEach(function(k){
-            if(k.startsWith('extra_varieties_')) localStorage.removeItem(k);
-          });
-        }catch{}
         onLogin();
       } else setErr("아이디 또는 비밀번호가 올바르지 않습니다.");
     }).catch(function () {
@@ -6833,6 +6820,7 @@ function DsFR(_ref51) {
 function DisinfectionTab(_ref52) {
   var userId = _ref52.userId;
   var SK_DIS = "seedfarm_dis_v1";
+  var blankDIS = {hotDate:{start:"",end:""},hotTemp:"60",hotCompliance:"",cleanState:"",soakDate:{start:"",end:""},extraDrugUse:"",insecticide:"사용안함",fungicide:"",drugTemp:"30",otherNote:"",hotPhotos:[],photos:[]};
   var load = function load() {
     try {
       var d = JSON.parse(localStorage.getItem(SK_DIS) || "{}");
@@ -6841,26 +6829,7 @@ function DisinfectionTab(_ref52) {
       return {};
     }
   };
-  var _useState127 = useState(_objectSpread({
-      hotDate: {
-        start: "",
-        end: ""
-      },
-      hotTemp: "60",
-      hotCompliance: "",
-      cleanState: "",
-      soakDate: {
-        start: "",
-        end: ""
-      },
-      extraDrugUse: "",
-      insecticide: "사용안함",
-      fungicide: "",
-      drugTemp: "30",
-      otherNote: "",
-      hotPhotos: [],
-      photos: []
-    }, load())),
+  var _useState127 = useState(_objectSpread(_objectSpread({}, blankDIS), load())),
     _useState128 = _slicedToArray(_useState127, 2),
     form = _useState128[0],
     setForm = _useState128[1];
@@ -6868,6 +6837,29 @@ function DisinfectionTab(_ref52) {
     _useState130 = _slicedToArray(_useState129, 2),
     saved = _useState130[0],
     setSaved = _useState130[1];
+
+  // Supabase에서 최신 데이터 불러와 form 갱신 (로그인 후 데이터 반영)
+  useEffect(function() {
+    _supa.from('sf_disinfection').select('*').eq('user_key', userId).single()
+      .then(function(res) {
+        if (res.data) {
+          var r = res.data;
+          setForm(function(f) { return _objectSpread(_objectSpread({}, f), {
+            hotDate:{start:r.hot_date_start||'',end:r.hot_date_end||''},
+            hotTemp:r.hot_temp||'60', hotCompliance:r.hot_compliance||'',
+            cleanState:r.clean_state||'',
+            soakDate:{start:r.soak_date_start||'',end:r.soak_date_end||''},
+            extraDrugUse:r.extra_drug_use||'', insecticide:r.insecticide||'사용안함',
+            fungicide:r.fungicide||'', drugTemp:r.drug_temp||'30',
+            otherNote:r.other_note||'',
+            hotPhotos:r.hot_photos||[], photos:r.photos||[],
+          }); });
+          // localStorage도 갱신
+          try { var d=JSON.parse(localStorage.getItem('seedfarm_dis_v1')||'{}'); d[userId]=res.data; localStorage.setItem('seedfarm_dis_v1',JSON.stringify(d)); } catch(e){}
+        }
+      }).catch(function(){});
+  }, [userId]);
+
   var set = function set(k, v) {
     setForm(function (f) {
       var next = _objectSpread(_objectSpread({}, f), {}, _defineProperty({}, k, v));
@@ -7448,26 +7440,8 @@ function SeedlingTab(_ref53) {
       return {};
     }
   };
-  var _useState131 = useState(_objectSpread({
-      sowDate: {
-        start: "",
-        end: ""
-      },
-      bedPeriod: {
-        start: "",
-        end: ""
-      },
-      height: "",
-      emerge: "",
-      trays: "",
-      rootMat: "",
-      fusa: "",
-      fusaSub: "",
-      fusaCount: "",
-      sep: "",
-      note: "",
-      photos: []
-    }, load())),
+  var blankSL = {sowDate:{start:"",end:""},bedPeriod:{start:"",end:""},height:"",emerge:"",trays:"",rootMat:"",fusa:"",fusaSub:"",fusaCount:"",sep:"",note:"",photos:[]};
+  var _useState131 = useState(_objectSpread(_objectSpread({}, blankSL), load())),
     _useState132 = _slicedToArray(_useState131, 2),
     form = _useState132[0],
     setForm = _useState132[1];
@@ -7475,6 +7449,26 @@ function SeedlingTab(_ref53) {
     _useState134 = _slicedToArray(_useState133, 2),
     saved = _useState134[0],
     setSaved = _useState134[1];
+
+  // Supabase에서 최신 데이터 불러와 form 갱신
+  useEffect(function() {
+    _supa.from('sf_seedling').select('*').eq('user_key', userId).single()
+      .then(function(res) {
+        if (res.data) {
+          var r = res.data;
+          setForm(function(f) { return _objectSpread(_objectSpread({}, f), {
+            sowDate:{start:r.sow_date_start||'',end:r.sow_date_end||''},
+            bedPeriod:{start:r.bed_period_start||'',end:r.bed_period_end||''},
+            height:r.height||'', emerge:r.emerge||'', trays:r.trays||'',
+            rootMat:r.root_mat||'', fusa:r.fusa||'', fusaSub:r.fusa_sub||'',
+            fusaCount:r.fusa_count||'', sep:r.sep||'', note:r.note||'',
+            photos:r.photos||[],
+          }); });
+          try { var d=JSON.parse(localStorage.getItem('seedfarm_sl_v1')||'{}'); d[userId]=res.data; localStorage.setItem('seedfarm_sl_v1',JSON.stringify(d)); } catch(e){}
+        }
+      }).catch(function(){});
+  }, [userId]);
+
   var set = function set(k, v) {
     return setForm(function (f) {
       return _objectSpread(_objectSpread({}, f), {}, _defineProperty({}, k, v));
@@ -11638,49 +11632,67 @@ function openShModal(type, user) {
   _shUser = user;
   const modal = document.getElementById('shModal');
   modal.style.display = 'flex';
-
   const key = user?.id || 'unknown';
   shSyncFromSupabase().then(db => {
-  if (type === 'sowing') {
-    document.getElementById('shModalTitle').textContent = '🌱 파종현황';
-    document.getElementById('sowingCards').style.display = 'block';
-    document.getElementById('sowingBtns').style.display = 'block';
-    document.getElementById('harvestCards').style.display = 'none';
-    document.getElementById('harvestBtns').style.display = 'none';
-    const curYear = Math.max(new Date().getFullYear(), 2026);
-    const userSowing = db.sowingData?.[key];
-    // 연도별 구조 지원 (객체) 및 이전 배열 구조 호환
-    let saved = [];
-    if (userSowing) {
-      if (Array.isArray(userSowing)) {
-        // 이전 구조: 배열 → 표시만 하고 Supabase 재업로드 안 함
-        saved = userSowing;
-      } else {
-        saved = userSowing[curYear] || [];
+    if (type === 'sowing') {
+      document.getElementById('shModalTitle').textContent = '🌱 파종현황';
+      document.getElementById('sowingCards').style.display = 'block';
+      document.getElementById('sowingBtns').style.display = 'block';
+      document.getElementById('harvestCards').style.display = 'none';
+      document.getElementById('harvestBtns').style.display = 'none';
+      const curYear = Math.max(new Date().getFullYear(), 2026);
+      const userSowing = db.sowingData?.[key];
+      let saved = [];
+      if (userSowing) {
+        if (Array.isArray(userSowing)) {
+          saved = userSowing;
+        } else {
+          saved = userSowing[curYear] || [];
+        }
       }
-    }
-    renderSowingCards(saved.length ? saved : [{}], user);
-  } else {
-    document.getElementById('shModalTitle').textContent = '🌾 수확현황';
-    document.getElementById('harvestCards').style.display = 'block';
-    document.getElementById('harvestBtns').style.display = 'block';
-    document.getElementById('sowingCards').style.display = 'none';
-    document.getElementById('sowingBtns').style.display = 'none';
-    const curYear = Math.max(new Date().getFullYear(), 2026);
-    const userHarvest = db.harvestData?.[key];
-    let havSaved;
-    if (!userHarvest) {
-      havSaved = [];
-    } else if (Array.isArray(userHarvest)) {
-      havSaved = userHarvest;
+      renderSowingCards(saved.length ? saved : [{}], user);
     } else {
-      havSaved = userHarvest[curYear] || [];
+      document.getElementById('shModalTitle').textContent = '🌾 수확현황';
+      document.getElementById('harvestCards').style.display = 'block';
+      document.getElementById('harvestBtns').style.display = 'block';
+      document.getElementById('sowingCards').style.display = 'none';
+      document.getElementById('sowingBtns').style.display = 'none';
+      const curYear = Math.max(new Date().getFullYear(), 2026);
+      const userHarvest = db.harvestData?.[key];
+      let havSaved;
+      if (!userHarvest) {
+        havSaved = [];
+      } else if (Array.isArray(userHarvest)) {
+        havSaved = userHarvest;
+      } else {
+        havSaved = userHarvest[curYear] || [];
+      }
+      renderHarvestCards(havSaved.length ? havSaved : [{}], user);
     }
-    renderHarvestCards(havSaved.length ? havSaved : [{}], user);
-  }
-}
-
-  }); // shSyncFromSupabase end
+  }).catch(() => {
+    // Supabase 실패 시 localStorage로 폴백
+    const db = shLoad();
+    const curYear = Math.max(new Date().getFullYear(), 2026);
+    if (type === 'sowing') {
+      document.getElementById('shModalTitle').textContent = '🌱 파종현황';
+      document.getElementById('sowingCards').style.display = 'block';
+      document.getElementById('sowingBtns').style.display = 'block';
+      document.getElementById('harvestCards').style.display = 'none';
+      document.getElementById('harvestBtns').style.display = 'none';
+      const userSowing = db.sowingData?.[key];
+      let saved = Array.isArray(userSowing) ? userSowing : (userSowing?.[curYear] || []);
+      renderSowingCards(saved.length ? saved : [{}], user);
+    } else {
+      document.getElementById('shModalTitle').textContent = '🌾 수확현황';
+      document.getElementById('harvestCards').style.display = 'block';
+      document.getElementById('harvestBtns').style.display = 'block';
+      document.getElementById('sowingCards').style.display = 'none';
+      document.getElementById('sowingBtns').style.display = 'none';
+      const userHarvest = db.harvestData?.[key];
+      let havSaved = Array.isArray(userHarvest) ? userHarvest : (userHarvest?.[curYear] || []);
+      renderHarvestCards(havSaved.length ? havSaved : [{}], user);
+    }
+  });
 }
 function closeShModal() {
   document.getElementById('shModal').style.display = 'none';
