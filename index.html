@@ -6815,8 +6815,22 @@ function DsFR(_ref51) {
     className: "ds-field-row"
   }, /*#__PURE__*/React.createElement("label", null, label), children);
 }
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {display:"flex",gap:10,marginTop:16,padding:"0 0 8px"}
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: doSave,
+    style: {
+      flex:1,background:saved?"#15803d":"#16a34a",
+      color:"white",border:"none",borderRadius:12,
+      padding:"14px",fontSize:15,fontWeight:700,
+      cursor:"pointer",fontFamily:"inherit",
+      boxShadow:"0 4px 12px rgba(22,163,74,.3)"
+    }
+  }, saved?"✅ 저장됨":"💾 저장")));
+}
 
-/* 침종(소독) 탭 */
+
+/
 function DisinfectionTab(_ref52) {
   var userId = _ref52.userId;
   var SK_DIS = "seedfarm_dis_v1";
@@ -7423,7 +7437,18 @@ function DisinfectionTab(_ref52) {
     style: {
       display: "none"
     }
-  })))));
+  })))), /*#__PURE__*/React.createElement("div", {
+    style: {display:"flex",gap:10,marginTop:16}
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: doSave,
+    style: {
+      flex:1,background:saved?"#15803d":"#16a34a",
+      color:"white",border:"none",borderRadius:12,
+      padding:"14px",fontSize:15,fontWeight:700,
+      cursor:"pointer",fontFamily:"inherit",
+      boxShadow:"0 4px 12px rgba(22,163,74,.3)"
+    }
+  }, saved?"✅ 저장됨":"💾 저장")));
 }
 
 /* 육묘 탭 */
