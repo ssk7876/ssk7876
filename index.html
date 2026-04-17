@@ -11397,14 +11397,11 @@ function App() {
       noticeOpen: false,
       disasterOpen: false
     });
-    // 로그인 후 Supabase 최신 데이터로 localStorage 완전 재동기화 후 화면 전환
-    ldFromSupabase().then(function(){
-      setScreen("app");
-      setTab("home");
-    }).catch(function(){
-      setScreen("app");
-      setTab("home");
-    });
+    // 화면 즉시 전환 (로그인 응답성 개선)
+    setScreen("app");
+    setTab("home");
+    // Supabase 동기화는 백그라운드에서 처리
+    ldFromSupabase().catch(function(){});
   };
   var onLogout = function onLogout() {
     localStorage.removeItem("stay_login");
