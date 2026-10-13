@@ -643,16 +643,15 @@ function FertilizerScreen(e){
   var rowsState=_slicedToArray(useState(function(){
     try{
       var saved=JSON.parse(localStorage.getItem(FT_KEY)||"{}")[cu.id+"_"+selYear]||{};
-      return farms.map(function(f,i){
-        var row=saved[i]||{};
-        return {
-          bd:row.bd||"", bq:row.bq||"", bn:row.bn||"",
-          td1:row.td1!==undefined?row.td1:(row.ed||""),
-          tq1:row.tq1!==undefined?row.tq1:(row.eq||""),
-          tn1:row.tn1!==undefined?row.tn1:(row.en||""),
-          td2:row.td2||"", tq2:row.tq2||"", tn2:row.tn2||""
-        };
-      });
+      return (function(){
+        var eRF={bd:"",bq:"",bn:"",ed:"",eq:"",en:""};
+        var ksF=Object.keys(saved).filter(function(k){return !isNaN(k);});
+        var lnF=Math.max(farms.length,ksF.length,1);
+        return Array.from({length:lnF},function(_,i){
+          var row=saved[i]||{};
+          return {bd:row.bd||"",bq:row.bq||"",bn:row.bn||"",ed:row.ed||"",eq:row.eq||"",en:row.en||""};
+        });
+      })();
     }catch(x){
       return farms.map(function(){
         return {bd:"",bq:"",bn:"",td1:"",tq1:"",tn1:"",td2:"",tq2:"",tn2:""};
@@ -688,7 +687,13 @@ function FertilizerScreen(e){
   useEffect(function(){
     try{
       var saved=JSON.parse(localStorage.getItem(FT_KEY)||"{}")[cu.id+"_"+selYear]||{};
-      setRows(farms.map(function(f,i){return saved[i]||{bd:"",bq:"",bn:"",ed:"",eq:"",en:""};}));
+      var eRF2={bd:"",bq:"",bn:"",ed:"",eq:"",en:""};
+      var ksF2=Object.keys(saved).filter(function(k){return !isNaN(k);});
+      var lnF2=Math.max(farms.length,ksF2.length,1);
+      setRows(Array.from({length:lnF2},function(_,i){
+        var row=saved[i]||{};
+        return {bd:row.bd||"",bq:row.bq||"",bn:row.bn||"",ed:row.ed||"",eq:row.eq||"",en:row.en||""};
+      }));
     }catch(x){}
   },[selYear]);
 
@@ -958,9 +963,12 @@ function PestLogScreen(e){
   var rowsState=_slicedToArray(useState(function(){
     try{
       var saved=JSON.parse(localStorage.getItem(PL_KEY)||"{}")[cu.id+"_"+selYear]||{};
-      return farms.map(function(f,i){return saved[i]||{d1:"",a1:"",d2:"",a2:"",d3:"",a3:""};});
+      var eR={d1:"",a1:"",d2:"",a2:"",d3:"",a3:""};
+      var ks2=Object.keys(saved).filter(function(k){return !isNaN(k);});
+      var ln2=Math.max(farms.length,ks2.length,1);
+      return Array.from({length:ln2},function(_,i){return _objectSpread(_objectSpread({},eR),saved[i]||{});});
     }catch(x){
-      return farms.map(function(){return{d1:"",a1:"",d2:"",a2:"",d3:"",a3:""};});
+      return [{d1:"",a1:"",d2:"",a2:"",d3:"",a3:""}];
     }
   }),2);
   var rows=rowsState[0],setRows=rowsState[1];
@@ -977,7 +985,10 @@ function PestLogScreen(e){
   useEffect(function(){
     try{
       var saved=JSON.parse(localStorage.getItem(PL_KEY)||"{}")[cu.id+"_"+selYear]||{};
-      setRows(farms.map(function(f,i){return saved[i]||{d1:"",a1:"",d2:"",a2:"",d3:"",a3:""};}));
+      var eR2={d1:"",a1:"",d2:"",a2:"",d3:"",a3:""};
+      var ks3=Object.keys(saved).filter(function(k){return !isNaN(k);});
+      var ln3=Math.max(farms.length,ks3.length,1);
+      setRows(Array.from({length:ln3},function(_,i){return _objectSpread(_objectSpread({},eR2),saved[i]||{});}));
     }catch(x){}
   },[selYear]);
 
@@ -1059,13 +1070,16 @@ function PestLogScreen(e){
   var rowsState = _slicedToArray(useState(function(){
     try {
       var saved = JSON.parse(localStorage.getItem(JN_KEY) || "{}")[cu.id+"_"+selYear] || {};
-      return farms.map(function(f, i){
-        return saved[i] || { sowStart: "", sowEnd: "", transplantStart: "", transplantEnd: "", harvestStart: "", harvestEnd: "" };
+      var emptyRow={sowStart:"",sowEnd:"",transplantStart:"",transplantEnd:"",harvestStart:"",harvestEnd:""};
+      var keys=Object.keys(saved).filter(function(k){return !isNaN(k);});
+      var len=Math.max(farms.length,keys.length,1);
+      return Array.from({length:len},function(_,i){
+        var farm=farms[i]||{};
+        var row=saved[i]||emptyRow;
+        return _objectSpread(_objectSpread({},emptyRow),row);
       });
     } catch(x) {
-      return farms.map(function(){
-        return { sowStart: "", sowEnd: "", transplantStart: "", transplantEnd: "", harvestStart: "", harvestEnd: "" };
-      });
+      return [{ sowStart:"",sowEnd:"",transplantStart:"",transplantEnd:"",harvestStart:"",harvestEnd:"" }];
     }
   }), 2);
   var rows = rowsState[0], setRows = rowsState[1];
@@ -1082,7 +1096,10 @@ function PestLogScreen(e){
   useEffect(function(){
     try{
       var saved=JSON.parse(localStorage.getItem(JN_KEY)||"{}")[cu.id+"_"+selYear]||{};
-      setRows(farms.map(function(f,i){return saved[i]||{sowStart:"",sowEnd:"",transplantStart:"",transplantEnd:"",harvestStart:"",harvestEnd:""};}));
+      var emptyR={sowStart:"",sowEnd:"",transplantStart:"",transplantEnd:"",harvestStart:"",harvestEnd:""};
+      var ks=Object.keys(saved).filter(function(k){return !isNaN(k);});
+      var ln=Math.max(farms.length,ks.length,1);
+      setRows(Array.from({length:ln},function(_,i){return _objectSpread(_objectSpread({},emptyR),saved[i]||{});  }));
     }catch(x){}
   },[selYear]);
 
@@ -1190,11 +1207,11 @@ function PestLogScreen(e){
 
   function downloadFert(user){
     var rows=getUserFert(user.id);
-    var headers=["농가명","면적(a)","밑거름 시비일","밑거름 시비량(kg)","밑거름 비료명","이삭거름 시비일","이삭거름 시비량(kg)","이삭거름 비료명"];
+    var headers=["농가명","면적(a)","밑거름 시비일","밑거름 시비량(포)","밑거름 비료명","덧거름(1차) 시비일","덧거름(1차) 시비량(포)","덧거름(1차) 비료명","덧거름(2차) 시비일","덧거름(2차) 시비량(포)","덧거름(2차) 비료명"];
     var tbl="<table border='1' style='border-collapse:collapse;'>";
     tbl+="<tr>"+headers.map(function(h){return"<th style='padding:6px 10px;background:#92400e;color:white;'>"+h+"</th>";}).join("")+"</tr>";
     rows.forEach(function(r){
-      var cells=[r.farmName,r.area||"—",r.bd||"",r.bq||"",r.bn||"",r.ed||"",r.eq||"",r.en||""];
+      var cells=[r.farmName,r.area||"—",r.bd||"",r.bq||"",r.bn||"",r.td1||"",r.tq1||"",r.tn1||"",r.td2||"",r.tq2||"",r.tn2||""];
       tbl+="<tr>"+cells.map(function(c){return"<td style='padding:5px 8px;'>"+c+"</td>";}).join("")+"</tr>";
     });
     tbl+="</table>";
